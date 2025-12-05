@@ -1,8 +1,42 @@
 @import "tailwindcss";
 
+/* Clash Display - Bold geometric display font */
+@font-face {
+  font-family: 'Clash Display';
+  src: url('https://cdn.fontshare.com/wf/LXAJFWXQFSTTMJ45ZDY24QMBTR2GIV7G/NXSMF7C6LVZAHRDD7QDTQ3QGKB3RBCLK/FFWBZDSCWVHHP3YH6NCLDMHKXQH7IMJM.woff2') format('woff2');
+  font-weight: 400 700;
+  font-display: swap;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Base colors - Deep obsidian dark theme */
+  --background: #08090a;
+  --background-secondary: #0f1115;
+  --background-tertiary: #161a1f;
+  --foreground: #f1f5f9;
+  --foreground-muted: #94a3b8;
+  --foreground-subtle: #64748b;
+
+  /* Accent colors - Electric cyan with violet undertones */
+  --accent-primary: #22d3ee;
+  --accent-primary-glow: rgba(34, 211, 238, 0.15);
+  --accent-secondary: #a78bfa;
+  --accent-tertiary: #3b82f6;
+
+  /* Card styling */
+  --card-bg: rgba(15, 17, 21, 0.8);
+  --card-border: rgba(148, 163, 184, 0.08);
+  --card-border-hover: rgba(34, 211, 238, 0.3);
+
+  /* Gradients */
+  --gradient-hero: linear-gradient(135deg, #08090a 0%, #0f1115 50%, #131720 100%);
+  --gradient-glow: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(34, 211, 238, 0.15), transparent);
+  --gradient-accent: linear-gradient(135deg, #22d3ee 0%, #3b82f6 50%, #a78bfa 100%);
+
+  /* Shadows */
+  --shadow-glow: 0 0 60px rgba(34, 211, 238, 0.1);
+  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.4);
+  --shadow-elevated: 0 8px 32px rgba(0, 0, 0, 0.6);
 }
 
 @theme inline {
@@ -10,17 +44,161 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-display: 'Clash Display', var(--font-geist-sans);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
 }
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--background);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--foreground-subtle);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--foreground-muted);
+}
+
+/* Selection styling */
+::selection {
+  background: rgba(34, 211, 238, 0.3);
+  color: var(--foreground);
+}
+
+/* Utility classes */
+.font-display {
+  font-family: 'Clash Display', var(--font-sans), system-ui, sans-serif;
+}
+
+.text-gradient {
+  background: var(--gradient-accent);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.bg-glow {
+  position: relative;
+}
+
+.bg-glow::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--gradient-glow);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Glass effect */
+.glass {
+  background: var(--card-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--card-border);
+}
+
+.glass-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-hover:hover {
+  border-color: var(--card-border-hover);
+  box-shadow: var(--shadow-glow);
+  transform: translateY(-2px);
+}
+
+/* Noise texture overlay */
+.noise {
+  position: relative;
+}
+
+.noise::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  opacity: 0.02;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Animated gradient border */
+@keyframes gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+.gradient-border {
+  position: relative;
+  background: var(--card-bg);
+  border-radius: 16px;
+}
+
+.gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  background: var(--gradient-accent);
+  background-size: 200% 200%;
+  border-radius: inherit;
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  animation: gradient-shift 3s ease infinite;
+}
+
+.gradient-border:hover::before {
+  opacity: 1;
+}
+
+/* Pulse animation for CTAs */
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 20px rgba(34, 211, 238, 0.3); }
+  50% { box-shadow: 0 0 40px rgba(34, 211, 238, 0.5); }
+}
+
+.pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* Float animation */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* Stagger animation delays */
+.stagger-1 { animation-delay: 0.1s; }
+.stagger-2 { animation-delay: 0.2s; }
+.stagger-3 { animation-delay: 0.3s; }
+.stagger-4 { animation-delay: 0.4s; }
+.stagger-5 { animation-delay: 0.5s; }
+.stagger-6 { animation-delay: 0.6s; }
