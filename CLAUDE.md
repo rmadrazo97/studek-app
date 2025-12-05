@@ -3,20 +3,31 @@
 ## Branch Workflow
 
 - **main**: Production-ready code. Only merged after approval.
-- **server**: Development branch for server work. All changes are made here first.
+- **server**: Branch synced to the remote server for deployment.
 
 ### Workflow
 
-1. All development happens on the `server` branch
-2. Changes are reviewed and approved before merging to `main`
-3. Always pull latest changes before starting work:
+1. **Local development**: All development happens locally on the `server` branch for resources and simplicity
+2. Changes are committed and pushed to the remote repository
+3. After approval, changes are merged into `main`
+4. The server pulls from `main` to deploy approved changes
+
+### Daily Workflow
+
+1. Pull latest changes before starting work:
    ```bash
    git pull origin server
    ```
-4. Commit frequently with clear messages
-5. Push changes to remote:
+2. Develop and test locally
+3. Commit frequently with clear messages
+4. Push changes to remote:
    ```bash
    git push origin server
+   ```
+5. After approval, merge to `main` and sync server:
+   ```bash
+   # On server
+   cd ~/studek-app && git pull origin main
    ```
 
 ## Server Access
@@ -32,3 +43,31 @@ ssh -i development-credentials/id_ed25519 root@155.138.237.103
 ## Repository Location on Server
 
 `/root/studek-app`
+
+## Deployment
+
+The app is served publicly at: **http://155.138.237.103**
+
+### Stack
+- **Next.js** - React framework
+- **PM2** - Process manager
+- **Nginx** - Reverse proxy
+
+### Deploy Commands
+
+First-time setup or full redeploy:
+```bash
+cd ~/studek-app && chmod +x server/deploy.sh && ./server/deploy.sh
+```
+
+Quick restart (after pulling changes):
+```bash
+cd ~/studek-app/app && npm install && npm run build && pm2 restart studek-app
+```
+
+### Useful PM2 Commands
+```bash
+pm2 status          # Check app status
+pm2 logs studek-app # View logs
+pm2 restart studek-app # Restart app
+```
