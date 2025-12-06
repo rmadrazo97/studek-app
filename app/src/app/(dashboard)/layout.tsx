@@ -19,6 +19,18 @@ export default function DashboardLayout({
   // Full-height pages that don't need padding (Creation Studio)
   const isFullHeightPage = pathname === "/create";
 
+  // Focus mode pages - no navigation, completely immersive
+  const isFocusMode = pathname === "/study";
+
+  // Focus mode: render children directly without any navigation
+  if (isFocusMode) {
+    return (
+      <ProtectedRoute>
+        {children}
+      </ProtectedRoute>
+    );
+  }
+
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-[#09090b]">
