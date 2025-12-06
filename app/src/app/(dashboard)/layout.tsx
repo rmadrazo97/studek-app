@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
+import { usePathname } from "next/navigation";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 
 export default function DashboardLayout({
@@ -10,6 +11,10 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const pathname = usePathname();
+
+  // Full-height pages that don't need padding (Creation Studio)
+  const isFullHeightPage = pathname === "/create";
 
   return (
     <div className="min-h-screen bg-[#09090b]">
@@ -21,11 +26,13 @@ export default function DashboardLayout({
         initial={false}
         animate={{ marginLeft: isSidebarCollapsed ? 72 : 280 }}
         transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-        className="min-h-screen"
+        className={isFullHeightPage ? "h-screen" : "min-h-screen"}
       >
-        <div className="p-6 lg:p-8">
-          {children}
-        </div>
+        {isFullHeightPage ? (
+          children
+        ) : (
+          <div className="p-6 lg:p-8">{children}</div>
+        )}
       </motion.main>
     </div>
   );
