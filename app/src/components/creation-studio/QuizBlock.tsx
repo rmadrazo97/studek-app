@@ -14,7 +14,7 @@ import {
   Link2,
   HelpCircle,
 } from "lucide-react";
-import { Block, useCreationStudio, QuizOption } from "@/stores/creationStudioStore";
+import { Block, useCreationStudio } from "@/stores/creationStudioStore";
 
 interface QuizBlockProps {
   block: Block;

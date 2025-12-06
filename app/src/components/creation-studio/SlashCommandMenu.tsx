@@ -22,7 +22,6 @@ import {
   Zap,
 } from "lucide-react";
 import {
-  BlockType,
   useCreationStudio,
   createBlock,
   createFlashcardBlock,

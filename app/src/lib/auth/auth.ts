@@ -4,7 +4,7 @@
  * Handles user registration, login, token generation, and session management.
  */
 
-import { getDatabase, executeRaw, runRaw, transaction } from '../db';
+import { executeRaw, runRaw } from '../db';
 import { generateId, now } from '../db/crud';
 import { createUser, getUserByEmail, getUserById, emailExists } from '../db/services/users';
 import {
@@ -16,8 +16,6 @@ import {
   hashToken,
 } from './crypto';
 import {
-  getUserRoles,
-  getUserPermissions,
   getUserRoleNames,
   getUserPermissionNames,
   assignRoleToUserByName,
@@ -27,9 +25,7 @@ import type {
   LoginRequest,
   AuthResponse,
   SafeUser,
-  TokenPayload,
   RefreshToken,
-  AuthError as AuthErrorType,
 } from './types';
 import { AuthError, AUTH_CONSTANTS, DEFAULT_ROLES } from './types';
 

@@ -16,7 +16,7 @@ import {
   Link2,
   X,
 } from "lucide-react";
-import { useCreationStudio, SourceDocument } from "@/stores/creationStudioStore";
+import { useCreationStudio } from "@/stores/creationStudioStore";
 import { Button } from "@/components/ui/Button";
 
 interface SourceViewerProps {
