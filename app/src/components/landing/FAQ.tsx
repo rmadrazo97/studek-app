@@ -57,9 +57,9 @@ function FAQAccordion({ item, isOpen, onToggle }: { item: FAQItem; isOpen: boole
     <div className="border-b border-[rgba(148,163,184,0.08)] last:border-0">
       <button
         onClick={onToggle}
-        className="w-full py-6 flex items-center justify-between text-left group"
+        className="w-full py-4 sm:py-5 lg:py-6 flex items-center justify-between text-left group"
       >
-        <span className="font-medium text-slate-200 group-hover:text-slate-100 transition-colors pr-4">
+        <span className="font-medium text-sm sm:text-base text-slate-200 group-hover:text-slate-100 transition-colors pr-3 sm:pr-4">
           {item.question}
         </span>
         <motion.div
@@ -68,7 +68,7 @@ function FAQAccordion({ item, isOpen, onToggle }: { item: FAQItem; isOpen: boole
           className="flex-shrink-0"
         >
           <ChevronDown
-            className={`w-5 h-5 transition-colors ${
+            className={`w-4 h-4 sm:w-5 sm:h-5 transition-colors ${
               isOpen ? "text-cyan-400" : "text-slate-500"
             }`}
           />
@@ -83,7 +83,7 @@ function FAQAccordion({ item, isOpen, onToggle }: { item: FAQItem; isOpen: boole
             transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
             className="overflow-hidden"
           >
-            <p className="pb-6 text-slate-400 leading-relaxed">{item.answer}</p>
+            <p className="pb-4 sm:pb-5 lg:pb-6 text-xs sm:text-sm lg:text-base text-slate-400 leading-relaxed">{item.answer}</p>
           </motion.div>
         )}
       </AnimatePresence>
@@ -97,27 +97,27 @@ export function FAQ() {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   return (
-    <section id="faq" ref={ref} className="relative py-32">
+    <section id="faq" ref={ref} className="relative py-16 sm:py-24 lg:py-32">
       {/* Background */}
       <div className="absolute inset-0 bg-[#0a0b0d]">
         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-slate-700/50 to-transparent" />
       </div>
 
-      <div className="relative z-10 max-w-3xl mx-auto px-6">
+      <div className="relative z-10 max-w-3xl mx-auto px-4 sm:px-6">
         {/* Section Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={isInView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.6 }}
-          className="text-center mb-16"
+          className="text-center mb-10 sm:mb-12 lg:mb-16"
         >
-          <span className="text-cyan-400 text-sm font-medium tracking-wider uppercase">
+          <span className="text-cyan-400 text-xs sm:text-sm font-medium tracking-wider uppercase">
             FAQ
           </span>
-          <h2 className="font-display text-4xl md:text-5xl font-bold text-slate-100 mt-4">
+          <h2 className="font-display text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-slate-100 mt-3 sm:mt-4">
             Questions? We&apos;ve got answers.
           </h2>
-          <p className="mt-4 text-lg text-slate-400">
+          <p className="mt-3 sm:mt-4 text-sm sm:text-base lg:text-lg text-slate-400">
             Everything you need to know about Studek.
           </p>
         </motion.div>
@@ -127,7 +127,7 @@ export function FAQ() {
           initial={{ opacity: 0, y: 30 }}
           animate={isInView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="rounded-2xl border border-[rgba(148,163,184,0.08)] bg-[#0f1115] px-8"
+          className="rounded-xl sm:rounded-2xl border border-[rgba(148,163,184,0.08)] bg-[#0f1115] px-4 sm:px-6 lg:px-8"
         >
           {faqData.map((item, index) => (
             <FAQAccordion
@@ -144,11 +144,11 @@ export function FAQ() {
           initial={{ opacity: 0 }}
           animate={isInView ? { opacity: 1 } : {}}
           transition={{ duration: 0.6, delay: 0.4 }}
-          className="mt-12 text-center"
+          className="mt-8 sm:mt-10 lg:mt-12 text-center"
         >
-          <div className="inline-flex items-center gap-3 px-6 py-4 rounded-2xl bg-[#0f1115] border border-[rgba(148,163,184,0.08)]">
-            <MessageCircle className="w-5 h-5 text-cyan-400" />
-            <span className="text-slate-400">
+          <div className="inline-flex items-center gap-2 sm:gap-3 px-4 sm:px-5 lg:px-6 py-3 sm:py-3.5 lg:py-4 rounded-xl sm:rounded-2xl bg-[#0f1115] border border-[rgba(148,163,184,0.08)]">
+            <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-400" />
+            <span className="text-xs sm:text-sm text-slate-400">
               Still have questions?{" "}
               <a href="#" className="text-cyan-400 hover:text-cyan-300 transition-colors">
                 Chat with us
