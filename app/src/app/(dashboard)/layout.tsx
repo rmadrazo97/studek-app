@@ -45,12 +45,12 @@ export default function DashboardLayout({
           />
         </div>
 
-        {/* Main Content - Mobile */}
+        {/* Main Content - Mobile - account for header + iOS safe area */}
         <main
           className={`
             md:hidden
             ${isFullHeightPage ? "h-screen" : "min-h-screen"}
-            pt-14 pb-20
+            pt-[calc(3.5rem+env(safe-area-inset-top,0px))] pb-[calc(5rem+env(safe-area-inset-bottom,0px))]
           `}
         >
           {isFullHeightPage ? (

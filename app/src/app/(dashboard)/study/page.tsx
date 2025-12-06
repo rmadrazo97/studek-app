@@ -250,8 +250,8 @@ function StudyContent() {
 
   return (
     <div className="min-h-screen bg-black flex flex-col select-none">
-      {/* Minimal Header - Just counts and exit */}
-      <header className="fixed top-0 left-0 right-0 z-50 px-4 py-3">
+      {/* Minimal Header - Just counts and exit - with iOS safe area */}
+      <header className="fixed top-0 left-0 right-0 z-50 px-4 py-3 pt-[calc(0.75rem+env(safe-area-inset-top,0px))]">
         <div className="max-w-3xl mx-auto flex items-center justify-between">
           {/* Close button */}
           <button
@@ -276,8 +276,8 @@ function StudyContent() {
         </div>
       </header>
 
-      {/* Progress bar - ultra thin at top */}
-      <div className="fixed top-0 left-0 right-0 h-0.5 bg-zinc-900 z-40">
+      {/* Progress bar - ultra thin at top - account for iOS safe area */}
+      <div className="fixed top-[env(safe-area-inset-top,0px)] left-0 right-0 h-0.5 bg-zinc-900 z-40">
         <motion.div
           initial={{ width: 0 }}
           animate={{ width: `${totalCount > 0 ? (completedCount / totalCount) * 100 : 0}%` }}
