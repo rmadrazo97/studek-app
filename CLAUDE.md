@@ -53,3 +53,26 @@ Or with Docker:
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
 ```
+
+## Development Guidelines
+
+### React Hooks Rules
+- **Never call hooks after early returns** - All `useState`, `useCallback`, `useEffect`, `useMemo` must be called before any `return` statement
+- Move early returns (`if (!data) return null`) to after all hook declarations
+- Add null checks inside callbacks instead of returning early before hooks
+
+### ESLint Configuration
+- Uses Next.js 16 with React Compiler (strict mode)
+- Some rules downgraded to warnings in `eslint.config.mjs`:
+  - `react-hooks/set-state-in-effect` - setState in effects (use sparingly)
+  - `react-hooks/preserve-manual-memoization` - useMemo dep mismatches
+  - `react/display-name` - anonymous components
+- Run `npm run lint` before committing - **0 errors required** for CI to pass
+
+### Tech Stack
+- **Framework:** Next.js 16 (App Router, Turbopack)
+- **Database:** SQLite with better-sqlite3
+- **Styling:** Tailwind CSS v4
+- **Animations:** Framer Motion
+- **Icons:** Lucide React
+- **Algorithm:** FSRS (spaced repetition)
