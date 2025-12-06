@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  LayoutDashboard,
+  Home,
   FolderTree,
   Table2,
   Library,
@@ -125,7 +125,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
   const [syncStatus] = useState<"synced" | "syncing" | "offline">("synced");
 
   const navItems = [
-    { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
+    { icon: Home, label: "Home", href: "/dashboard" },
     { icon: BarChart3, label: "Analytics", href: "/analytics" },
     { icon: PenTool, label: "Creation Studio", href: "/create" },
     { icon: FolderTree, label: "Decks", href: "/decks", hasTree: true },

@@ -1,23 +1,217 @@
 "use client";
 
-import { motion } from "framer-motion";
-import {
-  FocusRing,
-  Heatmap,
-  RetentionGraph,
-  MagicDropzone,
-} from "@/components/dashboard";
+import { useState, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Search, Plus, MoreHorizontal, BookOpen, Clock } from "lucide-react";
+import Link from "next/link";
 
-// Sample data - in production this would come from API/state
-const sampleHeatmapData = Array.from({ length: 140 }, () =>
-  Math.random() > 0.3 ? Math.floor(Math.random() * 60) : 0
-);
+// Sample deck data - in production this would come from API/database
+const sampleDecks = [
+  {
+    id: "1",
+    name: "Medicine",
+    hierarchy: "Medicine",
+    dueCount: 42,
+    newCount: 15,
+    totalCount: 320,
+    color: "from-rose-500 to-orange-500",
+  },
+  {
+    id: "2",
+    name: "Anatomy",
+    hierarchy: "Medicine::Anatomy",
+    dueCount: 18,
+    newCount: 5,
+    totalCount: 145,
+    color: "from-pink-500 to-rose-500",
+  },
+  {
+    id: "3",
+    name: "Heart",
+    hierarchy: "Medicine::Anatomy::Heart",
+    dueCount: 15,
+    newCount: 3,
+    totalCount: 120,
+    color: "from-red-500 to-pink-500",
+  },
+  {
+    id: "4",
+    name: "Brain",
+    hierarchy: "Medicine::Anatomy::Brain",
+    dueCount: 8,
+    newCount: 2,
+    totalCount: 98,
+    color: "from-purple-500 to-pink-500",
+  },
+  {
+    id: "5",
+    name: "Pharmacology",
+    hierarchy: "Medicine::Pharmacology",
+    dueCount: 24,
+    newCount: 10,
+    totalCount: 175,
+    color: "from-violet-500 to-purple-500",
+  },
+  {
+    id: "6",
+    name: "Japanese",
+    hierarchy: "Languages::Japanese",
+    dueCount: 56,
+    newCount: 20,
+    totalCount: 450,
+    color: "from-cyan-500 to-blue-500",
+  },
+  {
+    id: "7",
+    name: "N3 Vocabulary",
+    hierarchy: "Languages::Japanese::N3 Vocabulary",
+    dueCount: 8,
+    newCount: 12,
+    totalCount: 280,
+    color: "from-teal-500 to-cyan-500",
+  },
+  {
+    id: "8",
+    name: "Spanish",
+    hierarchy: "Languages::Spanish",
+    dueCount: 12,
+    newCount: 8,
+    totalCount: 190,
+    color: "from-amber-500 to-orange-500",
+  },
+  {
+    id: "9",
+    name: "Computer Science",
+    hierarchy: "Computer Science",
+    dueCount: 19,
+    newCount: 7,
+    totalCount: 85,
+    color: "from-blue-500 to-indigo-500",
+  },
+  {
+    id: "10",
+    name: "Algorithms",
+    hierarchy: "Computer Science::Algorithms",
+    dueCount: 11,
+    newCount: 4,
+    totalCount: 65,
+    color: "from-indigo-500 to-violet-500",
+  },
+  {
+    id: "11",
+    name: "Data Structures",
+    hierarchy: "Computer Science::Data Structures",
+    dueCount: 8,
+    newCount: 3,
+    totalCount: 52,
+    color: "from-emerald-500 to-teal-500",
+  },
+  {
+    id: "12",
+    name: "History",
+    hierarchy: "History",
+    dueCount: 0,
+    newCount: 25,
+    totalCount: 25,
+    color: "from-yellow-500 to-amber-500",
+  },
+];
 
-const sampleRetentionHistory = Array.from({ length: 30 }, (_, i) =>
-  85 + Math.sin(i / 5) * 8 + Math.random() * 3
-);
+interface DeckCardProps {
+  deck: (typeof sampleDecks)[0];
+  index: number;
+}
 
-export default function DashboardPage() {
+function DeckCard({ deck, index }: DeckCardProps) {
+  const hasDue = deck.dueCount > 0;
+  const hasNew = deck.newCount > 0;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      transition={{ duration: 0.3, delay: index * 0.05 }}
+      className="group relative bg-[#0f0f11] border border-zinc-800 rounded-2xl p-5 hover:border-zinc-700 hover:bg-[#111114] transition-all duration-200 cursor-pointer"
+    >
+      {/* Color accent bar */}
+      <div
+        className={`absolute top-0 left-4 right-4 h-1 rounded-b-full bg-gradient-to-r ${deck.color} opacity-60 group-hover:opacity-100 transition-opacity`}
+      />
+
+      {/* Header */}
+      <div className="flex items-start justify-between mb-4">
+        <div
+          className={`w-12 h-12 rounded-xl bg-gradient-to-br ${deck.color} flex items-center justify-center shadow-lg`}
+        >
+          <BookOpen className="w-6 h-6 text-white" />
+        </div>
+        <button className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 opacity-0 group-hover:opacity-100 transition-all">
+          <MoreHorizontal className="w-4 h-4" />
+        </button>
+      </div>
+
+      {/* Deck info */}
+      <div className="mb-4">
+        <h3 className="text-lg font-semibold text-zinc-100 mb-1 truncate">
+          {deck.name}
+        </h3>
+        <p className="text-xs text-zinc-500 truncate">{deck.hierarchy}</p>
+      </div>
+
+      {/* Stats */}
+      <div className="flex items-center gap-3">
+        {hasDue && (
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-cyan-500/10 border border-cyan-500/20">
+            <Clock className="w-3.5 h-3.5 text-cyan-400" />
+            <span className="text-sm font-medium text-cyan-400">
+              {deck.dueCount}
+            </span>
+          </div>
+        )}
+        {hasNew && (
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+            <Plus className="w-3.5 h-3.5 text-emerald-400" />
+            <span className="text-sm font-medium text-emerald-400">
+              {deck.newCount}
+            </span>
+          </div>
+        )}
+        <span className="text-xs text-zinc-500 ml-auto">
+          {deck.totalCount} cards
+        </span>
+      </div>
+
+      {/* Study button on hover */}
+      <div className="absolute inset-x-5 bottom-5 opacity-0 group-hover:opacity-100 transition-opacity">
+        <Link
+          href={`/study?deck=${deck.id}`}
+          className="block w-full py-2 text-center text-sm font-medium text-zinc-900 bg-gradient-to-r from-cyan-400 to-blue-500 rounded-lg hover:from-cyan-300 hover:to-blue-400 transition-all"
+        >
+          Study Now
+        </Link>
+      </div>
+    </motion.div>
+  );
+}
+
+export default function HomePage() {
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredDecks = useMemo(() => {
+    if (!searchQuery.trim()) return sampleDecks;
+
+    const query = searchQuery.toLowerCase();
+    return sampleDecks.filter(
+      (deck) =>
+        deck.name.toLowerCase().includes(query) ||
+        deck.hierarchy.toLowerCase().includes(query)
+    );
+  }, [searchQuery]);
+
+  const totalDue = sampleDecks.reduce((sum, deck) => sum + deck.dueCount, 0);
+  const totalNew = sampleDecks.reduce((sum, deck) => sum + deck.newCount, 0);
+
   return (
     <div className="max-w-7xl mx-auto">
       {/* Header */}
@@ -27,149 +221,99 @@ export default function DashboardPage() {
         transition={{ duration: 0.5 }}
         className="mb-8"
       >
-        <h1 className="text-3xl font-bold font-display text-zinc-100">
-          Good morning, Student
-        </h1>
+        <h1 className="text-3xl font-bold font-display text-zinc-100">Home</h1>
         <p className="text-zinc-500 mt-1">
-          You have cards waiting for review. Keep up the great work!
+          {totalDue > 0 ? (
+            <>
+              You have{" "}
+              <span className="text-cyan-400 font-medium">{totalDue} cards</span>{" "}
+              due for review
+              {totalNew > 0 && (
+                <>
+                  {" "}
+                  and{" "}
+                  <span className="text-emerald-400 font-medium">
+                    {totalNew} new cards
+                  </span>{" "}
+                  to learn
+                </>
+              )}
+            </>
+          ) : (
+            "All caught up! No cards due for review."
+          )}
         </p>
       </motion.div>
 
-      {/* Bento Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6">
-        {/* Focus Ring - Large Hero Widget */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-          className="lg:col-span-5 lg:row-span-2 bg-[#0f0f11] border border-zinc-800 rounded-2xl overflow-hidden hover:border-zinc-700 transition-colors"
-        >
-          <FocusRing dueCards={42} newCards={15} reviewCards={27} />
-        </motion.div>
-
-        {/* Heatmap Widget */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="lg:col-span-7 bg-[#0f0f11] border border-zinc-800 rounded-2xl overflow-hidden hover:border-zinc-700 transition-colors"
-        >
-          <Heatmap
-            data={sampleHeatmapData}
-            currentStreak={12}
-            longestStreak={45}
+      {/* Search Bar */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.1 }}
+        className="mb-8"
+      >
+        <div className="relative max-w-xl">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500" />
+          <input
+            type="text"
+            placeholder="Search decks..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-12 pr-4 py-3 bg-[#0f0f11] border border-zinc-800 rounded-xl text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/20 transition-all"
           />
-        </motion.div>
-
-        {/* Retention Graph Widget */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-          className="lg:col-span-4 bg-[#0f0f11] border border-zinc-800 rounded-2xl overflow-hidden hover:border-zinc-700 transition-colors"
-        >
-          <RetentionGraph
-            trueRetention={94}
-            targetRetention={90}
-            stabilityAvg={28}
-            difficultyAvg={5.2}
-            historyData={sampleRetentionHistory}
-          />
-        </motion.div>
-
-        {/* Magic Dropzone Widget */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-          className="lg:col-span-3 bg-[#0f0f11] border border-zinc-800 rounded-2xl overflow-hidden hover:border-zinc-700 transition-colors"
-        >
-          <MagicDropzone />
-        </motion.div>
-
-        {/* Quick Stats Row */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.5 }}
-          className="lg:col-span-12 grid grid-cols-2 md:grid-cols-4 gap-4"
-        >
-          {[
-            { label: "Total Cards", value: "1,247", change: "+23 this week" },
-            { label: "Mature Cards", value: "892", change: "71% of total" },
-            { label: "Study Time", value: "4.2h", change: "This week" },
-            { label: "Cards Reviewed", value: "312", change: "Today" },
-          ].map((stat, i) => (
-            <div
-              key={i}
-              className="bg-[#0f0f11] border border-zinc-800 rounded-xl p-4 hover:border-zinc-700 transition-colors"
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery("")}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
             >
-              <span className="text-xs text-zinc-500 block mb-1">
-                {stat.label}
-              </span>
-              <span className="text-2xl font-bold text-zinc-100 font-display">
-                {stat.value}
-              </span>
-              <span className="text-xs text-zinc-600 block mt-1">
-                {stat.change}
-              </span>
-            </div>
-          ))}
-        </motion.div>
+              Clear
+            </button>
+          )}
+        </div>
+      </motion.div>
 
-        {/* Recent Decks */}
+      {/* Deck Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <AnimatePresence mode="popLayout">
+          {filteredDecks.map((deck, index) => (
+            <DeckCard key={deck.id} deck={deck} index={index} />
+          ))}
+        </AnimatePresence>
+
+        {/* Create New Deck Card */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.6 }}
-          className="lg:col-span-12 bg-[#0f0f11] border border-zinc-800 rounded-2xl p-5 hover:border-zinc-700 transition-colors"
+          transition={{ duration: 0.3, delay: filteredDecks.length * 0.05 }}
+          className="group relative bg-[#0f0f11] border border-dashed border-zinc-700 rounded-2xl p-5 hover:border-cyan-500/50 hover:bg-[#111114] transition-all duration-200 cursor-pointer flex flex-col items-center justify-center min-h-[200px]"
         >
-          <h3 className="text-sm font-semibold text-zinc-100 mb-4">
-            Recent Decks
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {[
-              {
-                name: "Medicine::Anatomy::Heart",
-                due: 15,
-                total: 120,
-                color: "from-rose-500 to-orange-500",
-              },
-              {
-                name: "Japanese::N3 Vocabulary",
-                due: 8,
-                total: 450,
-                color: "from-violet-500 to-purple-500",
-              },
-              {
-                name: "Computer Science::Algorithms",
-                due: 19,
-                total: 85,
-                color: "from-cyan-500 to-blue-500",
-              },
-            ].map((deck, i) => (
-              <div
-                key={i}
-                className="flex items-center gap-4 p-4 bg-zinc-900/50 rounded-xl border border-zinc-800 hover:border-zinc-700 cursor-pointer transition-colors"
-              >
-                <div
-                  className={`w-10 h-10 rounded-lg bg-gradient-to-br ${deck.color} flex items-center justify-center text-white font-bold text-sm`}
-                >
-                  {deck.due}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-zinc-100 truncate">
-                    {deck.name}
-                  </p>
-                  <p className="text-xs text-zinc-500">
-                    {deck.due} due · {deck.total} total
-                  </p>
-                </div>
-              </div>
-            ))}
+          <div className="w-12 h-12 rounded-xl bg-zinc-800 group-hover:bg-cyan-500/20 flex items-center justify-center transition-colors mb-4">
+            <Plus className="w-6 h-6 text-zinc-500 group-hover:text-cyan-400 transition-colors" />
           </div>
+          <span className="text-sm font-medium text-zinc-500 group-hover:text-zinc-300 transition-colors">
+            Create New Deck
+          </span>
         </motion.div>
       </div>
+
+      {/* Empty state */}
+      {filteredDecks.length === 0 && searchQuery && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="text-center py-16"
+        >
+          <div className="w-16 h-16 rounded-2xl bg-zinc-800 flex items-center justify-center mx-auto mb-4">
+            <Search className="w-8 h-8 text-zinc-500" />
+          </div>
+          <h3 className="text-lg font-medium text-zinc-300 mb-2">
+            No decks found
+          </h3>
+          <p className="text-sm text-zinc-500">
+            No decks match &quot;{searchQuery}&quot;. Try a different search term.
+          </p>
+        </motion.div>
+      )}
     </div>
   );
 }
