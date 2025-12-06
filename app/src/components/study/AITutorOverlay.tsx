@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Sparkles,
@@ -45,18 +45,37 @@ const presetPrompts = [
   },
 ];
 
+function getSimulatedResponse(prompt: string, front: string, back: string): string {
+  if (prompt.toLowerCase().includes("explain") || prompt.toLowerCase().includes("simple")) {
+    return `Think of it this way: "${back}" is the answer to "${front}". Imagine you're explaining this to a friend - the key concept here is understanding the relationship between the question and answer. Try to visualize it or connect it to something you already know!`;
+  }
+  if (prompt.toLowerCase().includes("mnemonic")) {
+    return `Here's a memory trick: Take the first letters of the key words in "${back}" and create a silly sentence or image. The more absurd, the better you'll remember it! You could also try the memory palace technique - place this concept in a familiar location in your mind.`;
+  }
+  if (prompt.toLowerCase().includes("miss") || prompt.toLowerCase().includes("wrong")) {
+    return `Common reasons for missing this:\n\n1. **Similar concepts** - There might be related information that's causing confusion\n2. **Not enough context** - Try adding more details to your mental model\n3. **Shallow encoding** - Next time, try to explain it in your own words\n\nTip: When you see this card again, pause and really think about WHY the answer is what it is.`;
+  }
+  return `Great question! The key thing to understand about "${front}" is that ${back}. Let me know if you'd like me to break this down further or explain it from a different angle.`;
+}
+
 export function AITutorOverlay({ isOpen, onClose }: AITutorOverlayProps) {
   const { state } = useReview();
   const { currentCard } = state;
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const messageIdRef = useRef(0);
 
-  const handleSend = async (prompt: string) => {
+  const generateMessageId = useCallback(() => {
+    messageIdRef.current += 1;
+    return `msg-${messageIdRef.current}`;
+  }, []);
+
+  const handleSend = useCallback((prompt: string) => {
     if (!prompt.trim() || !currentCard) return;
 
     const userMessage: Message = {
-      id: Date.now().toString(),
+      id: generateMessageId(),
       role: "user",
       content: prompt,
     };
@@ -68,27 +87,14 @@ export function AITutorOverlay({ isOpen, onClose }: AITutorOverlayProps) {
     // Simulate AI response (in production, this would call your AI API)
     setTimeout(() => {
       const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
+        id: generateMessageId(),
         role: "assistant",
         content: getSimulatedResponse(prompt, currentCard.front, currentCard.back),
       };
       setMessages((prev) => [...prev, assistantMessage]);
       setIsLoading(false);
     }, 1500);
-  };
-
-  const getSimulatedResponse = (prompt: string, front: string, back: string): string => {
-    if (prompt.toLowerCase().includes("explain") || prompt.toLowerCase().includes("simple")) {
-      return `Think of it this way: "${back}" is the answer to "${front}". Imagine you're explaining this to a friend - the key concept here is understanding the relationship between the question and answer. Try to visualize it or connect it to something you already know!`;
-    }
-    if (prompt.toLowerCase().includes("mnemonic")) {
-      return `Here's a memory trick: Take the first letters of the key words in "${back}" and create a silly sentence or image. The more absurd, the better you'll remember it! You could also try the memory palace technique - place this concept in a familiar location in your mind.`;
-    }
-    if (prompt.toLowerCase().includes("miss") || prompt.toLowerCase().includes("wrong")) {
-      return `Common reasons for missing this:\n\n1. **Similar concepts** - There might be related information that's causing confusion\n2. **Not enough context** - Try adding more details to your mental model\n3. **Shallow encoding** - Next time, try to explain it in your own words\n\nTip: When you see this card again, pause and really think about WHY the answer is what it is.`;
-    }
-    return `Great question! The key thing to understand about "${front}" is that ${back}. Let me know if you'd like me to break this down further or explain it from a different angle.`;
-  };
+  }, [currentCard, generateMessageId]);
 
   const handlePresetClick = (prompt: string) => {
     handleSend(prompt);

@@ -2,7 +2,7 @@
 
 import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
-import { Check, X, Minus, Sparkles, Crown } from "lucide-react";
+import { Check, X, Sparkles, Crown } from "lucide-react";
 
 interface ComparisonRow {
   feature: string;

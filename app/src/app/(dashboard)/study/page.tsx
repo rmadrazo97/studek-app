@@ -291,7 +291,7 @@ function StudyContent() {
             onDragEnd={handleDragEnd}
             className="w-full cursor-grab active:cursor-grabbing"
           >
-            <ReviewCard onOpenTutor={() => setIsTutorOpen(true)} />
+            <ReviewCard />
           </motion.div>
         )}
       </div>

@@ -7,7 +7,7 @@ import {
   Brain,
   Mic,
   Users,
-  Image,
+  Image as ImageIcon,
   BarChart3,
   Smartphone,
   Cloud,
@@ -180,7 +180,7 @@ export function Features() {
           <FeatureCard
             title="Smart Image Occlusion"
             description="AI detects labels and creates occlusion masks automatically. Perfect for anatomy, diagrams, and maps."
-            icon={<Image className="w-6 h-6 text-orange-400" />}
+            icon={<ImageIcon className="w-6 h-6 text-orange-400" />}
             gradient="bg-gradient-to-br from-orange-500/10 to-transparent"
             className="md:col-span-2"
             delay={0.4}

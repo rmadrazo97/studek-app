@@ -1,21 +1,29 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Copy, Check, ZoomIn, Volume2, VolumeX } from "lucide-react";
-import { useReview, Card } from "@/stores/reviewStore";
+import { useReview } from "@/stores/reviewStore";
 
-interface ReviewCardProps {
-  onOpenTutor?: () => void;
+// Pre-generate waveform heights to avoid Math.random() during render
+function generateWaveformHeights(count: number): number[][] {
+  return Array.from({ length: count }, () => [
+    Math.random() * 20 + 10,
+    Math.random() * 30 + 10,
+    Math.random() * 20 + 10,
+  ]);
 }
 
-export function ReviewCard({ onOpenTutor }: ReviewCardProps) {
+export function ReviewCard() {
   const { state } = useReview();
   const { currentCard, status } = state;
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
+
+  // Memoize waveform heights to maintain purity
+  const waveformHeights = useMemo(() => generateWaveformHeights(30), []);
 
   if (!currentCard) return null;
 
@@ -37,7 +45,7 @@ export function ReviewCard({ onOpenTutor }: ReviewCardProps) {
   };
 
   // Parse content for code blocks (simplified - in production use a proper parser)
-  const renderContent = (content: string, isAnswer: boolean = false) => {
+  const renderContent = (content: string) => {
     // Check for code blocks
     const codeBlockRegex = /```(\w+)?\n([\s\S]*?)```/g;
     const parts: React.ReactNode[] = [];
@@ -121,6 +129,7 @@ export function ReviewCard({ onOpenTutor }: ReviewCardProps) {
                 <div className="mb-6">
                   {currentCard.media.type === "image" && (
                     <div className="relative group">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={currentCard.media.url}
                         alt="Card media"
@@ -150,17 +159,11 @@ export function ReviewCard({ onOpenTutor }: ReviewCardProps) {
                       <div className="flex-1 h-12 bg-zinc-800 rounded-lg flex items-center px-4">
                         {/* Audio waveform visualization (simplified) */}
                         <div className="flex items-center gap-1 h-full">
-                          {Array.from({ length: 30 }).map((_, i) => (
+                          {waveformHeights.map((heights, i) => (
                             <motion.div
                               key={i}
                               animate={{
-                                height: isAudioPlaying
-                                  ? [
-                                      Math.random() * 20 + 10,
-                                      Math.random() * 30 + 10,
-                                      Math.random() * 20 + 10,
-                                    ]
-                                  : 8,
+                                height: isAudioPlaying ? heights : 8,
                               }}
                               transition={{
                                 duration: 0.3,
@@ -222,12 +225,13 @@ export function ReviewCard({ onOpenTutor }: ReviewCardProps) {
 
                   {/* Answer Content */}
                   <div className="text-center text-xl sm:text-2xl font-medium text-zinc-100 leading-relaxed">
-                    {renderContent(currentCard.back, true)}
+                    {renderContent(currentCard.back)}
                   </div>
 
                   {/* Answer Media */}
                   {currentCard.media && currentCard.media.type === "image" && (
                     <div className="mt-6 flex justify-center">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={currentCard.media.url}
                         alt="Answer media"
