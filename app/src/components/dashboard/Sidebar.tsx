@@ -18,6 +18,7 @@ import {
   Loader2,
   Settings,
   HelpCircle,
+  BarChart3,
 } from "lucide-react";
 
 interface DeckItem {
@@ -123,6 +124,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
 
   const navItems = [
     { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
+    { icon: BarChart3, label: "Analytics", href: "/analytics" },
     { icon: FolderTree, label: "Decks", href: "/decks", hasTree: true },
     { icon: Table2, label: "Card Browser", href: "/browser" },
   ];
