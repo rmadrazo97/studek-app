@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   Home,
-  FolderTree,
+  Compass,
   PenTool,
   Library,
   BarChart3,
@@ -16,7 +16,7 @@ export function MobileBottomNav() {
 
   const navItems = [
     { icon: Home, label: "Home", href: "/dashboard" },
-    { icon: FolderTree, label: "Decks", href: "/decks" },
+    { icon: Compass, label: "Explore", href: "/explore" },
     { icon: PenTool, label: "Create", href: "/create", isMain: true },
     { icon: Library, label: "Library", href: "/library" },
     { icon: BarChart3, label: "Stats", href: "/analytics" },
