@@ -45,8 +45,8 @@ export function useVirtualization({
   const [containerHeight, setContainerHeight] = useState(0);
   const [isScrolling, setIsScrolling] = useState(false);
 
-  // Measured sizes cache
-  const measuredSizes = useRef<Map<number, number>>(new Map());
+  // Measured sizes cache as state to allow access during render
+  const [measuredSizes, setMeasuredSizes] = useState<Map<number, number>>(() => new Map());
   const scrollingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Calculate item positions
@@ -55,7 +55,7 @@ export function useVirtualization({
     let currentPosition = 0;
 
     for (let i = 0; i < count; i++) {
-      const size = measuredSizes.current.get(i) ?? getItemSize(i);
+      const size = measuredSizes.get(i) ?? getItemSize(i);
       positions.push({
         start: currentPosition,
         end: currentPosition + size,
@@ -68,7 +68,7 @@ export function useVirtualization({
       itemPositions: positions,
       totalSize: currentPosition,
     };
-  }, [count, getItemSize]);
+  }, [count, getItemSize, measuredSizes]);
 
   // Find visible range using binary search
   const findStartIndex = useCallback(
@@ -230,11 +230,16 @@ export function useVirtualization({
       if (!element) return;
 
       const height = element.getBoundingClientRect().height;
-      const currentSize = measuredSizes.current.get(index);
 
-      if (currentSize !== height) {
-        measuredSizes.current.set(index, height);
-      }
+      setMeasuredSizes((prev) => {
+        const currentSize = prev.get(index);
+        if (currentSize !== height) {
+          const next = new Map(prev);
+          next.set(index, height);
+          return next;
+        }
+        return prev;
+      });
     },
     []
   );

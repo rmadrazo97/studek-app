@@ -180,7 +180,7 @@ export function scheduleReview(
   let newDifficulty: number;
   let newState: FSRSCard['state'];
   let newLapses = card.lapses;
-  let newReps = card.reps + 1;
+  const newReps = card.reps + 1;
 
   if (card.state === 'new') {
     // First review - initialize card
@@ -396,7 +396,7 @@ export function simulateFutureWorkload(
   }));
 }
 
-export default {
+const fsrs = {
   calculateRetrievability,
   calculateInterval,
   scheduleReview,
@@ -410,3 +410,5 @@ export default {
   simulateFutureWorkload,
   DEFAULT_PARAMS,
 };
+
+export default fsrs;
