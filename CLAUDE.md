@@ -21,13 +21,31 @@ On push to `main`:
 | `VPS_USERNAME` | SSH user: `root` |
 | `VPS_SSH_KEY` | Private SSH key (contents of `id_ed25519`) |
 | `GHCR_PAT` | GitHub PAT with `read:packages` scope |
+| `BACKEND_SECRETS` | JSON object with environment variables (see below) |
+
+### BACKEND_SECRETS JSON Format
+```json
+{
+  "JWT_SECRET": "your-secure-jwt-secret",
+  "POSTGRES_PASSWORD": "your-postgres-password",
+  "STRIPE_SECRET_KEY": "sk_live_...",
+  "STRIPE_PUBLISHABLE_KEY": "pk_live_...",
+  "STRIPE_WEBHOOK_SECRET": "whsec_...",
+  "STRIPE_PRICE_PRO_MONTHLY": "price_...",
+  "STRIPE_PRICE_PRO_YEARLY": "price_...",
+  "STRIPE_PRICE_PREMIUM_MONTHLY": "price_...",
+  "STRIPE_PRICE_PREMIUM_YEARLY": "price_...",
+  "LOGS_USERNAME": "admin",
+  "LOGS_PASSWORD": "your-logs-password"
+}
+```
 
 ## Server Access
 ```bash
 ssh -i development-credentials/id_ed25519 root@155.138.237.103
 ```
 - **Repo:** `/root/studek-app`
-- **Stack:** Next.js + Docker + SQLite + Nginx
+- **Stack:** Next.js + Docker + SQLite + PostgreSQL + Nginx
 
 ## Docker Commands
 ```bash
@@ -71,8 +89,42 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
 
 ### Tech Stack
 - **Framework:** Next.js 16 (App Router, Turbopack)
-- **Database:** SQLite with better-sqlite3
+- **Database:** SQLite with better-sqlite3 (main app), PostgreSQL (subscriptions)
+- **Subscriptions:** @saas-experts/subscrio + Stripe
 - **Styling:** Tailwind CSS v4
 - **Animations:** Framer Motion
 - **Icons:** Lucide React
 - **Algorithm:** FSRS (spaced repetition)
+
+## Subscription System
+
+### Overview
+Subscription management uses `@saas-experts/subscrio` with Stripe integration.
+- **PostgreSQL** stores subscription data (separate from main SQLite database)
+- **Stripe** handles payment processing
+
+### Plans
+| Plan | Features |
+|------|----------|
+| **Free** | 5 decks, 100 cards/deck, basic features |
+| **Pro** ($9.99/mo) | 50 decks, 1000 cards/deck, AI generation, analytics, collaboration |
+| **Premium** ($19.99/mo) | Unlimited decks/cards, all features |
+
+### API Endpoints
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/subscriptions` | GET | Get current subscription |
+| `/api/subscriptions/plans` | GET | List available plans |
+| `/api/subscriptions/checkout` | POST | Create Stripe checkout session |
+| `/api/subscriptions/portal` | POST | Create Stripe customer portal session |
+| `/api/subscriptions/cancel` | POST | Cancel subscription at period end |
+| `/api/subscriptions/reactivate` | POST | Reactivate canceled subscription |
+| `/api/subscriptions/features/[key]` | GET | Check feature access |
+| `/api/subscriptions/config` | GET | Get Stripe publishable key |
+| `/api/webhooks/stripe` | POST | Stripe webhook handler |
+
+### Stripe Setup
+1. Create products/prices in Stripe Dashboard
+2. Set up webhook endpoint: `https://your-domain/api/webhooks/stripe`
+3. Enable events: `checkout.session.completed`, `customer.subscription.*`, `invoice.*`
+4. Add price IDs to `BACKEND_SECRETS`

@@ -23,6 +23,15 @@ export async function register() {
       console.log('[Instrumentation] Seeding admin user...');
       await seedAdmin();
 
+      // Initialize subscription system (Subscrio)
+      if (process.env.SUBSCRIO_DATABASE_URL) {
+        console.log('[Instrumentation] Initializing subscription system...');
+        const { initializeSubscrio } = await import('./lib/subscriptions');
+        await initializeSubscrio();
+      } else {
+        console.log('[Instrumentation] Skipping subscriptions (SUBSCRIO_DATABASE_URL not set)');
+      }
+
       console.log('[Instrumentation] Server initialization complete');
     } catch (error) {
       console.error('[Instrumentation] Initialization error:', error);
