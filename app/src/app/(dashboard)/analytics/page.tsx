@@ -6,7 +6,6 @@ import {
   BarChart3,
   RefreshCw,
   Download,
-  Settings,
   TrendingUp,
   Clock,
   BookOpen,
@@ -25,7 +24,7 @@ import {
 } from "@/components/analytics";
 
 // Analytics Service
-import analyticsService, {
+import {
   getHeatmapData,
   generateMockHeatmapData,
   generateMockReviewLogs,
@@ -40,7 +39,7 @@ import { getHourlyBreakdown } from "@/lib/fsrs";
 
 export default function AnalyticsPage() {
   const [isLoading, setIsLoading] = useState(true);
-  const [desiredRetention, setDesiredRetention] = useState(0.9);
+  const [desiredRetention] = useState(0.9);
 
   // Analytics Data State
   const [analyticsData, setAnalyticsData] = useState<{

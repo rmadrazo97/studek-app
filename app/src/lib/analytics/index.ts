@@ -492,12 +492,9 @@ export function getHeatmapData(
   const now = new Date();
   const result: { date: string; count: number; level: number }[] = [];
 
-  // Find max for quantization
-  const maxCount = Math.max(...dailyData.map(d => d.totalReviews), 1);
-  const p90 = dailyData
-    .map(d => d.totalReviews)
-    .sort((a, b) => a - b)
-    [Math.floor(dailyData.length * 0.9)] || maxCount;
+  // Find p90 for quantization (more robust than max)
+  const sortedCounts = dailyData.map(d => d.totalReviews).sort((a, b) => a - b);
+  const p90 = sortedCounts[Math.floor(sortedCounts.length * 0.9)] || 1;
 
   for (let i = days - 1; i >= 0; i--) {
     const date = new Date(now);

@@ -41,7 +41,7 @@ export function ContributionHeatmap({
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
 
   // Process data into weeks
-  const { weeks, monthLabels, totalReviews, activeDays } = useMemo(() => {
+  const { weeks, monthLabels, totalReviews } = useMemo(() => {
     // Sort data by date
     const sorted = [...data].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
@@ -87,9 +87,8 @@ export function ContributionHeatmap({
 
     // Calculate totals
     const total = sorted.reduce((sum, d) => sum + d.count, 0);
-    const active = sorted.filter((d) => d.count > 0).length;
 
-    return { weeks: weeksArr, monthLabels: labels, totalReviews: total, activeDays: active };
+    return { weeks: weeksArr, monthLabels: labels, totalReviews: total };
   }, [data]);
 
   // Day labels

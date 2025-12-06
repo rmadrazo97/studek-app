@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { CalendarClock, TrendingUp, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react";
+import { CalendarClock, AlertCircle } from "lucide-react";
 
 interface WorkloadDay {
   date: string;
@@ -145,7 +145,6 @@ export function FutureDueHistogram({ data }: FutureDueHistogramProps) {
             // Calculate heights
             const reviewHeight = (day.reviews / maxTotal) * height;
             const newHeight = (day.newCards / maxTotal) * height;
-            const totalHeight = reviewHeight + newHeight;
             const backlogHeight = showBacklog ? (day.backlog / maxTotal) * height : 0;
 
             const reviewY = height - reviewHeight;
