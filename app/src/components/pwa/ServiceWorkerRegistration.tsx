@@ -1,33 +1,20 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-
-interface ServiceWorkerState {
-  isSupported: boolean;
-  isRegistered: boolean;
-  isUpdateAvailable: boolean;
-  registration: ServiceWorkerRegistration | null;
-}
+import { useEffect, useState, useCallback, useRef } from "react";
 
 export function ServiceWorkerRegistration() {
-  const [swState, setSwState] = useState<ServiceWorkerState>({
-    isSupported: false,
-    isRegistered: false,
-    isUpdateAvailable: false,
-    registration: null,
-  });
-
   const [showUpdateToast, setShowUpdateToast] = useState(false);
+  const registrationRef = useRef<ServiceWorkerRegistration | null>(null);
 
   const updateServiceWorker = useCallback(() => {
-    if (swState.registration?.waiting) {
+    if (registrationRef.current?.waiting) {
       // Tell the waiting service worker to skip waiting and become active
-      swState.registration.waiting.postMessage({ type: "SKIP_WAITING" });
+      registrationRef.current.waiting.postMessage({ type: "SKIP_WAITING" });
       setShowUpdateToast(false);
       // Reload the page to use the new service worker
       window.location.reload();
     }
-  }, [swState.registration]);
+  }, []);
 
   useEffect(() => {
     // Check if service workers are supported
@@ -35,8 +22,6 @@ export function ServiceWorkerRegistration() {
       console.log("Service workers are not supported");
       return;
     }
-
-    setSwState((prev) => ({ ...prev, isSupported: true }));
 
     const registerServiceWorker = async () => {
       try {
@@ -46,12 +31,7 @@ export function ServiceWorkerRegistration() {
         });
 
         console.log("Service Worker registered successfully:", registration);
-
-        setSwState((prev) => ({
-          ...prev,
-          isRegistered: true,
-          registration,
-        }));
+        registrationRef.current = registration;
 
         // Check for updates immediately
         registration.update();
@@ -68,7 +48,6 @@ export function ServiceWorkerRegistration() {
             ) {
               // New content is available, show update notification
               console.log("New content is available, please refresh.");
-              setSwState((prev) => ({ ...prev, isUpdateAvailable: true }));
               setShowUpdateToast(true);
             }
           });
