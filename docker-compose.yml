@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+    container_name: studek-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_PATH=/app/data/studek.db
+    volumes:
+      # Persist SQLite database
+      - sqlite_data:/app/data
+      # Mount migrations for runtime access
+      - ./app/migrations:/app/migrations:ro
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - studek-network
+
+  # Development-only service for running migrations
+  migrate:
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+      target: builder
+    container_name: studek-migrate
+    profiles:
+      - tools
+    environment:
+      - DATABASE_PATH=/app/data/studek.db
+    volumes:
+      - sqlite_data:/app/data
+      - ./app/migrations:/app/migrations
+    command: ["node", "src/lib/db/migrate.js"]
+    networks:
+      - studek-network
+
+volumes:
+  sqlite_data:
+    driver: local
+
+networks:
+  studek-network:
+    driver: bridge
