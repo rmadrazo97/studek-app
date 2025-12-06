@@ -27,7 +27,6 @@ On push to `main`:
 ```json
 {
   "JWT_SECRET": "your-secure-jwt-secret",
-  "POSTGRES_PASSWORD": "your-postgres-password",
   "STRIPE_SECRET_KEY": "sk_live_...",
   "STRIPE_PUBLISHABLE_KEY": "pk_live_...",
   "STRIPE_WEBHOOK_SECRET": "whsec_...",
@@ -45,7 +44,7 @@ On push to `main`:
 ssh -i development-credentials/id_ed25519 root@155.138.237.103
 ```
 - **Repo:** `/root/studek-app`
-- **Stack:** Next.js + Docker + SQLite + PostgreSQL + Nginx
+- **Stack:** Next.js + Docker + SQLite + Nginx
 
 ## Docker Commands
 ```bash
@@ -89,8 +88,8 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
 
 ### Tech Stack
 - **Framework:** Next.js 16 (App Router, Turbopack)
-- **Database:** SQLite with better-sqlite3 (main app), PostgreSQL (subscriptions)
-- **Subscriptions:** @saas-experts/subscrio + Stripe
+- **Database:** SQLite with better-sqlite3
+- **Payments:** Stripe (Checkout, Customer Portal, Webhooks)
 - **Styling:** Tailwind CSS v4
 - **Animations:** Framer Motion
 - **Icons:** Lucide React
@@ -99,9 +98,16 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
 ## Subscription System
 
 ### Overview
-Subscription management uses `@saas-experts/subscrio` with Stripe integration.
-- **PostgreSQL** stores subscription data (separate from main SQLite database)
-- **Stripe** handles payment processing
+Custom subscription management with SQLite and Stripe integration.
+- **SQLite** stores all subscription data (plans, features, subscriptions, Stripe customers)
+- **Stripe** handles payment processing via Checkout and Customer Portal
+- **Feature flags** control access based on subscription plans
+
+### Database Tables
+- `subscription_plans` - Available plans (Free, Pro, Premium)
+- `plan_features` - Features per plan with value types (boolean, number, string)
+- `subscriptions` - User subscriptions with Stripe integration
+- `stripe_customers` - Maps users to Stripe customer IDs
 
 ### Plans
 | Plan | Features |
@@ -109,6 +115,15 @@ Subscription management uses `@saas-experts/subscrio` with Stripe integration.
 | **Free** | 5 decks, 100 cards/deck, basic features |
 | **Pro** ($9.99/mo) | 50 decks, 1000 cards/deck, AI generation, analytics, collaboration |
 | **Premium** ($19.99/mo) | Unlimited decks/cards, all features |
+
+### Feature Flags
+- `max_decks` - Maximum number of decks (number)
+- `max_cards_per_deck` - Maximum cards per deck (number)
+- `ai_card_generation` - AI card generation access (boolean)
+- `advanced_analytics` - Advanced analytics access (boolean)
+- `export_import` - Export/import functionality (boolean)
+- `collaboration` - Collaboration features (boolean)
+- `priority_support` - Priority support access (boolean)
 
 ### API Endpoints
 | Endpoint | Method | Description |
@@ -128,3 +143,25 @@ Subscription management uses `@saas-experts/subscrio` with Stripe integration.
 2. Set up webhook endpoint: `https://your-domain/api/webhooks/stripe`
 3. Enable events: `checkout.session.completed`, `customer.subscription.*`, `invoice.*`
 4. Add price IDs to `BACKEND_SECRETS`
+
+### Usage in Code
+```typescript
+// Check feature access
+import { checkFeatureAccess, canCreateDeck, hasAICardGeneration } from '@/lib/subscriptions';
+
+// Check a specific feature
+const access = checkFeatureAccess(userId, 'ai_card_generation');
+if (access.hasAccess) {
+  // User has access
+}
+
+// Check deck limit
+if (canCreateDeck(userId, currentDeckCount)) {
+  // User can create more decks
+}
+
+// Check boolean feature
+if (hasAICardGeneration(userId)) {
+  // Show AI generation UI
+}
+```

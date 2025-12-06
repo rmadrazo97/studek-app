@@ -6,17 +6,18 @@
 
 import { NextResponse } from 'next/server';
 import { withAuth, AuthenticatedRequest } from '@/lib/auth';
-import { getUserSubscription, getAvailablePlans } from '@/lib/subscriptions/service';
+import { getUserSubscription } from '@/lib/subscriptions/subscriptions';
+import { getAllPlans } from '@/lib/subscriptions/plans';
 import type { SubscriptionResponse } from '@/lib/subscriptions/types';
 
 async function handler(request: AuthenticatedRequest): Promise<NextResponse<SubscriptionResponse>> {
   try {
-    const subscription = await getUserSubscription(request.auth.userId);
+    const subscription = getUserSubscription(request.auth.userId);
 
     // Get plan details if subscription exists
     let plan = null;
     if (subscription) {
-      const plans = await getAvailablePlans();
+      const plans = getAllPlans();
       plan = plans.find((p) => p.key === subscription.planKey) || null;
     }
 

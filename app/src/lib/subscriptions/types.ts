@@ -2,48 +2,86 @@
  * Subscription Types
  */
 
+// Database row types
+export interface DbSubscriptionPlan {
+  id: string;
+  key: string;
+  name: string;
+  description: string | null;
+  price_monthly: number;
+  price_yearly: number;
+  stripe_price_monthly: string | null;
+  stripe_price_yearly: string | null;
+  is_active: number;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DbPlanFeature {
+  id: string;
+  plan_id: string;
+  feature_key: string;
+  feature_name: string;
+  value_type: 'boolean' | 'number' | 'string';
+  value: string;
+  created_at: string;
+}
+
+export interface DbSubscription {
+  id: string;
+  user_id: string;
+  plan_id: string;
+  status: SubscriptionStatus;
+  billing_cycle: BillingCycle;
+  stripe_subscription_id: string | null;
+  stripe_customer_id: string | null;
+  current_period_start: string | null;
+  current_period_end: string | null;
+  cancel_at_period_end: number;
+  canceled_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DbStripeCustomer {
+  id: string;
+  user_id: string;
+  stripe_customer_id: string;
+  created_at: string;
+}
+
+// Enum types
+export type SubscriptionStatus = 'active' | 'canceled' | 'past_due' | 'trialing' | 'paused' | 'incomplete';
+export type BillingCycle = 'monthly' | 'yearly' | 'free';
+
+// API types
 export interface SubscriptionPlan {
   key: string;
-  displayName: string;
+  name: string;
+  description: string | null;
+  priceMonthly: number;
+  priceYearly: number;
   features: PlanFeature[];
-  billingCycles: BillingCycle[];
 }
 
 export interface PlanFeature {
   key: string;
-  displayName: string;
+  name: string;
   value: string;
-  valueType: 'numeric' | 'boolean' | 'string';
-}
-
-export interface BillingCycle {
-  key: string;
-  displayName: string;
-  durationValue: number;
-  durationUnit: 'days' | 'weeks' | 'months' | 'years';
-  priceInCents?: number;
-  stripePriceId?: string;
+  valueType: 'boolean' | 'number' | 'string';
 }
 
 export interface CustomerSubscription {
-  key: string;
+  id: string;
   planKey: string;
-  planDisplayName: string;
-  billingCycleKey: string;
-  status: 'active' | 'canceled' | 'past_due' | 'trialing' | 'paused';
-  currentPeriodStart: string;
-  currentPeriodEnd: string;
+  planName: string;
+  status: SubscriptionStatus;
+  billingCycle: BillingCycle;
+  currentPeriodStart: string | null;
+  currentPeriodEnd: string | null;
   cancelAtPeriodEnd: boolean;
-  stripeSubscriptionId?: string;
-}
-
-export interface SubscriptionCheckoutSession {
-  sessionId: string;
-  url: string;
-}
-
-export interface SubscriptionPortalSession {
-  url: string;
+  stripeSubscriptionId: string | null;
 }
 
 export interface FeatureAccess {
@@ -55,7 +93,8 @@ export interface FeatureAccess {
 
 // API request/response types
 export interface CreateCheckoutRequest {
-  billingCycleKey: string;
+  planKey: string;
+  billingCycle: 'monthly' | 'yearly';
   successUrl: string;
   cancelUrl: string;
 }

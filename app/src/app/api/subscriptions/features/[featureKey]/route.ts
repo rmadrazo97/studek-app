@@ -6,7 +6,7 @@
 
 import { NextResponse } from 'next/server';
 import { withAuth, AuthenticatedRequest } from '@/lib/auth';
-import { checkFeatureAccess } from '@/lib/subscriptions/service';
+import { checkFeatureAccess } from '@/lib/subscriptions/features';
 import type { FeatureCheckResponse } from '@/lib/subscriptions/types';
 
 async function handler(
@@ -24,7 +24,7 @@ async function handler(
       );
     }
 
-    const feature = await checkFeatureAccess(request.auth.userId, featureKey);
+    const feature = checkFeatureAccess(request.auth.userId, featureKey);
 
     return NextResponse.json({ feature });
   } catch (error) {

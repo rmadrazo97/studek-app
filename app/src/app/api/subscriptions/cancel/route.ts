@@ -6,11 +6,12 @@
 
 import { NextResponse } from 'next/server';
 import { withAuth, AuthenticatedRequest } from '@/lib/auth';
-import { cancelSubscription, getUserSubscription } from '@/lib/subscriptions/service';
+import { getUserSubscription, cancelSubscriptionAtPeriodEnd } from '@/lib/subscriptions/subscriptions';
+import { cancelStripeSubscription } from '@/lib/subscriptions/stripe';
 
 async function handler(request: AuthenticatedRequest): Promise<NextResponse<{ success: boolean; message: string } | { error: string }>> {
   try {
-    const subscription = await getUserSubscription(request.auth.userId);
+    const subscription = getUserSubscription(request.auth.userId);
 
     if (!subscription) {
       return NextResponse.json(
@@ -26,7 +27,13 @@ async function handler(request: AuthenticatedRequest): Promise<NextResponse<{ su
       );
     }
 
-    await cancelSubscription(request.auth.userId);
+    // Cancel in Stripe if we have a Stripe subscription
+    if (subscription.stripeSubscriptionId) {
+      await cancelStripeSubscription(subscription.stripeSubscriptionId);
+    }
+
+    // Mark as canceling in our database
+    cancelSubscriptionAtPeriodEnd(request.auth.userId);
 
     return NextResponse.json({
       success: true,

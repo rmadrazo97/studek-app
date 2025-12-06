@@ -21,30 +21,28 @@ type TabType = "profile" | "settings" | "billing";
 
 interface SubscriptionPlan {
   key: string;
-  displayName: string;
+  name: string;
+  description: string | null;
+  priceMonthly: number;
+  priceYearly: number;
   features: Array<{
     key: string;
-    displayName: string;
+    name: string;
     value: string;
     valueType: string;
-  }>;
-  billingCycles: Array<{
-    key: string;
-    displayName: string;
-    durationValue: number;
-    durationUnit: string;
   }>;
 }
 
 interface Subscription {
-  key: string;
+  id: string;
   planKey: string;
-  planDisplayName: string;
-  billingCycleKey: string;
+  planName: string;
   status: string;
-  currentPeriodStart: string;
-  currentPeriodEnd: string;
+  billingCycle: string;
+  currentPeriodStart: string | null;
+  currentPeriodEnd: string | null;
   cancelAtPeriodEnd: boolean;
+  stripeSubscriptionId: string | null;
 }
 
 export default function SettingsPage() {
@@ -114,14 +112,15 @@ export default function SettingsPage() {
     setTimeout(() => setSaveSuccess(false), 2000);
   };
 
-  const handleUpgrade = async (billingCycleKey: string) => {
+  const handleUpgrade = async (planKey: string, billingCycle: 'monthly' | 'yearly') => {
     try {
       const fetch = authFetch();
       const res = await fetch("/api/subscriptions/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          billingCycleKey,
+          planKey,
+          billingCycle,
           successUrl: `${window.location.origin}/settings?tab=billing&success=true`,
           cancelUrl: `${window.location.origin}/settings?tab=billing`,
         }),
@@ -418,7 +417,7 @@ export default function SettingsPage() {
                       })()}
                       <div>
                         <h3 className="text-lg font-semibold text-zinc-100">
-                          {subscription?.planDisplayName || "Free"} Plan
+                          {subscription?.planName || "Free"} Plan
                         </h3>
                         <p className="text-sm text-zinc-500">
                           {subscription?.status === "active"
@@ -442,7 +441,7 @@ export default function SettingsPage() {
                     )}
                   </div>
 
-                  {subscription && subscription.planKey !== "free" && (
+                  {subscription && subscription.planKey !== "free" && subscription.currentPeriodStart && subscription.currentPeriodEnd && (
                     <div className="grid grid-cols-2 gap-4 mb-4 p-4 bg-zinc-800/50 rounded-xl">
                       <div>
                         <p className="text-xs text-zinc-500 mb-1">Current Period</p>
@@ -454,7 +453,7 @@ export default function SettingsPage() {
                       <div>
                         <p className="text-xs text-zinc-500 mb-1">Billing Cycle</p>
                         <p className="text-sm text-zinc-300 capitalize">
-                          {subscription.billingCycleKey.replace(/-/g, " ")}
+                          {subscription.billingCycle}
                         </p>
                       </div>
                     </div>
@@ -482,9 +481,6 @@ export default function SettingsPage() {
                         .filter((p) => p.key !== "free")
                         .map((plan) => {
                           const PlanIcon = getPlanIcon(plan.key);
-                          const monthlyBilling = plan.billingCycles.find((b) =>
-                            b.key.includes("monthly")
-                          );
 
                           return (
                             <div
@@ -507,13 +503,11 @@ export default function SettingsPage() {
                                 </div>
                                 <div>
                                   <h4 className="font-semibold text-zinc-100">
-                                    {plan.displayName}
+                                    {plan.name}
                                   </h4>
-                                  {monthlyBilling && (
-                                    <p className="text-xs text-zinc-400">
-                                      {monthlyBilling.displayName}
-                                    </p>
-                                  )}
+                                  <p className="text-xs text-zinc-400">
+                                    ${plan.priceMonthly}/mo or ${plan.priceYearly}/yr
+                                  </p>
                                 </div>
                               </div>
 
@@ -525,12 +519,14 @@ export default function SettingsPage() {
                                   >
                                     <Check className="w-4 h-4 text-emerald-400" />
                                     <span>
-                                      {feature.displayName}:{" "}
+                                      {feature.name}:{" "}
                                       <span className="text-zinc-300">
                                         {feature.value === "true"
                                           ? "Yes"
                                           : feature.value === "false"
                                           ? "No"
+                                          : feature.value === "-1"
+                                          ? "Unlimited"
                                           : feature.value}
                                       </span>
                                     </span>
@@ -539,23 +535,22 @@ export default function SettingsPage() {
                               </ul>
 
                               <div className="flex gap-2">
-                                {plan.billingCycles.map((billing) => (
-                                  <button
-                                    key={billing.key}
-                                    onClick={() => handleUpgrade(billing.key)}
-                                    className={`flex-1 px-3 py-2 text-sm font-medium rounded-lg transition-all ${
-                                      billing.key.includes("yearly")
-                                        ? "bg-zinc-800 text-zinc-300 hover:bg-zinc-700"
-                                        : plan.key === "pro"
-                                        ? "bg-violet-500 text-white hover:bg-violet-400"
-                                        : "bg-amber-500 text-zinc-900 hover:bg-amber-400"
-                                    }`}
-                                  >
-                                    {billing.key.includes("yearly")
-                                      ? "Yearly"
-                                      : "Monthly"}
-                                  </button>
-                                ))}
+                                <button
+                                  onClick={() => handleUpgrade(plan.key, 'monthly')}
+                                  className={`flex-1 px-3 py-2 text-sm font-medium rounded-lg transition-all ${
+                                    plan.key === "pro"
+                                      ? "bg-violet-500 text-white hover:bg-violet-400"
+                                      : "bg-amber-500 text-zinc-900 hover:bg-amber-400"
+                                  }`}
+                                >
+                                  Monthly
+                                </button>
+                                <button
+                                  onClick={() => handleUpgrade(plan.key, 'yearly')}
+                                  className="flex-1 px-3 py-2 text-sm font-medium rounded-lg transition-all bg-zinc-800 text-zinc-300 hover:bg-zinc-700"
+                                >
+                                  Yearly
+                                </button>
                               </div>
                             </div>
                           );

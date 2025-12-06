@@ -12,17 +12,17 @@ import type { CreateCheckoutRequest, CreateCheckoutResponse } from '@/lib/subscr
 async function handler(request: AuthenticatedRequest): Promise<NextResponse<CreateCheckoutResponse | { error: string }>> {
   try {
     const body = (await request.json()) as CreateCheckoutRequest;
-    const { billingCycleKey, successUrl, cancelUrl } = body;
+    const { planKey, billingCycle, successUrl, cancelUrl } = body;
 
-    if (!billingCycleKey || !successUrl || !cancelUrl) {
+    if (!planKey || !billingCycle || !successUrl || !cancelUrl) {
       return NextResponse.json(
-        { error: 'Missing required fields: billingCycleKey, successUrl, cancelUrl' },
+        { error: 'Missing required fields: planKey, billingCycle, successUrl, cancelUrl' },
         { status: 400 }
       );
     }
 
     // Don't allow checkout for free plan
-    if (billingCycleKey === 'free-monthly') {
+    if (planKey === 'free') {
       return NextResponse.json(
         { error: 'Cannot checkout for free plan' },
         { status: 400 }
@@ -35,7 +35,8 @@ async function handler(request: AuthenticatedRequest): Promise<NextResponse<Crea
       auth.userId,
       user.email,
       user.name || user.email,
-      billingCycleKey,
+      planKey,
+      billingCycle,
       successUrl,
       cancelUrl
     );

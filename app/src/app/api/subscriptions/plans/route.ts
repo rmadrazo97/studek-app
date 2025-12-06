@@ -5,12 +5,12 @@
  */
 
 import { NextResponse } from 'next/server';
-import { getAvailablePlans } from '@/lib/subscriptions/service';
+import { getAllPlans } from '@/lib/subscriptions/plans';
 import type { PlansResponse } from '@/lib/subscriptions/types';
 
 export async function GET(): Promise<NextResponse<PlansResponse | { error: string }>> {
   try {
-    const plans = await getAvailablePlans();
+    const plans = getAllPlans();
     return NextResponse.json({ plans });
   } catch (error) {
     console.error('[Subscriptions] Error fetching plans:', error);

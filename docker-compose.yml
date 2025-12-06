@@ -11,12 +11,14 @@ services:
       - NODE_ENV=production
       - DATABASE_PATH=/app/data/studek.db
       - JWT_SECRET=${JWT_SECRET:-default-dev-secret-change-in-production}
-      # PostgreSQL for subscriptions (Subscrio)
-      - SUBSCRIO_DATABASE_URL=postgresql://studek:${POSTGRES_PASSWORD:-studek_secret}@postgres:5432/studek_subscriptions
       # Stripe integration
       - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY:-}
       - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET:-}
       - STRIPE_PUBLISHABLE_KEY=${STRIPE_PUBLISHABLE_KEY:-}
+      - STRIPE_PRICE_PRO_MONTHLY=${STRIPE_PRICE_PRO_MONTHLY:-}
+      - STRIPE_PRICE_PRO_YEARLY=${STRIPE_PRICE_PRO_YEARLY:-}
+      - STRIPE_PRICE_PREMIUM_MONTHLY=${STRIPE_PRICE_PREMIUM_MONTHLY:-}
+      - STRIPE_PRICE_PREMIUM_YEARLY=${STRIPE_PRICE_PREMIUM_YEARLY:-}
     volumes:
       # Persist SQLite database
       - sqlite_data:/app/data
@@ -28,29 +30,6 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
-    depends_on:
-      postgres:
-        condition: service_healthy
-    networks:
-      - studek-network
-
-  # PostgreSQL for subscription management (Subscrio)
-  postgres:
-    image: postgres:16-alpine
-    container_name: studek-postgres
-    restart: unless-stopped
-    environment:
-      - POSTGRES_USER=studek
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-studek_secret}
-      - POSTGRES_DB=studek_subscriptions
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U studek -d studek_subscriptions"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
     networks:
       - studek-network
 
@@ -92,8 +71,6 @@ services:
 
 volumes:
   sqlite_data:
-    driver: local
-  postgres_data:
     driver: local
 
 networks:
