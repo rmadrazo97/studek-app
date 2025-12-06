@@ -34,8 +34,8 @@ function getStripePriceId(planKey: string, billingCycle: 'monthly' | 'yearly'): 
   const priceMap: Record<string, string | undefined> = {
     'pro-monthly': process.env.STRIPE_PRICE_PRO_MONTHLY,
     'pro-yearly': process.env.STRIPE_PRICE_PRO_YEARLY,
-    'premium-monthly': process.env.STRIPE_PRICE_PREMIUM_MONTHLY,
-    'premium-yearly': process.env.STRIPE_PRICE_PREMIUM_YEARLY,
+    'max-monthly': process.env.STRIPE_PRICE_MAX_MONTHLY,
+    'max-yearly': process.env.STRIPE_PRICE_MAX_YEARLY,
   };
 
   return priceMap[`${planKey}-${billingCycle}`] || null;

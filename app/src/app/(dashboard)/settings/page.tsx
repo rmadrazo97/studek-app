@@ -168,7 +168,7 @@ export default function SettingsPage() {
   ];
 
   const getPlanIcon = (planKey: string) => {
-    if (planKey === "premium") return Crown;
+    if (planKey === "max") return Crown;
     if (planKey === "pro") return Sparkles;
     return User;
   };
@@ -404,7 +404,7 @@ export default function SettingsPage() {
                         return (
                           <div
                             className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                              subscription?.planKey === "premium"
+                              subscription?.planKey === "max"
                                 ? "bg-gradient-to-br from-amber-500 to-orange-500"
                                 : subscription?.planKey === "pro"
                                 ? "bg-gradient-to-br from-violet-500 to-purple-500"

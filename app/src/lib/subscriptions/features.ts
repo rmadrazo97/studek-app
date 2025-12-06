@@ -10,9 +10,10 @@ import type { FeatureAccess, DbPlanFeature } from './types';
 
 // Default feature values for users without subscription (free tier)
 const DEFAULT_FEATURES: Record<string, { value: string; valueType: 'boolean' | 'number' | 'string' }> = {
-  max_decks: { value: '5', valueType: 'number' },
-  max_cards_per_deck: { value: '100', valueType: 'number' },
+  max_decks: { value: '1', valueType: 'number' },
+  max_cards_per_deck: { value: '50', valueType: 'number' },
   ai_card_generation: { value: 'false', valueType: 'boolean' },
+  ai_assistant: { value: 'false', valueType: 'boolean' },
   advanced_analytics: { value: 'false', valueType: 'boolean' },
   export_import: { value: 'true', valueType: 'boolean' },
   collaboration: { value: 'false', valueType: 'boolean' },
@@ -180,6 +181,14 @@ export function hasCollaboration(userId: string): boolean {
  */
 export function hasPrioritySupport(userId: string): boolean {
   const access = checkFeatureAccess(userId, 'priority_support');
+  return access.hasAccess;
+}
+
+/**
+ * Check if user has AI assistant (Max plan only)
+ */
+export function hasAIAssistant(userId: string): boolean {
+  const access = checkFeatureAccess(userId, 'ai_assistant');
   return access.hasAccess;
 }
 

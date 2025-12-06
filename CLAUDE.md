@@ -32,8 +32,8 @@ On push to `main`:
   "STRIPE_WEBHOOK_SECRET": "whsec_...",
   "STRIPE_PRICE_PRO_MONTHLY": "price_...",
   "STRIPE_PRICE_PRO_YEARLY": "price_...",
-  "STRIPE_PRICE_PREMIUM_MONTHLY": "price_...",
-  "STRIPE_PRICE_PREMIUM_YEARLY": "price_...",
+  "STRIPE_PRICE_MAX_MONTHLY": "price_...",
+  "STRIPE_PRICE_MAX_YEARLY": "price_...",
   "LOGS_USERNAME": "admin",
   "LOGS_PASSWORD": "your-logs-password"
 }
@@ -112,14 +112,15 @@ Custom subscription management with SQLite and Stripe integration.
 ### Plans
 | Plan | Features |
 |------|----------|
-| **Free** | 5 decks, 100 cards/deck, basic features |
-| **Pro** ($9.99/mo) | 50 decks, 1000 cards/deck, AI generation, analytics, collaboration |
-| **Premium** ($19.99/mo) | Unlimited decks/cards, all features |
+| **Free** | 1 deck, 50 cards/deck, basic features |
+| **Pro** ($3.99/mo) | Unlimited decks/cards, analytics, collaboration |
+| **Max** ($9.99/mo) | Everything in Pro + AI card generation, AI study assistant |
 
 ### Feature Flags
 - `max_decks` - Maximum number of decks (number)
 - `max_cards_per_deck` - Maximum cards per deck (number)
 - `ai_card_generation` - AI card generation access (boolean)
+- `ai_assistant` - AI study assistant (boolean)
 - `advanced_analytics` - Advanced analytics access (boolean)
 - `export_import` - Export/import functionality (boolean)
 - `collaboration` - Collaboration features (boolean)
