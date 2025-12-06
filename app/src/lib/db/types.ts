@@ -273,6 +273,81 @@ export interface TagCreate {
 }
 
 // ============================================
+// Deck Share Types
+// ============================================
+
+export type SharePermission = 'read' | 'write' | 'admin';
+export type ShareLinkPermission = 'read' | 'clone';
+
+export interface DeckShare {
+  id: string;
+  deck_id: string;
+  shared_with_user_id: string;
+  permission: SharePermission;
+  created_at: string;
+}
+
+export interface DeckShareCreate {
+  deck_id: string;
+  shared_with_user_id: string;
+  permission?: SharePermission;
+}
+
+export interface DeckShareLink {
+  id: string;
+  deck_id: string;
+  code: string;
+  permission: ShareLinkPermission;
+  is_active: boolean;
+  expires_at: string | null;
+  access_count: number;
+  max_uses: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DeckShareLinkCreate {
+  deck_id: string;
+  permission?: ShareLinkPermission;
+  expires_at?: string;
+  max_uses?: number;
+}
+
+export interface DeckShareLinkUpdate {
+  permission?: ShareLinkPermission;
+  is_active?: boolean;
+  expires_at?: string;
+  max_uses?: number;
+}
+
+export interface DeckClone {
+  id: string;
+  original_deck_id: string;
+  cloned_deck_id: string;
+  cloned_by_user_id: string;
+  share_link_id: string | null;
+  created_at: string;
+}
+
+export interface DeckCloneCreate {
+  original_deck_id: string;
+  cloned_deck_id: string;
+  cloned_by_user_id: string;
+  share_link_id?: string;
+}
+
+// Deck with share info for API responses
+export interface DeckWithShareInfo extends Deck {
+  share_links?: DeckShareLink[];
+  shared_with?: Array<{
+    user_id: string;
+    user_email: string;
+    user_name: string | null;
+    permission: SharePermission;
+  }>;
+}
+
+// ============================================
 // Query Options
 // ============================================
 
