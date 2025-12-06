@@ -45,6 +45,19 @@ const presetPrompts = [
   },
 ];
 
+function getSimulatedResponse(prompt: string, front: string, back: string): string {
+  if (prompt.toLowerCase().includes("explain") || prompt.toLowerCase().includes("simple")) {
+    return `Think of it this way: "${back}" is the answer to "${front}". Imagine you're explaining this to a friend - the key concept here is understanding the relationship between the question and answer. Try to visualize it or connect it to something you already know!`;
+  }
+  if (prompt.toLowerCase().includes("mnemonic")) {
+    return `Here's a memory trick: Take the first letters of the key words in "${back}" and create a silly sentence or image. The more absurd, the better you'll remember it! You could also try the memory palace technique - place this concept in a familiar location in your mind.`;
+  }
+  if (prompt.toLowerCase().includes("miss") || prompt.toLowerCase().includes("wrong")) {
+    return `Common reasons for missing this:\n\n1. **Similar concepts** - There might be related information that's causing confusion\n2. **Not enough context** - Try adding more details to your mental model\n3. **Shallow encoding** - Next time, try to explain it in your own words\n\nTip: When you see this card again, pause and really think about WHY the answer is what it is.`;
+  }
+  return `Great question! The key thing to understand about "${front}" is that ${back}. Let me know if you'd like me to break this down further or explain it from a different angle.`;
+}
+
 export function AITutorOverlay({ isOpen, onClose }: AITutorOverlayProps) {
   const { state } = useReview();
   const { currentCard } = state;
@@ -82,19 +95,6 @@ export function AITutorOverlay({ isOpen, onClose }: AITutorOverlayProps) {
       setIsLoading(false);
     }, 1500);
   }, [currentCard, generateMessageId]);
-
-  const getSimulatedResponse = (prompt: string, front: string, back: string): string => {
-    if (prompt.toLowerCase().includes("explain") || prompt.toLowerCase().includes("simple")) {
-      return `Think of it this way: "${back}" is the answer to "${front}". Imagine you're explaining this to a friend - the key concept here is understanding the relationship between the question and answer. Try to visualize it or connect it to something you already know!`;
-    }
-    if (prompt.toLowerCase().includes("mnemonic")) {
-      return `Here's a memory trick: Take the first letters of the key words in "${back}" and create a silly sentence or image. The more absurd, the better you'll remember it! You could also try the memory palace technique - place this concept in a familiar location in your mind.`;
-    }
-    if (prompt.toLowerCase().includes("miss") || prompt.toLowerCase().includes("wrong")) {
-      return `Common reasons for missing this:\n\n1. **Similar concepts** - There might be related information that's causing confusion\n2. **Not enough context** - Try adding more details to your mental model\n3. **Shallow encoding** - Next time, try to explain it in your own words\n\nTip: When you see this card again, pause and really think about WHY the answer is what it is.`;
-    }
-    return `Great question! The key thing to understand about "${front}" is that ${back}. Let me know if you'd like me to break this down further or explain it from a different angle.`;
-  };
 
   const handlePresetClick = (prompt: string) => {
     handleSend(prompt);

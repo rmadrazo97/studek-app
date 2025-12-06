@@ -5,9 +5,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Copy, Check, ZoomIn, Volume2, VolumeX } from "lucide-react";
 import { useReview } from "@/stores/reviewStore";
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-interface ReviewCardProps {}
-
 // Pre-generate waveform heights to avoid Math.random() during render
 function generateWaveformHeights(count: number): number[][] {
   return Array.from({ length: count }, () => [
@@ -17,7 +14,7 @@ function generateWaveformHeights(count: number): number[][] {
   ]);
 }
 
-export function ReviewCard(_props: ReviewCardProps) {
+export function ReviewCard() {
   const { state } = useReview();
   const { currentCard, status } = state;
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
