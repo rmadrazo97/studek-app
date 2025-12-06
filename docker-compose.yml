@@ -33,11 +33,13 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - DOZZLE_USERNAME=${LOGS_USERNAME:-admin}
-      - DOZZLE_PASSWORD=${LOGS_PASSWORD:-admin}
+      - LOGS_USERNAME=${LOGS_USERNAME:-admin}
+      - LOGS_PASSWORD=${LOGS_PASSWORD:-admin}
       - DOZZLE_NO_ANALYTICS=true
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./dozzle-entrypoint.sh:/dozzle-entrypoint.sh:ro
+    entrypoint: ["/bin/sh", "/dozzle-entrypoint.sh"]
     networks:
       - studek-network
 

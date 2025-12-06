@@ -49,7 +49,13 @@ COPY --from=builder /app/.next/static ./.next/static
 
 # Copy database library and migrations for runtime
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/better-sqlite3 ./node_modules/better-sqlite3
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/bindings ./node_modules/bindings
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/file-uri-to-path ./node_modules/file-uri-to-path
 COPY --from=builder --chown=nextjs:nodejs /app/migrations ./migrations
+
+# Copy source files needed for migrations (instrumentation runs from .next but needs these)
+COPY --from=builder --chown=nextjs:nodejs /app/src/lib/db ./src/lib/db
+COPY --from=builder --chown=nextjs:nodejs /app/src/lib/auth ./src/lib/auth
 
 # Set correct permissions
 USER nextjs

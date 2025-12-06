@@ -10,6 +10,9 @@ const nextConfig: NextConfig = {
   env: {
     APP_VERSION: packageJson.version,
   },
+  experimental: {
+    instrumentationHook: true,
+  },
 };
 
 export default nextConfig;
