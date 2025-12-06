@@ -6,14 +6,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Home,
-  FolderTree,
   Table2,
   Library,
   Sparkles,
   FileUp,
   ChevronLeft,
   ChevronRight,
-  ChevronDown,
   Cloud,
   Check,
   Loader2,
@@ -21,103 +19,12 @@ import {
   HelpCircle,
   BarChart3,
   PenTool,
+  Compass,
 } from "lucide-react";
-
-interface DeckItem {
-  id: string;
-  name: string;
-  children?: DeckItem[];
-}
-
-// Sample deck structure with nested decks
-const sampleDecks: DeckItem[] = [
-  {
-    id: "1",
-    name: "Medicine",
-    children: [
-      {
-        id: "1-1",
-        name: "Anatomy",
-        children: [
-          { id: "1-1-1", name: "Heart" },
-          { id: "1-1-2", name: "Brain" },
-        ],
-      },
-      { id: "1-2", name: "Pharmacology" },
-    ],
-  },
-  {
-    id: "2",
-    name: "Languages",
-    children: [
-      { id: "2-1", name: "Spanish" },
-      { id: "2-2", name: "Japanese" },
-    ],
-  },
-  { id: "3", name: "Computer Science" },
-];
 
 interface SidebarProps {
   isCollapsed: boolean;
   onToggle: () => void;
-}
-
-function DeckTreeItem({
-  deck,
-  level = 0,
-  isCollapsed,
-}: {
-  deck: DeckItem;
-  level?: number;
-  isCollapsed: boolean;
-}) {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const hasChildren = deck.children && deck.children.length > 0;
-
-  if (isCollapsed) return null;
-
-  return (
-    <div>
-      <button
-        onClick={() => hasChildren && setIsExpanded(!isExpanded)}
-        className={`
-          w-full flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg
-          text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/50
-          transition-colors
-        `}
-        style={{ paddingLeft: `${12 + level * 16}px` }}
-      >
-        {hasChildren ? (
-          <ChevronDown
-            className={`w-3 h-3 transition-transform ${isExpanded ? "" : "-rotate-90"}`}
-          />
-        ) : (
-          <span className="w-3" />
-        )}
-        <span className="truncate">{deck.name}</span>
-      </button>
-      <AnimatePresence>
-        {isExpanded && hasChildren && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="overflow-hidden"
-          >
-            {deck.children!.map((child) => (
-              <DeckTreeItem
-                key={child.id}
-                deck={child}
-                level={level + 1}
-                isCollapsed={isCollapsed}
-              />
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
 }
 
 export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
@@ -128,7 +35,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
     { icon: Home, label: "Home", href: "/dashboard" },
     { icon: BarChart3, label: "Analytics", href: "/analytics" },
     { icon: PenTool, label: "Creation Studio", href: "/create" },
-    { icon: FolderTree, label: "Decks", href: "/decks", hasTree: true },
+    { icon: Compass, label: "Explore", href: "/explore" },
     { icon: Library, label: "Library", href: "/library" },
     { icon: Table2, label: "Card Browser", href: "/browser" },
   ];
@@ -228,18 +135,6 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
                     )}
                   </AnimatePresence>
                 </Link>
-                {/* Deck Tree View */}
-                {item.hasTree && !isCollapsed && (
-                  <div className="mt-1 ml-2 border-l border-zinc-800 pl-2">
-                    {sampleDecks.map((deck) => (
-                      <DeckTreeItem
-                        key={deck.id}
-                        deck={deck}
-                        isCollapsed={isCollapsed}
-                      />
-                    ))}
-                  </div>
-                )}
               </div>
             );
           })}

@@ -34,6 +34,31 @@ export interface UserUpdate {
 }
 
 // ============================================
+// Deck Categories
+// ============================================
+
+export const DECK_CATEGORIES = [
+  'languages',
+  'medicine',
+  'science',
+  'mathematics',
+  'history',
+  'geography',
+  'programming',
+  'business',
+  'law',
+  'arts',
+  'music',
+  'literature',
+  'philosophy',
+  'psychology',
+  'test-prep',
+  'other',
+] as const;
+
+export type DeckCategory = typeof DECK_CATEGORIES[number];
+
+// ============================================
 // Deck Types
 // ============================================
 
@@ -44,7 +69,9 @@ export interface Deck {
   description: string | null;
   parent_id: string | null;
   hierarchy: string | null;
+  category: DeckCategory | null;
   is_public: boolean;
+  last_accessed_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -55,6 +82,7 @@ export interface DeckCreate {
   description?: string;
   parent_id?: string;
   hierarchy?: string;
+  category?: DeckCategory;
   is_public?: boolean;
 }
 
@@ -63,6 +91,7 @@ export interface DeckUpdate {
   description?: string;
   parent_id?: string;
   hierarchy?: string;
+  category?: DeckCategory;
   is_public?: boolean;
 }
 
@@ -70,6 +99,29 @@ export interface DeckWithStats extends Deck {
   card_count: number;
   due_count: number;
   new_count: number;
+}
+
+// Deck with author info for explore page
+export interface PublicDeckWithAuthor extends DeckWithStats {
+  author_name: string | null;
+  author_email: string;
+  clone_count: number;
+}
+
+// ============================================
+// Deck Visit Types
+// ============================================
+
+export interface DeckVisit {
+  id: string;
+  user_id: string;
+  deck_id: string;
+  visited_at: string;
+}
+
+export interface DeckVisitCreate {
+  user_id: string;
+  deck_id: string;
 }
 
 // ============================================
