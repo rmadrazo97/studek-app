@@ -25,7 +25,7 @@ export function FlashcardBlock({
   isEditable = true,
   onDelete,
 }: FlashcardBlockProps) {
-  const { updateBlock, state } = useCreationStudio();
+  const { updateBlock } = useCreationStudio();
   const [isFlipped, setIsFlipped] = useState(false);
   const [isExpanded, setIsExpanded] = useState(true);
   const [isFocused, setIsFocused] = useState(false);
@@ -33,10 +33,10 @@ export function FlashcardBlock({
   const backRef = useRef<HTMLTextAreaElement>(null);
 
   const flashcard = block.flashcardData;
-  if (!flashcard) return null;
 
   const handleFrontChange = useCallback(
     (value: string) => {
+      if (!flashcard) return;
       updateBlock({
         ...block,
         flashcardData: {
@@ -50,6 +50,7 @@ export function FlashcardBlock({
 
   const handleBackChange = useCallback(
     (value: string) => {
+      if (!flashcard) return;
       updateBlock({
         ...block,
         flashcardData: {
@@ -70,9 +71,10 @@ export function FlashcardBlock({
   };
 
   useEffect(() => {
+    if (!flashcard) return;
     resizeTextarea(frontRef.current);
     resizeTextarea(backRef.current);
-  }, [flashcard.front, flashcard.back]);
+  }, [flashcard]);
 
   // Handle Tab to navigate between front and back
   const handleKeyDown = useCallback(
@@ -87,6 +89,8 @@ export function FlashcardBlock({
     },
     []
   );
+
+  if (!flashcard) return null;
 
   const statusColors = {
     new: "from-blue-500/20 to-cyan-500/20 border-blue-500/30",

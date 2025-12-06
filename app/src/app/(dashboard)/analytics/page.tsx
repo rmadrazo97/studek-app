@@ -6,7 +6,6 @@ import {
   BarChart3,
   RefreshCw,
   Download,
-  Settings,
   TrendingUp,
   Clock,
   BookOpen,
@@ -25,7 +24,7 @@ import {
 } from "@/components/analytics";
 
 // Analytics Service
-import analyticsService, {
+import {
   getHeatmapData,
   generateMockHeatmapData,
   generateMockReviewLogs,
@@ -40,7 +39,7 @@ import { getHourlyBreakdown } from "@/lib/fsrs";
 
 export default function AnalyticsPage() {
   const [isLoading, setIsLoading] = useState(true);
-  const [desiredRetention, setDesiredRetention] = useState(0.9);
+  const [desiredRetention, _setDesiredRetention] = useState(0.9);
 
   // Analytics Data State
   const [analyticsData, setAnalyticsData] = useState<{
@@ -89,12 +88,12 @@ export default function AnalyticsPage() {
     );
 
     const todayStats = {
-      reviewed: todayData?.totalReviews || Math.floor(Math.random() * 50 + 20),
-      correct: todayLogs.filter((l) => l.rating > 1).length || Math.floor(Math.random() * 40 + 15),
+      reviewed: todayData?.totalReviews || 35,
+      correct: todayLogs.filter((l) => l.rating > 1).length || 28,
       timeSpent: Math.round(
-        (todayLogs.reduce((sum, l) => sum + l.duration, 0) || Math.random() * 1800000) / 60000
+        (todayLogs.reduce((sum, l) => sum + l.duration, 0) || 900000) / 60000
       ),
-      newLearned: todayData?.newCards || Math.floor(Math.random() * 10),
+      newLearned: todayData?.newCards || 5,
     };
 
     // XP calculation (gamification)

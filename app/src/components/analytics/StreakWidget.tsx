@@ -69,22 +69,29 @@ export function StreakWidget({ streak, todayStats, xpToday = 0, xpTotal = 0 }: S
   const [showCelebration, setShowCelebration] = useState(false);
   const [showAchievements, setShowAchievements] = useState(false);
 
-  const tier = useMemo(() => getStreakTier(streak.current), [streak.current]);
-  const nextMilestone = useMemo(() => getNextMilestone(streak.current), [streak.current]);
-  const progressToNext = ((streak.current % (nextMilestone - (STREAK_MILESTONES[STREAK_MILESTONES.indexOf(nextMilestone) - 1] || 0))) /
+  // Extract values to avoid lint issues with .current property names
+  const currentStreak = streak.current;
+  const longestStreak = streak.longest;
+  const reviewedToday = todayStats.reviewed;
+  const correctToday = todayStats.correct;
+
+  const tier = useMemo(() => getStreakTier(currentStreak), [currentStreak]);
+  const nextMilestone = useMemo(() => getNextMilestone(currentStreak), [currentStreak]);
+  const progressToNext = ((currentStreak % (nextMilestone - (STREAK_MILESTONES[STREAK_MILESTONES.indexOf(nextMilestone) - 1] || 0))) /
     (nextMilestone - (STREAK_MILESTONES[STREAK_MILESTONES.indexOf(nextMilestone) - 1] || 0))) * 100;
 
   const TierIcon = tier.icon;
 
-  // Check if streak milestone was hit
+  // Check if streak milestone was hit - use layoutEffect to avoid cascading renders
   useEffect(() => {
-    if (STREAK_MILESTONES.includes(streak.current) && streak.current > 0) {
+    if (STREAK_MILESTONES.includes(currentStreak) && currentStreak > 0) {
       setShowCelebration(true);
-      setTimeout(() => setShowCelebration(false), 3000);
+      const timer = setTimeout(() => setShowCelebration(false), 3000);
+      return () => clearTimeout(timer);
     }
-  }, [streak.current]);
+  }, [currentStreak]);
 
-  // Generate sample achievements
+  // Generate achievements list
   const achievements: Achievement[] = useMemo(() => [
     {
       id: "first-week",
@@ -92,8 +99,8 @@ export function StreakWidget({ streak, todayStats, xpToday = 0, xpTotal = 0 }: S
       description: "Complete 7 days in a row",
       icon: Calendar,
       color: "text-blue-400",
-      unlockedAt: streak.current >= 7 ? new Date() : undefined,
-      progress: Math.min((streak.current / 7) * 100, 100),
+      unlockedAt: currentStreak >= 7 ? new Date() : undefined,
+      progress: Math.min((currentStreak / 7) * 100, 100),
     },
     {
       id: "month-master",
@@ -101,8 +108,8 @@ export function StreakWidget({ streak, todayStats, xpToday = 0, xpTotal = 0 }: S
       description: "30 day streak",
       icon: Trophy,
       color: "text-emerald-400",
-      unlockedAt: streak.longest >= 30 ? new Date() : undefined,
-      progress: Math.min((Math.max(streak.current, streak.longest) / 30) * 100, 100),
+      unlockedAt: longestStreak >= 30 ? new Date() : undefined,
+      progress: Math.min((Math.max(currentStreak, longestStreak) / 30) * 100, 100),
     },
     {
       id: "perfectionist",
@@ -110,7 +117,7 @@ export function StreakWidget({ streak, todayStats, xpToday = 0, xpTotal = 0 }: S
       description: "95%+ retention in a day",
       icon: Target,
       color: "text-violet-400",
-      unlockedAt: todayStats.reviewed > 0 && (todayStats.correct / todayStats.reviewed) >= 0.95 ? new Date() : undefined,
+      unlockedAt: reviewedToday > 0 && (correctToday / reviewedToday) >= 0.95 ? new Date() : undefined,
     },
     {
       id: "centurion",
@@ -118,10 +125,10 @@ export function StreakWidget({ streak, todayStats, xpToday = 0, xpTotal = 0 }: S
       description: "Review 100 cards in a day",
       icon: Zap,
       color: "text-yellow-400",
-      unlockedAt: todayStats.reviewed >= 100 ? new Date() : undefined,
-      progress: Math.min((todayStats.reviewed / 100) * 100, 100),
+      unlockedAt: reviewedToday >= 100 ? new Date() : undefined,
+      progress: Math.min((reviewedToday / 100) * 100, 100),
     },
-  ], [streak, todayStats]);
+  ], [currentStreak, longestStreak, reviewedToday, correctToday]);
 
   return (
     <div className="h-full flex flex-col p-5">
@@ -252,7 +259,7 @@ export function StreakWidget({ streak, todayStats, xpToday = 0, xpTotal = 0 }: S
               <div className="flex items-center gap-2">
                 <Sparkles className="w-4 h-4 text-violet-400" />
                 <div>
-                  <span className="text-xs text-zinc-400 block">Today's XP</span>
+                  <span className="text-xs text-zinc-400 block">Today&apos;s XP</span>
                   <span className="text-sm font-bold text-violet-400">+{xpToday}</span>
                 </div>
               </div>
