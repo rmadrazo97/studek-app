@@ -1,5 +1,3 @@
-version: '3.8'
-
 # Development override - builds from source instead of using pre-built image
 # Usage: docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
 
