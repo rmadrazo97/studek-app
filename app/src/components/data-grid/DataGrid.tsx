@@ -444,7 +444,7 @@ function GroupRow<TData>({
         >
           <ChevronRight className="w-4 h-4 text-gray-400" />
         </motion.span>
-        <span className="font-medium text-foreground">{group.groupValue}</span>
+        <span className="font-medium text-foreground">{String(group.groupValue)}</span>
         <span className="text-gray-500">({group.count})</span>
       </div>
     </div>

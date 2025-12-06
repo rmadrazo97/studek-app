@@ -1,7 +1,24 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git init:*)"
+      "Bash(git init:*)",
+      "Bash(gh repo create:*)",
+      "Bash(git fetch:*)",
+      "Bash(git checkout:*)",
+      "Bash(npx create-next-app:*)",
+      "Bash(GIT_SSH_COMMAND=\"ssh -i /Users/amadrazo/Desktop/development/vibe/studek/development-credentials/id_ed25519 -o IdentitiesOnly=yes\" git commit -m \"$(cat <<''EOF''\nAdd Next.js app and server deployment configuration\n\n- Create Next.js app with TypeScript, Tailwind, and App Router\n- Add PM2 ecosystem config for process management\n- Add Nginx reverse proxy configuration\n- Add deployment script for automated setup\n- Update CLAUDE.md with deployment instructions\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(GIT_SSH_COMMAND=\"ssh -i /Users/amadrazo/Desktop/development/vibe/studek/development-credentials/id_ed25519 -o IdentitiesOnly=yes\" git push origin server)",
+      "Bash(ssh:*)",
+      "Skill(frontend-design:frontend-design)",
+      "Bash(npm install:*)",
+      "Bash(npm run build:*)",
+      "Bash(git add:*)",
+      "Bash(GIT_SSH_COMMAND=\"ssh -i /Users/amadrazo/Desktop/development/vibe/studek/development-credentials/id_ed25519 -o IdentitiesOnly=yes\" git push:*)",
+      "Bash(curl:*)",
+      "Bash(git restore:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nConfigure Docker Compose deployment via GitHub Actions\n\n- Update workflow to use docker compose instead of PM2\n- Use GHCR_PAT secret for container registry authentication\n- Update docker-compose.yml to use pre-built ghcr.io image\n- Add docker-compose.dev.yml for local development builds\n- Update CLAUDE.md with new deployment workflow and secrets\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git commit:*)",
+      "Bash(npx tsc:*)"
     ],
     "deny": [],
     "ask": []
