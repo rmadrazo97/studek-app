@@ -34,6 +34,31 @@ export interface UserUpdate {
 }
 
 // ============================================
+// Deck Categories
+// ============================================
+
+export const DECK_CATEGORIES = [
+  'languages',
+  'medicine',
+  'science',
+  'mathematics',
+  'history',
+  'geography',
+  'programming',
+  'business',
+  'law',
+  'arts',
+  'music',
+  'literature',
+  'philosophy',
+  'psychology',
+  'test-prep',
+  'other',
+] as const;
+
+export type DeckCategory = typeof DECK_CATEGORIES[number];
+
+// ============================================
 // Deck Types
 // ============================================
 
@@ -44,7 +69,9 @@ export interface Deck {
   description: string | null;
   parent_id: string | null;
   hierarchy: string | null;
+  category: DeckCategory | null;
   is_public: boolean;
+  last_accessed_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -55,6 +82,7 @@ export interface DeckCreate {
   description?: string;
   parent_id?: string;
   hierarchy?: string;
+  category?: DeckCategory;
   is_public?: boolean;
 }
 
@@ -63,6 +91,7 @@ export interface DeckUpdate {
   description?: string;
   parent_id?: string;
   hierarchy?: string;
+  category?: DeckCategory;
   is_public?: boolean;
 }
 
@@ -70,6 +99,29 @@ export interface DeckWithStats extends Deck {
   card_count: number;
   due_count: number;
   new_count: number;
+}
+
+// Deck with author info for explore page
+export interface PublicDeckWithAuthor extends DeckWithStats {
+  author_name: string | null;
+  author_email: string;
+  clone_count: number;
+}
+
+// ============================================
+// Deck Visit Types
+// ============================================
+
+export interface DeckVisit {
+  id: string;
+  user_id: string;
+  deck_id: string;
+  visited_at: string;
+}
+
+export interface DeckVisitCreate {
+  user_id: string;
+  deck_id: string;
 }
 
 // ============================================
@@ -270,6 +322,81 @@ export interface TagCreate {
   user_id: string;
   name: string;
   color?: string;
+}
+
+// ============================================
+// Deck Share Types
+// ============================================
+
+export type SharePermission = 'read' | 'write' | 'admin';
+export type ShareLinkPermission = 'read' | 'clone';
+
+export interface DeckShare {
+  id: string;
+  deck_id: string;
+  shared_with_user_id: string;
+  permission: SharePermission;
+  created_at: string;
+}
+
+export interface DeckShareCreate {
+  deck_id: string;
+  shared_with_user_id: string;
+  permission?: SharePermission;
+}
+
+export interface DeckShareLink {
+  id: string;
+  deck_id: string;
+  code: string;
+  permission: ShareLinkPermission;
+  is_active: boolean;
+  expires_at: string | null;
+  access_count: number;
+  max_uses: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DeckShareLinkCreate {
+  deck_id: string;
+  permission?: ShareLinkPermission;
+  expires_at?: string;
+  max_uses?: number;
+}
+
+export interface DeckShareLinkUpdate {
+  permission?: ShareLinkPermission;
+  is_active?: boolean;
+  expires_at?: string;
+  max_uses?: number;
+}
+
+export interface DeckClone {
+  id: string;
+  original_deck_id: string;
+  cloned_deck_id: string;
+  cloned_by_user_id: string;
+  share_link_id: string | null;
+  created_at: string;
+}
+
+export interface DeckCloneCreate {
+  original_deck_id: string;
+  cloned_deck_id: string;
+  cloned_by_user_id: string;
+  share_link_id?: string;
+}
+
+// Deck with share info for API responses
+export interface DeckWithShareInfo extends Deck {
+  share_links?: DeckShareLink[];
+  shared_with?: Array<{
+    user_id: string;
+    user_email: string;
+    user_name: string | null;
+    permission: SharePermission;
+  }>;
 }
 
 // ============================================

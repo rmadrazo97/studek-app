@@ -1,21 +1,16 @@
 #!/bin/sh
 set -e
 
-# Generate users.yml from environment variables
-# Password is hashed with SHA-256 and base64 encoded
+# Generate users.yml from environment variables using Dozzle's built-in generate command
 LOGS_USER="${LOGS_USERNAME:-admin}"
 LOGS_PASS="${LOGS_PASSWORD:-admin}"
 
-# Create SHA-256 hash of password (base64 encoded)
-PASS_HASH=$(echo -n "$LOGS_PASS" | sha256sum | cut -d' ' -f1 | xxd -r -p | base64)
-
-# Create data directory and users.yml
+# Create data directory
 mkdir -p /data
-cat > /data/users.yml << EOF
-users:
-  $LOGS_USER:
-    password: "$PASS_HASH"
-EOF
+
+# Use Dozzle's built-in generate command to create properly formatted users.yml with bcrypt hash
+# This ensures compatibility with Dozzle 5.x+ which requires bcrypt passwords
+/dozzle generate "$LOGS_USER" --password "$LOGS_PASS" --name "$LOGS_USER" > /data/users.yml
 
 echo "Dozzle auth configured for user: $LOGS_USER"
 
