@@ -248,8 +248,6 @@ function StudyContent() {
     );
   }
 
-  const remaining = newCount + learningCount + reviewCount;
-
   return (
     <div className="min-h-screen bg-black flex flex-col select-none">
       {/* Minimal Header - Just counts and exit */}

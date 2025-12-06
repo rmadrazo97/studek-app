@@ -18,27 +18,20 @@ import {
   Search,
   Filter,
   X,
-  Plus,
-  ChevronDown,
   Columns,
   LayoutGrid,
   AlignJustify,
   List,
   Check,
-  Settings,
   Eye,
   EyeOff,
-  Save,
-  FolderOpen,
 } from "lucide-react";
 import type {
   ColumnDef,
   ColumnFilter,
   DataGridInstance,
   DensityMode,
-  EnumOption,
   FilterOperator,
-  ViewState,
 } from "./types";
 import { useDataGridContext } from "./DataGridContext";
 
@@ -158,7 +151,7 @@ const operatorLabels: Record<FilterOperator, string> = {
   neq: "!=",
 };
 
-function FilterChip({ filter, column, onEdit, onRemove }: FilterChipProps) {
+function FilterChip({ filter, column, onRemove }: FilterChipProps) {
   const displayValue = useMemo(() => {
     if (filter.operator === "is_empty" || filter.operator === "is_not_empty") {
       return "";
@@ -720,7 +713,6 @@ export function DataGridToolbar<TData>({
   showFilters = true,
   showDensity = true,
   showColumnToggle = true,
-  showViewManagement = false,
   actions,
   className = "",
 }: DataGridToolbarProps<TData>) {

@@ -1,15 +1,13 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
   Globe,
   BookOpen,
-  Users,
   Download,
   Sparkles,
-  GraduationCap,
   Stethoscope,
   FlaskConical,
   Calculator,
@@ -25,11 +23,9 @@ import {
   Heart,
   ClipboardList,
   MoreHorizontal,
-  ChevronRight,
 } from "lucide-react";
 import Link from "next/link";
-import { getAccessToken } from "@/stores/auth";
-import { DECK_CATEGORIES, type DeckCategory } from "@/lib/db/types";
+import { type DeckCategory } from "@/lib/db/types";
 
 // ============================================
 // Types

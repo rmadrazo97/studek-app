@@ -8,14 +8,11 @@ import { getDatabase, transaction } from '../index';
 import {
   create,
   findById,
-  findAll,
   findAllPaginated,
   update,
   deleteById,
   bulkDelete,
-  query,
   count,
-  generateId,
   now,
 } from '../crud';
 import type {

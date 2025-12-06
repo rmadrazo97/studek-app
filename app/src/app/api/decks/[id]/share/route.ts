@@ -16,7 +16,6 @@ import {
   getDeckSharesWithUsers,
   createShareLink,
   shareDeckWithUser,
-  deleteShareLink,
   removeDeckShare,
   deactivateShareLink,
   getUserByEmail,

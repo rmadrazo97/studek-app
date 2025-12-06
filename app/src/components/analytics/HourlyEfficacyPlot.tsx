@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { Clock, TrendingDown, Lightbulb, AlertTriangle } from "lucide-react";
+import { Clock, Lightbulb } from "lucide-react";
 
 interface HourlyStats {
   hour: number;
@@ -115,12 +115,6 @@ export function HourlyEfficacyPlot({
     if (lowHours.includes(hour)) return "#f97316"; // Low hours
     if (hour === cognitiveCliff) return "#ef4444"; // Cliff
     return "#3b82f6"; // Normal
-  };
-
-  // Get retention line color
-  const getLineColor = (hour: number) => {
-    if (hour === cognitiveCliff) return "#ef4444";
-    return "#a78bfa";
   };
 
   return (

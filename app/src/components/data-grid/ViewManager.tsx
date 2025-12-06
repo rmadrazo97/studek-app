@@ -13,14 +13,10 @@ import {
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Save,
   FolderOpen,
   Plus,
   Trash2,
-  Edit,
   Check,
-  X,
-  Share2,
   Lock,
   Globe,
   MoreVertical,

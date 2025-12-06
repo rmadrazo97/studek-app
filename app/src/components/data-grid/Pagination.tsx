@@ -13,7 +13,7 @@ import {
   ChevronsLeft,
   ChevronsRight,
 } from "lucide-react";
-import type { DataGridInstance, PaginationState } from "./types";
+import type { DataGridInstance } from "./types";
 import { useDataGridContext } from "./DataGridContext";
 
 // ============================================
