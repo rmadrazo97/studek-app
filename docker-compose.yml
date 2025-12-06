@@ -2,9 +2,9 @@ version: '3.8'
 
 services:
   app:
-    build:
-      context: ./app
-      dockerfile: Dockerfile
+    # Use pre-built image from GitHub Container Registry in production
+    # For local development, use: docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+    image: ghcr.io/rmadrazo97/studek-app:latest
     container_name: studek-app
     restart: unless-stopped
     ports:
