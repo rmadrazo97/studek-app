@@ -76,3 +76,55 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
 - **Animations:** Framer Motion
 - **Icons:** Lucide React
 - **Algorithm:** FSRS (spaced repetition)
+- **PWA:** Custom service worker with offline support
+- **Mobile:** Capacitor for iOS/Android builds
+
+## PWA Features
+
+The app is a Progressive Web App with:
+- **Offline Support:** Service worker caches pages and API responses
+- **Install Prompt:** Smart install banner for mobile and desktop
+- **Push Ready:** Infrastructure for push notifications
+- **Background Sync:** Queue for offline actions
+
+### PWA Files
+- `public/manifest.json` - Web app manifest
+- `public/sw.js` - Service worker
+- `public/icons/` - App icons (SVG sources)
+- `src/components/pwa/` - PWA React components
+
+### Generate PNG Icons
+```bash
+npm run generate:icons
+```
+Requires `sharp`: `npm install sharp --save-dev`
+
+## Mobile App (Capacitor)
+
+Build native iOS/Android apps from the PWA. See `CAPACITOR.md` for full guide.
+
+### Quick Start
+```bash
+# Install Capacitor
+npm install @capacitor/core @capacitor/cli @capacitor/ios @capacitor/android
+
+# Add platforms
+npx cap add ios
+npx cap add android
+
+# Build and sync
+npm run capacitor:build
+
+# Open in IDE
+npm run ios      # Opens Xcode
+npm run android  # Opens Android Studio
+```
+
+### Capacitor Scripts
+| Script | Description |
+|--------|-------------|
+| `npm run build:static` | Build static export for Capacitor |
+| `npm run capacitor:sync` | Sync web assets to native |
+| `npm run capacitor:build` | Build + sync |
+| `npm run ios` | Open iOS project in Xcode |
+| `npm run android` | Open Android project in Android Studio |
