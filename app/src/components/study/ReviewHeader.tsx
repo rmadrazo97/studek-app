@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import {
@@ -24,10 +24,19 @@ export function ReviewHeader({ onEdit, onUndo }: ReviewHeaderProps) {
   const { state, undo } = useReview();
   const [elapsedTime, setElapsedTime] = useState(0);
   const [showOptions, setShowOptions] = useState(false);
+  const prevCardIdRef = useRef<string | undefined>(state.currentCard?.id);
 
   const { newCount, learningCount, reviewCount, totalCount, completedCount, status } = state;
   const remaining = newCount + learningCount + reviewCount;
   const progress = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
+
+  // Reset elapsed time when card changes (using ref to avoid setState in effect)
+  if (state.currentCard?.id !== prevCardIdRef.current) {
+    prevCardIdRef.current = state.currentCard?.id;
+    if (elapsedTime !== 0) {
+      setElapsedTime(0);
+    }
+  }
 
   // Timer logic
   useEffect(() => {
@@ -36,15 +45,8 @@ export function ReviewHeader({ onEdit, onUndo }: ReviewHeaderProps) {
         setElapsedTime(Math.floor((Date.now() - state.startTime!) / 1000));
       }, 1000);
       return () => clearInterval(interval);
-    } else if (status === "back") {
-      // Stop timer when answer is shown
     }
   }, [status, state.startTime]);
-
-  // Reset timer when card changes
-  useEffect(() => {
-    setElapsedTime(0);
-  }, [state.currentCard?.id]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
