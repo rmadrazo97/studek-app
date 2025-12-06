@@ -96,16 +96,26 @@ jobs:
         env:
           GHCR_PAT: ${{ secrets.GHCR_PAT }}
           GITHUB_ACTOR: ${{ github.actor }}
+          BACKEND_SECRETS: ${{ secrets.BACKEND_SECRETS }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USERNAME }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          envs: GHCR_PAT,GITHUB_ACTOR
+          envs: GHCR_PAT,GITHUB_ACTOR,BACKEND_SECRETS,VPS_HOST
           script: |
             cd ~/studek-app
 
             # Pull latest changes
             git pull origin main
+
+            # Parse backend secrets JSON and create .env file
+            if [ -n "$BACKEND_SECRETS" ]; then
+              echo "Creating .env file from secrets..."
+              echo "$BACKEND_SECRETS" | python3 -c "import sys,json; [print(f'{k}={v}') for k,v in json.load(sys.stdin).items()]" > .env
+              chmod 600 .env
+              echo ".env file created with $(wc -l < .env) variables"
+            fi
 
             # Login to GitHub Container Registry
             echo "$GHCR_PAT" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
@@ -120,3 +130,9 @@ jobs:
 
             # Show status
             docker compose ps
+
+            # Show logs URL
+            echo ""
+            echo "=== Log Viewer ==="
+            echo "URL: http://$VPS_HOST:8080"
+            echo "=================="

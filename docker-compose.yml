@@ -10,6 +10,7 @@ services:
     environment:
       - NODE_ENV=production
       - DATABASE_PATH=/app/data/studek.db
+      - JWT_SECRET=${JWT_SECRET:-default-dev-secret-change-in-production}
     volumes:
       # Persist SQLite database
       - sqlite_data:/app/data
@@ -21,6 +22,22 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+    networks:
+      - studek-network
+
+  # Log viewer - password protected
+  logs:
+    image: amir20/dozzle:latest
+    container_name: studek-logs
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - DOZZLE_USERNAME=${LOGS_USERNAME:-admin}
+      - DOZZLE_PASSWORD=${LOGS_PASSWORD:-admin}
+      - DOZZLE_NO_ANALYTICS=true
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
       - studek-network
 
