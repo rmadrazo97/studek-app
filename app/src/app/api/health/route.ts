@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server';
 import { isDatabaseConnected, getDatabase } from '@/lib/db';
+import { initializeDatabase } from '@/lib/db/init';
 
 export async function GET() {
   try {
+    // Initialize database (runs migrations if needed)
+    initializeDatabase();
+
     // Check database connection
     const dbConnected = isDatabaseConnected();
 

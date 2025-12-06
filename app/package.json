@@ -10,7 +10,8 @@
     "db:migrate": "npx tsx src/lib/db/migrate.ts run",
     "db:rollback": "npx tsx src/lib/db/migrate.ts rollback",
     "db:status": "npx tsx src/lib/db/migrate.ts status",
-    "db:create": "npx tsx src/lib/db/migrate.ts create"
+    "db:create": "npx tsx src/lib/db/migrate.ts create",
+    "db:seed": "npx tsx src/lib/auth/seed.ts"
   },
   "dependencies": {
     "better-sqlite3": "^11.10.0",
