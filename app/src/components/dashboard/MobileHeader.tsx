@@ -67,8 +67,8 @@ export function MobileHeader({ syncStatus = "synced" }: MobileHeaderProps) {
     <>
       {/* Mobile Header Bar */}
       <header className="fixed top-0 left-0 right-0 h-14 bg-[#09090b]/95 backdrop-blur-lg border-b border-zinc-800 flex items-center justify-between px-4 z-50 md:hidden">
-        {/* Logo */}
-        <Link href="/dashboard" className="flex items-center gap-2">
+        {/* Logo - links to landing page */}
+        <Link href="/" className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center shadow-[0_0_20px_rgba(34,211,238,0.3)]">
             <Sparkles className="w-4 h-4 text-[#09090b]" />
           </div>
