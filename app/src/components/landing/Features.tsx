@@ -41,7 +41,7 @@ function FeatureCard({
       initial={{ opacity: 0, y: 30 }}
       animate={isInView ? { opacity: 1, y: 0 } : {}}
       transition={{ duration: 0.5, delay }}
-      className={`group relative rounded-2xl border border-[rgba(148,163,184,0.08)] bg-[#0f1115] overflow-hidden ${className}`}
+      className={`group relative rounded-xl sm:rounded-2xl border border-[rgba(148,163,184,0.08)] bg-[#0f1115] overflow-hidden ${className}`}
     >
       {/* Gradient overlay on hover */}
       <div
@@ -49,26 +49,26 @@ function FeatureCard({
       />
 
       {/* Content */}
-      <div className="relative z-10 p-6 h-full flex flex-col">
+      <div className="relative z-10 p-4 sm:p-5 lg:p-6 h-full flex flex-col">
         {/* Icon */}
-        <div className="w-12 h-12 rounded-xl bg-[#161a1f] border border-[rgba(148,163,184,0.08)] flex items-center justify-center mb-4 group-hover:scale-110 group-hover:border-white/10 transition-all duration-300">
+        <div className="w-10 h-10 sm:w-11 sm:h-11 lg:w-12 lg:h-12 rounded-lg sm:rounded-xl bg-[#161a1f] border border-[rgba(148,163,184,0.08)] flex items-center justify-center mb-3 sm:mb-4 group-hover:scale-110 group-hover:border-white/10 transition-all duration-300">
           {icon}
         </div>
 
         {/* Text */}
-        <h3 className="font-display text-xl font-semibold text-slate-100 mb-2">
+        <h3 className="font-display text-base sm:text-lg lg:text-xl font-semibold text-slate-100 mb-1.5 sm:mb-2">
           {title}
         </h3>
-        <p className="text-slate-400 text-sm leading-relaxed flex-grow">
+        <p className="text-slate-400 text-xs sm:text-sm leading-relaxed flex-grow">
           {description}
         </p>
 
         {/* Optional visual content */}
-        {children && <div className="mt-4">{children}</div>}
+        {children && <div className="mt-3 sm:mt-4">{children}</div>}
       </div>
 
       {/* Border glow on hover */}
-      <div className="absolute inset-0 rounded-2xl border border-transparent group-hover:border-white/5 transition-colors duration-500 pointer-events-none" />
+      <div className="absolute inset-0 rounded-xl sm:rounded-2xl border border-transparent group-hover:border-white/5 transition-colors duration-500 pointer-events-none" />
     </motion.div>
   );
 }
@@ -78,49 +78,49 @@ export function Features() {
   const isInView = useInView(sectionRef, { once: true, margin: "-100px" });
 
   return (
-    <section id="features" ref={sectionRef} className="relative py-32">
+    <section id="features" ref={sectionRef} className="relative py-16 sm:py-24 lg:py-32">
       {/* Background */}
       <div className="absolute inset-0 bg-[#08090a]">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[600px] bg-cyan-500/5 rounded-full blur-[150px]" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] sm:w-[800px] lg:w-[1000px] h-[400px] sm:h-[500px] lg:h-[600px] bg-cyan-500/5 rounded-full blur-[100px] sm:blur-[120px] lg:blur-[150px]" />
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto px-6">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6">
         {/* Section Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={isInView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.6 }}
-          className="text-center mb-16"
+          className="text-center mb-10 sm:mb-12 lg:mb-16"
         >
-          <span className="text-cyan-400 text-sm font-medium tracking-wider uppercase">
+          <span className="text-cyan-400 text-xs sm:text-sm font-medium tracking-wider uppercase">
             Features
           </span>
-          <h2 className="font-display text-4xl md:text-5xl font-bold text-slate-100 mt-4">
+          <h2 className="font-display text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-slate-100 mt-3 sm:mt-4">
             Everything you need to
             <span className="text-gradient"> master anything</span>
           </h2>
-          <p className="mt-4 text-lg text-slate-400 max-w-2xl mx-auto">
+          <p className="mt-3 sm:mt-4 text-sm sm:text-base lg:text-lg text-slate-400 max-w-2xl mx-auto">
             Powerful features that make studying effortless, not a chore.
           </p>
         </motion.div>
 
-        {/* Bento Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 auto-rows-[200px]">
-          {/* AI Magic Import - Large */}
+        {/* Bento Grid - Optimized for mobile */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 auto-rows-auto lg:auto-rows-[200px]">
+          {/* AI Magic Import - Large - Full width on mobile */}
           <FeatureCard
             title="AI Magic Import"
             description="Transform any content into intelligent flashcards. Drop a PDF, paste a YouTube URL, or snap a photo of your textbook."
-            icon={<Wand2 className="w-6 h-6 text-cyan-400" />}
+            icon={<Wand2 className="w-5 h-5 sm:w-6 sm:h-6 text-cyan-400" />}
             gradient="bg-gradient-to-br from-cyan-500/10 to-transparent"
-            className="md:col-span-2 md:row-span-2"
+            className="sm:col-span-2 lg:row-span-2"
             delay={0.1}
           >
             {/* Visual demo */}
-            <div className="mt-auto flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-1.5 sm:gap-2">
               {["PDF", "YouTube", "Web", "Images", "Audio"].map((type) => (
                 <span
                   key={type}
-                  className="px-3 py-1.5 rounded-lg bg-[#161a1f] border border-[rgba(148,163,184,0.08)] text-xs text-slate-400"
+                  className="px-2 sm:px-3 py-1 sm:py-1.5 rounded-md sm:rounded-lg bg-[#161a1f] border border-[rgba(148,163,184,0.08)] text-[10px] sm:text-xs text-slate-400"
                 >
                   {type}
                 </span>
@@ -132,11 +132,11 @@ export function Features() {
           <FeatureCard
             title="FSRS Native"
             description="The most advanced spaced repetition algorithm, optimizing your retention automatically."
-            icon={<Brain className="w-6 h-6 text-violet-400" />}
+            icon={<Brain className="w-5 h-5 sm:w-6 sm:h-6 text-violet-400" />}
             gradient="bg-gradient-to-br from-violet-500/10 to-transparent"
             delay={0.2}
           >
-            <div className="flex items-end gap-1 h-12 mt-2">
+            <div className="flex items-end gap-0.5 sm:gap-1 h-10 sm:h-12 mt-1 sm:mt-2">
               {[40, 65, 45, 80, 55, 90, 70].map((h, i) => (
                 <motion.div
                   key={i}
@@ -153,11 +153,11 @@ export function Features() {
           <FeatureCard
             title="Voice Mode"
             description="Study hands-free. Listen and respond with voice while commuting."
-            icon={<Mic className="w-6 h-6 text-green-400" />}
+            icon={<Mic className="w-5 h-5 sm:w-6 sm:h-6 text-green-400" />}
             gradient="bg-gradient-to-br from-green-500/10 to-transparent"
             delay={0.3}
           >
-            <div className="flex items-center gap-1 h-8 mt-2">
+            <div className="flex items-center gap-0.5 sm:gap-1 h-6 sm:h-8 mt-1 sm:mt-2">
               {[0.3, 0.5, 0.8, 0.4, 1, 0.6, 0.9, 0.3, 0.7, 0.5, 0.4, 0.8].map((h, i) => (
                 <motion.div
                   key={i}
@@ -180,16 +180,16 @@ export function Features() {
           <FeatureCard
             title="Smart Image Occlusion"
             description="AI detects labels and creates occlusion masks automatically. Perfect for anatomy, diagrams, and maps."
-            icon={<ImageIcon className="w-6 h-6 text-orange-400" />}
+            icon={<ImageIcon className="w-5 h-5 sm:w-6 sm:h-6 text-orange-400" />}
             gradient="bg-gradient-to-br from-orange-500/10 to-transparent"
-            className="md:col-span-2"
+            className="sm:col-span-2"
             delay={0.4}
           >
-            <div className="relative h-20 bg-[#161a1f] rounded-lg mt-2 overflow-hidden">
-              <div className="absolute inset-0 flex items-center justify-center gap-8 text-xs text-slate-500">
+            <div className="relative h-14 sm:h-16 lg:h-20 bg-[#161a1f] rounded-md sm:rounded-lg mt-1 sm:mt-2 overflow-hidden">
+              <div className="absolute inset-0 flex items-center justify-center gap-4 sm:gap-6 lg:gap-8 text-[10px] sm:text-xs text-slate-500">
                 <span>Heart</span>
                 <motion.span
-                  className="px-4 py-1 bg-orange-500 rounded text-[#08090a] font-medium"
+                  className="px-3 sm:px-4 py-0.5 sm:py-1 bg-orange-500 rounded text-[#08090a] font-medium"
                   animate={{ opacity: [1, 0.5, 1] }}
                   transition={{ duration: 2, repeat: Infinity }}
                 >
@@ -204,15 +204,15 @@ export function Features() {
           <FeatureCard
             title="Real-time Collab"
             description="Study together with shared decks that sync instantly."
-            icon={<Users className="w-6 h-6 text-blue-400" />}
+            icon={<Users className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" />}
             gradient="bg-gradient-to-br from-blue-500/10 to-transparent"
             delay={0.5}
           >
-            <div className="flex -space-x-2 mt-2">
+            <div className="flex -space-x-1.5 sm:-space-x-2 mt-1 sm:mt-2">
               {["A", "B", "C", "+5"].map((letter, i) => (
                 <div
                   key={i}
-                  className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500/20 to-blue-600/20 border-2 border-[#0f1115] flex items-center justify-center text-xs text-blue-400"
+                  className="w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 rounded-full bg-gradient-to-br from-blue-500/20 to-blue-600/20 border-2 border-[#0f1115] flex items-center justify-center text-[10px] sm:text-xs text-blue-400"
                 >
                   {letter}
                 </div>
@@ -224,13 +224,13 @@ export function Features() {
           <FeatureCard
             title="Deep Analytics"
             description="Track your progress with beautiful retention graphs and insights."
-            icon={<BarChart3 className="w-6 h-6 text-pink-400" />}
+            icon={<BarChart3 className="w-5 h-5 sm:w-6 sm:h-6 text-pink-400" />}
             gradient="bg-gradient-to-br from-pink-500/10 to-transparent"
             delay={0.6}
           >
-            <div className="text-2xl font-display font-bold text-pink-400 mt-2">
+            <div className="text-xl sm:text-2xl font-display font-bold text-pink-400 mt-1 sm:mt-2">
               94%
-              <span className="text-xs text-slate-500 font-normal ml-2">
+              <span className="text-[10px] sm:text-xs text-slate-500 font-normal ml-1.5 sm:ml-2">
                 retention
               </span>
             </div>
@@ -240,12 +240,12 @@ export function Features() {
           <FeatureCard
             title="Study Anywhere"
             description="Seamless sync across all your devices. Web, iOS, Android—pick up where you left off."
-            icon={<Smartphone className="w-6 h-6 text-cyan-400" />}
+            icon={<Smartphone className="w-5 h-5 sm:w-6 sm:h-6 text-cyan-400" />}
             gradient="bg-gradient-to-br from-cyan-500/10 to-transparent"
-            className="md:col-span-2"
+            className="sm:col-span-2"
             delay={0.7}
           >
-            <div className="flex items-center gap-4 mt-2">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3 lg:gap-4 mt-1 sm:mt-2">
               {[
                 { icon: "💻", label: "Web" },
                 { icon: "📱", label: "iOS" },
@@ -253,15 +253,15 @@ export function Features() {
               ].map((platform) => (
                 <div
                   key={platform.label}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#161a1f] border border-[rgba(148,163,184,0.08)]"
+                  className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-md sm:rounded-lg bg-[#161a1f] border border-[rgba(148,163,184,0.08)]"
                 >
-                  <span>{platform.icon}</span>
-                  <span className="text-xs text-slate-400">{platform.label}</span>
+                  <span className="text-sm sm:text-base">{platform.icon}</span>
+                  <span className="text-[10px] sm:text-xs text-slate-400">{platform.label}</span>
                 </div>
               ))}
               <div className="flex items-center gap-1 ml-auto">
-                <Cloud className="w-4 h-4 text-green-400" />
-                <span className="text-xs text-green-400">Synced</span>
+                <Cloud className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-400" />
+                <span className="text-[10px] sm:text-xs text-green-400">Synced</span>
               </div>
             </div>
           </FeatureCard>
