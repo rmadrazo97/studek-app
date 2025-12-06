@@ -15,7 +15,7 @@ export async function register() {
       const { runMigrations } = await import('./lib/db/migrate');
       const { seedAdmin } = await import('./lib/auth/seed');
 
-      // Run migrations
+      // Run migrations (includes subscription tables)
       console.log('[Instrumentation] Running database migrations...');
       runMigrations();
 
