@@ -2,12 +2,38 @@
 
 import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Folder, Globe, Lock } from "lucide-react";
+import { X, Folder, Globe, Lock, ChevronDown } from "lucide-react";
+import { DECK_CATEGORIES, type DeckCategory } from "@/lib/db/types";
+
+// Category display names
+const categoryLabels: Record<DeckCategory, string> = {
+  languages: "Languages",
+  medicine: "Medicine",
+  science: "Science",
+  mathematics: "Mathematics",
+  history: "History",
+  geography: "Geography",
+  programming: "Programming",
+  business: "Business",
+  law: "Law",
+  arts: "Arts",
+  music: "Music",
+  literature: "Literature",
+  philosophy: "Philosophy",
+  psychology: "Psychology",
+  "test-prep": "Test Prep",
+  other: "Other",
+};
 
 interface CreateDeckModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onCreate: (data: { name: string; description?: string; is_public?: boolean }) => Promise<void>;
+  onCreate: (data: {
+    name: string;
+    description?: string;
+    category?: DeckCategory;
+    is_public?: boolean;
+  }) => Promise<void>;
 }
 
 export default function CreateDeckModal({
@@ -17,43 +43,56 @@ export default function CreateDeckModal({
 }: CreateDeckModalProps) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [category, setCategory] = useState<DeckCategory | "">("");
   const [isPublic, setIsPublic] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = useCallback(async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
 
-    if (!name.trim()) {
-      setError("Deck name is required");
-      return;
-    }
+      if (!name.trim()) {
+        setError("Deck name is required");
+        return;
+      }
 
-    setIsLoading(true);
-    setError(null);
+      // If public, category is required
+      if (isPublic && !category) {
+        setError("Please select a category for public decks");
+        return;
+      }
 
-    try {
-      await onCreate({
-        name: name.trim(),
-        description: description.trim() || undefined,
-        is_public: isPublic,
-      });
+      setIsLoading(true);
+      setError(null);
 
-      // Reset form
-      setName("");
-      setDescription("");
-      setIsPublic(false);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create deck");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [name, description, isPublic, onCreate]);
+      try {
+        await onCreate({
+          name: name.trim(),
+          description: description.trim() || undefined,
+          category: category || undefined,
+          is_public: isPublic,
+        });
+
+        // Reset form
+        setName("");
+        setDescription("");
+        setCategory("");
+        setIsPublic(false);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to create deck");
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [name, description, category, isPublic, onCreate]
+  );
 
   const handleClose = useCallback(() => {
     if (!isLoading) {
       setName("");
       setDescription("");
+      setCategory("");
       setIsPublic(false);
       setError(null);
       onClose();
@@ -137,6 +176,38 @@ export default function CreateDeckModal({
                 />
               </div>
 
+              {/* Category */}
+              <div>
+                <label
+                  htmlFor="deck-category"
+                  className="block text-sm font-medium text-gray-300 mb-1.5"
+                >
+                  Category{" "}
+                  {isPublic ? (
+                    <span className="text-cyan-400">(required for public)</span>
+                  ) : (
+                    <span className="text-gray-500">(optional)</span>
+                  )}
+                </label>
+                <div className="relative">
+                  <select
+                    id="deck-category"
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value as DeckCategory | "")}
+                    className="w-full px-4 py-2.5 bg-background text-foreground border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all appearance-none cursor-pointer"
+                    disabled={isLoading}
+                  >
+                    <option value="">Select a category...</option>
+                    {DECK_CATEGORIES.map((cat) => (
+                      <option key={cat} value={cat}>
+                        {categoryLabels[cat]}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+                </div>
+              </div>
+
               {/* Visibility */}
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
@@ -172,15 +243,13 @@ export default function CreateDeckModal({
                 </div>
                 <p className="mt-2 text-xs text-gray-500">
                   {isPublic
-                    ? "Anyone can view this deck and its cards"
+                    ? "This deck will appear in Explore for others to discover and clone"
                     : "Only you and people you share with can access this deck"}
                 </p>
               </div>
 
               {/* Error */}
-              {error && (
-                <p className="text-sm text-red-400">{error}</p>
-              )}
+              {error && <p className="text-sm text-red-400">{error}</p>}
 
               {/* Actions */}
               <div className="flex justify-end gap-3 pt-2">
