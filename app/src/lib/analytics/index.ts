@@ -487,10 +487,10 @@ export function getAnalyticsSummary(
 export function getHeatmapData(
   dailyData: DailyAnalytics[],
   weeks: number = 52
-): { date: string; count: number; level: number }[] {
+): { date: string; count: number; level: 0 | 1 | 2 | 3 | 4 }[] {
   const days = weeks * 7;
   const now = new Date();
-  const result: { date: string; count: number; level: number }[] = [];
+  const result: { date: string; count: number; level: 0 | 1 | 2 | 3 | 4 }[] = [];
 
   // Find p90 for quantization (more robust than max)
   const sortedCounts = dailyData.map(d => d.totalReviews).sort((a, b) => a - b);
@@ -505,7 +505,7 @@ export function getHeatmapData(
     const count = dayData?.totalReviews || 0;
 
     // Quantize to 0-4 levels using p90 as max
-    let level = 0;
+    let level: 0 | 1 | 2 | 3 | 4 = 0;
     if (count > 0) {
       const ratio = count / p90;
       if (ratio <= 0.25) level = 1;
