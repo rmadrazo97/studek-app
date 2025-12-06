@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import { Menu, X, Sparkles } from "lucide-react";
+import Link from "next/link";
 import { Button } from "../ui/Button";
 
 export function Navigation() {
@@ -67,12 +68,16 @@ export function Navigation() {
 
           {/* Desktop CTAs */}
           <div className="hidden md:flex items-center gap-3">
-            <Button variant="ghost" size="sm">
-              Sign In
-            </Button>
-            <Button variant="primary" size="sm">
-              Start Free
-            </Button>
+            <Link href="/login">
+              <Button variant="ghost" size="sm">
+                Sign In
+              </Button>
+            </Link>
+            <Link href="/register">
+              <Button variant="primary" size="sm">
+                Start Free
+              </Button>
+            </Link>
           </div>
 
           {/* Mobile Menu Button */}
@@ -104,12 +109,16 @@ export function Navigation() {
                 </a>
               ))}
               <div className="flex flex-col gap-2 mt-4 px-2">
-                <Button variant="ghost" size="sm" className="w-full">
-                  Sign In
-                </Button>
-                <Button variant="primary" size="sm" className="w-full">
-                  Start Free
-                </Button>
+                <Link href="/login" onClick={() => setIsMobileMenuOpen(false)}>
+                  <Button variant="ghost" size="sm" className="w-full">
+                    Sign In
+                  </Button>
+                </Link>
+                <Link href="/register" onClick={() => setIsMobileMenuOpen(false)}>
+                  <Button variant="primary" size="sm" className="w-full">
+                    Start Free
+                  </Button>
+                </Link>
               </div>
             </div>
           </motion.div>
