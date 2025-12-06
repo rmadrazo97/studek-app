@@ -19,6 +19,7 @@ import {
   Loader2,
   Settings,
   HelpCircle,
+  BarChart3,
   PenTool,
 } from "lucide-react";
 
@@ -125,6 +126,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
 
   const navItems = [
     { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
+    { icon: BarChart3, label: "Analytics", href: "/analytics" },
     { icon: PenTool, label: "Creation Studio", href: "/create" },
     { icon: FolderTree, label: "Decks", href: "/decks", hasTree: true },
     { icon: Library, label: "Library", href: "/library" },
