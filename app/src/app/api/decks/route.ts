@@ -66,14 +66,15 @@ export const POST = withAuth(async (request: AuthenticatedRequest) => {
       );
     }
 
-    // Create the deck
+    // Create the deck - only include defined values, convert undefined to null for SQLite
     const deck = createDeck({
       user_id: userId,
       name: body.name.trim(),
-      description: body.description?.trim(),
-      parent_id: body.parent_id,
-      hierarchy: body.hierarchy,
+      description: body.description?.trim() ?? null,
+      parent_id: body.parent_id ?? null,
+      hierarchy: body.hierarchy ?? null,
       is_public: body.is_public ?? false,
+      category: body.category ?? null,
     });
 
     return NextResponse.json(deck, { status: 201 });
