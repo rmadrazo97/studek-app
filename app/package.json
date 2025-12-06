@@ -6,9 +6,14 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:migrate": "npx tsx src/lib/db/migrate.ts run",
+    "db:rollback": "npx tsx src/lib/db/migrate.ts rollback",
+    "db:status": "npx tsx src/lib/db/migrate.ts status",
+    "db:create": "npx tsx src/lib/db/migrate.ts create"
   },
   "dependencies": {
+    "better-sqlite3": "^11.6.0",
     "framer-motion": "^12.23.25",
     "lucide-react": "^0.556.0",
     "next": "16.0.7",
@@ -23,6 +28,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.0.7",
     "tailwindcss": "^4",
+    "tsx": "^4.19.2",
     "typescript": "^5"
   }
 }
