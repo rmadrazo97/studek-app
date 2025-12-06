@@ -3,12 +3,10 @@
 import { useState, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Copy, Check, ZoomIn, Volume2, VolumeX } from "lucide-react";
-import Image from "next/image";
 import { useReview } from "@/stores/reviewStore";
 
-interface ReviewCardProps {
-  onOpenTutor?: () => void;
-}
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+interface ReviewCardProps {}
 
 // Pre-generate waveform heights to avoid Math.random() during render
 function generateWaveformHeights(count: number): number[][] {
@@ -19,7 +17,7 @@ function generateWaveformHeights(count: number): number[][] {
   ]);
 }
 
-export function ReviewCard({ onOpenTutor }: ReviewCardProps) {
+export function ReviewCard(_props: ReviewCardProps) {
   const { state } = useReview();
   const { currentCard, status } = state;
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
@@ -50,7 +48,7 @@ export function ReviewCard({ onOpenTutor }: ReviewCardProps) {
   };
 
   // Parse content for code blocks (simplified - in production use a proper parser)
-  const renderContent = (content: string, isAnswer: boolean = false) => {
+  const renderContent = (content: string) => {
     // Check for code blocks
     const codeBlockRegex = /```(\w+)?\n([\s\S]*?)```/g;
     const parts: React.ReactNode[] = [];
@@ -230,7 +228,7 @@ export function ReviewCard({ onOpenTutor }: ReviewCardProps) {
 
                   {/* Answer Content */}
                   <div className="text-center text-xl sm:text-2xl font-medium text-zinc-100 leading-relaxed">
-                    {renderContent(currentCard.back, true)}
+                    {renderContent(currentCard.back)}
                   </div>
 
                   {/* Answer Media */}
@@ -269,7 +267,6 @@ export function ReviewCard({ onOpenTutor }: ReviewCardProps) {
             onClick={() => setLightboxImage(null)}
             className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-4 cursor-zoom-out"
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
             <motion.img
               initial={{ scale: 0.9 }}
               animate={{ scale: 1 }}

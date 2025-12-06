@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Sparkles,
@@ -51,12 +51,18 @@ export function AITutorOverlay({ isOpen, onClose }: AITutorOverlayProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const messageIdRef = useRef(0);
 
-  const handleSend = async (prompt: string) => {
+  const generateMessageId = useCallback(() => {
+    messageIdRef.current += 1;
+    return `msg-${messageIdRef.current}`;
+  }, []);
+
+  const handleSend = useCallback((prompt: string) => {
     if (!prompt.trim() || !currentCard) return;
 
     const userMessage: Message = {
-      id: Date.now().toString(),
+      id: generateMessageId(),
       role: "user",
       content: prompt,
     };
@@ -68,14 +74,14 @@ export function AITutorOverlay({ isOpen, onClose }: AITutorOverlayProps) {
     // Simulate AI response (in production, this would call your AI API)
     setTimeout(() => {
       const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
+        id: generateMessageId(),
         role: "assistant",
         content: getSimulatedResponse(prompt, currentCard.front, currentCard.back),
       };
       setMessages((prev) => [...prev, assistantMessage]);
       setIsLoading(false);
     }, 1500);
-  };
+  }, [currentCard, generateMessageId]);
 
   const getSimulatedResponse = (prompt: string, front: string, back: string): string => {
     if (prompt.toLowerCase().includes("explain") || prompt.toLowerCase().includes("simple")) {
