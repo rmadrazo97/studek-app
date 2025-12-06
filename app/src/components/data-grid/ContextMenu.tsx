@@ -9,6 +9,7 @@ import {
   useState,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   ReactNode,
   MouseEvent,
@@ -55,11 +56,6 @@ interface MenuItemProps {
 function MenuItem({ item, context, onClose }: MenuItemProps) {
   const [isSubmenuOpen, setIsSubmenuOpen] = useState(false);
   const itemRef = useRef<HTMLDivElement>(null);
-
-  if (item.separator) {
-    return <div className="my-1 border-t border-white/10" />;
-  }
-
   const hasChildren = item.children && item.children.length > 0;
 
   const handleClick = useCallback(() => {
@@ -67,6 +63,10 @@ function MenuItem({ item, context, onClose }: MenuItemProps) {
     item.action?.(context);
     onClose();
   }, [item, context, hasChildren, onClose]);
+
+  if (item.separator) {
+    return <div className="my-1 border-t border-white/10" />;
+  }
 
   return (
     <div
@@ -145,7 +145,8 @@ export function ContextMenu({
   // Adjust position to stay within viewport
   const [adjustedPosition, setAdjustedPosition] = useState(position);
 
-  useEffect(() => {
+  // Use layoutEffect for synchronous DOM measurement before paint
+  useLayoutEffect(() => {
     if (!menuRef.current) return;
 
     const rect = menuRef.current.getBoundingClientRect();
@@ -165,8 +166,14 @@ export function ContextMenu({
       y = viewportHeight - rect.height - 16;
     }
 
-    setAdjustedPosition({ x: Math.max(16, x), y: Math.max(16, y) });
-  }, [position]);
+    const newX = Math.max(16, x);
+    const newY = Math.max(16, y);
+
+    // Only update if position changed to avoid unnecessary re-renders
+    if (newX !== adjustedPosition.x || newY !== adjustedPosition.y) {
+      setAdjustedPosition({ x: newX, y: newY });
+    }
+  }, [position, adjustedPosition.x, adjustedPosition.y]);
 
   // Close on click outside
   useEffect(() => {

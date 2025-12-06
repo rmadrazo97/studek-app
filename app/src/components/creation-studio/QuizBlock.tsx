@@ -31,7 +31,6 @@ export function QuizBlock({ block, isEditable = true, onDelete }: QuizBlockProps
   const [showResult, setShowResult] = useState(false);
 
   const quiz = block.quizData;
-  if (!quiz) return null;
 
   // Generate unique ID
   const generateId = () => Math.random().toString(36).substring(2, 11);
@@ -39,6 +38,7 @@ export function QuizBlock({ block, isEditable = true, onDelete }: QuizBlockProps
   // Update question
   const handleQuestionChange = useCallback(
     (value: string) => {
+      if (!quiz) return;
       updateBlock({
         ...block,
         quizData: {
@@ -53,6 +53,7 @@ export function QuizBlock({ block, isEditable = true, onDelete }: QuizBlockProps
   // Update option text
   const handleOptionChange = useCallback(
     (optionId: string, value: string) => {
+      if (!quiz) return;
       updateBlock({
         ...block,
         quizData: {
@@ -69,6 +70,7 @@ export function QuizBlock({ block, isEditable = true, onDelete }: QuizBlockProps
   // Toggle correct answer
   const handleToggleCorrect = useCallback(
     (optionId: string) => {
+      if (!quiz) return;
       updateBlock({
         ...block,
         quizData: {
@@ -85,7 +87,7 @@ export function QuizBlock({ block, isEditable = true, onDelete }: QuizBlockProps
 
   // Add new option
   const handleAddOption = useCallback(() => {
-    if (quiz.options.length >= 6) return;
+    if (!quiz || quiz.options.length >= 6) return;
     updateBlock({
       ...block,
       quizData: {
@@ -101,7 +103,7 @@ export function QuizBlock({ block, isEditable = true, onDelete }: QuizBlockProps
   // Remove option
   const handleRemoveOption = useCallback(
     (optionId: string) => {
-      if (quiz.options.length <= 2) return;
+      if (!quiz || quiz.options.length <= 2) return;
       updateBlock({
         ...block,
         quizData: {
@@ -112,6 +114,8 @@ export function QuizBlock({ block, isEditable = true, onDelete }: QuizBlockProps
     },
     [block, quiz, updateBlock]
   );
+
+  if (!quiz) return null;
 
   // Test mode handlers
   const handleSelectAnswer = (optionId: string) => {
