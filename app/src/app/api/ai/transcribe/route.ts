@@ -8,16 +8,29 @@ import { NextResponse } from 'next/server';
 import { verifyAccessToken } from '@/lib/auth';
 import OpenAI from 'openai';
 
-// Initialize OpenAI client
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_APIKEY,
-});
+// Lazy-initialize OpenAI client to avoid build-time errors
+let openaiClient: OpenAI | null = null;
 
-// Check if AI is configured
-const isConfigured = !!process.env.OPENAI_APIKEY;
+function getOpenAIClient(): OpenAI | null {
+  if (!process.env.OPENAI_APIKEY) {
+    return null;
+  }
+  if (!openaiClient) {
+    openaiClient = new OpenAI({
+      apiKey: process.env.OPENAI_APIKEY,
+    });
+  }
+  return openaiClient;
+}
+
+// Check if AI is configured (evaluated at runtime)
+function isConfigured(): boolean {
+  return !!process.env.OPENAI_APIKEY;
+}
 
 export async function POST(req: Request) {
-  if (!isConfigured) {
+  const openai = getOpenAIClient();
+  if (!openai) {
     return NextResponse.json(
       { error: 'AI transcription not configured', code: 'AI_NOT_CONFIGURED' },
       { status: 503 }
@@ -105,7 +118,7 @@ export async function POST(req: Request) {
 // GET endpoint to check if transcription is available
 export async function GET() {
   return NextResponse.json({
-    available: isConfigured,
+    available: isConfigured(),
     model: 'gpt-4o-transcribe',
   });
 }
