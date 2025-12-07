@@ -61,8 +61,14 @@ export const GET = withAuth(
         total = result.total;
       }
 
+      // Parse tags from JSON string to array
+      const parsedCards = cards.map((card) => ({
+        ...card,
+        tags: typeof card.tags === 'string' ? JSON.parse(card.tags || '[]') : (card.tags || []),
+      }));
+
       return NextResponse.json({
-        cards,
+        cards: parsedCards,
         total,
         limit,
         offset,
@@ -144,8 +150,14 @@ export const POST = withAuth(
         ? createCards(validCards)
         : [createCard(validCards[0])];
 
+      // Parse tags from JSON string to array in response
+      const parsedCreatedCards = createdCards.map((card) => ({
+        ...card,
+        tags: typeof card.tags === 'string' ? JSON.parse(card.tags || '[]') : (card.tags || []),
+      }));
+
       return NextResponse.json(
-        isArray ? createdCards : createdCards[0],
+        isArray ? parsedCreatedCards : parsedCreatedCards[0],
         { status: 201 }
       );
     } catch (error) {
