@@ -10,6 +10,7 @@ import {
   type AuthenticatedRequest,
   forbiddenResponse,
 } from '@/lib/auth/middleware';
+import { handleApiError } from '@/lib/api/errors';
 import {
   getDeckWithStats,
   getDeckById,
@@ -48,11 +49,7 @@ export const GET = withAuth(
         permission: access.permission,
       });
     } catch (error) {
-      console.error('[API] GET /api/decks/[id] error:', error);
-      return NextResponse.json(
-        { error: 'Failed to fetch deck' },
-        { status: 500 }
-      );
+      return handleApiError('GET /api/decks/[id]', error, 'Failed to fetch deck');
     }
   }
 );
@@ -108,11 +105,7 @@ export const PATCH = withAuth(
 
       return NextResponse.json(updatedDeck);
     } catch (error) {
-      console.error('[API] PATCH /api/decks/[id] error:', error);
-      return NextResponse.json(
-        { error: 'Failed to update deck' },
-        { status: 500 }
-      );
+      return handleApiError('PATCH /api/decks/[id]', error, 'Failed to update deck');
     }
   }
 );
@@ -149,11 +142,7 @@ export const DELETE = withAuth(
 
       return NextResponse.json({ success: true });
     } catch (error) {
-      console.error('[API] DELETE /api/decks/[id] error:', error);
-      return NextResponse.json(
-        { error: 'Failed to delete deck' },
-        { status: 500 }
-      );
+      return handleApiError('DELETE /api/decks/[id]', error, 'Failed to delete deck');
     }
   }
 );

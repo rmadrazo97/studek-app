@@ -9,6 +9,7 @@ import {
   type AuthenticatedRequest,
   forbiddenResponse,
 } from '@/lib/auth/middleware';
+import { handleApiError } from '@/lib/api/errors';
 import {
   getDeckById,
   getCardsPaginated,
@@ -68,11 +69,7 @@ export const GET = withAuth(
         hasMore: offset + cards.length < total,
       });
     } catch (error) {
-      console.error('[API] GET /api/decks/[id]/cards error:', error);
-      return NextResponse.json(
-        { error: 'Failed to fetch cards' },
-        { status: 500 }
-      );
+      return handleApiError('GET /api/decks/[id]/cards', error, 'Failed to fetch cards');
     }
   }
 );
@@ -152,11 +149,7 @@ export const POST = withAuth(
         { status: 201 }
       );
     } catch (error) {
-      console.error('[API] POST /api/decks/[id]/cards error:', error);
-      return NextResponse.json(
-        { error: 'Failed to create card(s)' },
-        { status: 500 }
-      );
+      return handleApiError('POST /api/decks/[id]/cards', error, 'Failed to create card(s)');
     }
   }
 );

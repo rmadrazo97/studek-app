@@ -4,6 +4,7 @@
 
 import { NextResponse } from 'next/server';
 import { withAuth, type AuthenticatedRequest } from '@/lib/auth/middleware';
+import { handleApiError } from '@/lib/api/errors';
 import {
   getRecentlyVisitedDecks,
   getRecentlyCreatedDecks,
@@ -86,10 +87,6 @@ export const GET = withAuth(async (request: AuthenticatedRequest) => {
       },
     });
   } catch (error) {
-    console.error('[API] GET /api/dashboard error:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch dashboard data' },
-      { status: 500 }
-    );
+    return handleApiError('GET /api/dashboard', error, 'Failed to fetch dashboard data');
   }
 });

@@ -5,6 +5,7 @@
 
 import { NextResponse } from 'next/server';
 import { withAuth, type AuthenticatedRequest } from '@/lib/auth/middleware';
+import { handleApiError } from '@/lib/api/errors';
 import { getDatabase } from '@/lib/db';
 import { createCards, getDeckById, userHasAccessToDeck } from '@/lib/db/services';
 import type { Card, CardCreate } from '@/lib/db/types';
@@ -59,11 +60,7 @@ export const GET = withAuth(async (request: AuthenticatedRequest) => {
       hasMore: offset + cards.length < total,
     });
   } catch (error) {
-    console.error('[API] GET /api/cards error:', error);
-    return NextResponse.json(
-      { error: 'Failed to search cards' },
-      { status: 500 }
-    );
+    return handleApiError('GET /api/cards', error, 'Failed to search cards');
   }
 });
 
@@ -136,16 +133,9 @@ export const POST = withAuth(async (request: AuthenticatedRequest) => {
 
     return NextResponse.json(createdCards, { status: 201 });
   } catch (error) {
-    console.error('[API] POST /api/cards error:', error);
-    if (error instanceof Error) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 400 }
-      );
+    if (error instanceof Error && error.message.includes('required')) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
     }
-    return NextResponse.json(
-      { error: 'Failed to create cards' },
-      { status: 500 }
-    );
+    return handleApiError('POST /api/cards', error, 'Failed to create cards');
   }
 });

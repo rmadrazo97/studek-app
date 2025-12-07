@@ -10,6 +10,7 @@ import {
   type AuthenticatedRequest,
   forbiddenResponse,
 } from '@/lib/auth/middleware';
+import { handleApiError } from '@/lib/api/errors';
 import {
   getDeckById,
   getShareLinksForDeck,
@@ -61,11 +62,7 @@ export const GET = withAuth(
         is_public: deck.is_public,
       });
     } catch (error) {
-      console.error('[API] GET /api/decks/[id]/share error:', error);
-      return NextResponse.json(
-        { error: 'Failed to fetch share info' },
-        { status: 500 }
-      );
+      return handleApiError('GET /api/decks/[id]/share', error, 'Failed to fetch share info');
     }
   }
 );
@@ -161,8 +158,6 @@ export const POST = withAuth(
         );
       }
     } catch (error) {
-      console.error('[API] POST /api/decks/[id]/share error:', error);
-
       // Handle unique constraint violation
       if (error instanceof Error && error.message.includes('UNIQUE constraint')) {
         return NextResponse.json(
@@ -170,11 +165,7 @@ export const POST = withAuth(
           { status: 409 }
         );
       }
-
-      return NextResponse.json(
-        { error: 'Failed to create share' },
-        { status: 500 }
-      );
+      return handleApiError('POST /api/decks/[id]/share', error, 'Failed to create share');
     }
   }
 );
@@ -230,11 +221,7 @@ export const DELETE = withAuth(
         );
       }
     } catch (error) {
-      console.error('[API] DELETE /api/decks/[id]/share error:', error);
-      return NextResponse.json(
-        { error: 'Failed to remove share' },
-        { status: 500 }
-      );
+      return handleApiError('DELETE /api/decks/[id]/share', error, 'Failed to remove share');
     }
   }
 );
