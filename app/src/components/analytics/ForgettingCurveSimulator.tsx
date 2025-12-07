@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Brain, Sliders, Info, AlertTriangle, CheckCircle } from "lucide-react";
-import { generateForgettingCurve, calculateInterval, DEFAULT_PARAMS } from "@/lib/fsrs";
+import { generateForgettingCurve, calculateInterval } from "@/lib/fsrs";
 
 interface ForgettingCurveSimulatorProps {
   initialStability?: number;
@@ -21,7 +21,7 @@ export function ForgettingCurveSimulator({
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   // Generate curve data
-  const { curveData, interval, workloadImpact, retentionZones } = useMemo(() => {
+  const { curveData, interval, workloadImpact } = useMemo(() => {
     const days = Math.max(stability * 2, 60);
     const data = generateForgettingCurve(stability, days, 100);
 

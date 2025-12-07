@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect, ReactNode, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { GripVertical, ChevronUp, ChevronDown, FileText } from "lucide-react";
+import { GripVertical, ChevronUp, FileText } from "lucide-react";
 import { useCreationStudio } from "@/stores/creationStudioStore";
 
 interface ResizableSplitPaneProps {
@@ -53,7 +53,6 @@ export function ResizableSplitPane({
   const { state, setPaneRatio, toggleSourceDrawer, setMobile } = useCreationStudio();
   const containerRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [containerWidth, setContainerWidth] = useState(0);
 
   // Initialize from store or default
   const ratio = state.paneSplitRatio || defaultRatio;
@@ -68,17 +67,6 @@ export function ResizableSplitPane({
     return () => window.removeEventListener("resize", checkMobile);
   }, [setMobile]);
 
-  // Measure container
-  useEffect(() => {
-    const updateWidth = () => {
-      if (containerRef.current) {
-        setContainerWidth(containerRef.current.offsetWidth);
-      }
-    };
-    updateWidth();
-    window.addEventListener("resize", updateWidth);
-    return () => window.removeEventListener("resize", updateWidth);
-  }, []);
 
   // Handle drag
   const handleMouseDown = useCallback((e: React.MouseEvent) => {

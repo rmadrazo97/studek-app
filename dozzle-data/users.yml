@@ -1,0 +1,7 @@
+users:
+  admin:
+    email: ""
+    name: Admin
+    # Default password: admin (change in production by regenerating with: docker run --rm amir20/dozzle:latest generate <user> --password <pass>)
+    password: $2a$11$IrjZKaohnDxY6Qm1w/OnX.5zEA60Qy8aQT85yBTrFY1t2q4TERXaK
+    filter: ""

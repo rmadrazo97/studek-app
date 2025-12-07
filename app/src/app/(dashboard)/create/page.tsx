@@ -22,7 +22,7 @@ import { Button } from "@/components/ui/Button";
 
 function CreationStudioContent() {
   const router = useRouter();
-  const { state, setPaneRatio, undo, redo, saveSnapshot } = useCreationStudio();
+  const { undo, redo, saveSnapshot } = useCreationStudio();
   const [showAISidebar, setShowAISidebar] = useState(false);
   const [showSourcePane, setShowSourcePane] = useState(true);
 

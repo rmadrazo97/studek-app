@@ -6,14 +6,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Home,
-  FolderTree,
+  Compass,
   Table2,
   Library,
   Sparkles,
   FileUp,
   ChevronLeft,
   ChevronRight,
-  ChevronDown,
   Cloud,
   Check,
   Loader2,
@@ -23,101 +22,9 @@ import {
   PenTool,
 } from "lucide-react";
 
-interface DeckItem {
-  id: string;
-  name: string;
-  children?: DeckItem[];
-}
-
-// Sample deck structure with nested decks
-const sampleDecks: DeckItem[] = [
-  {
-    id: "1",
-    name: "Medicine",
-    children: [
-      {
-        id: "1-1",
-        name: "Anatomy",
-        children: [
-          { id: "1-1-1", name: "Heart" },
-          { id: "1-1-2", name: "Brain" },
-        ],
-      },
-      { id: "1-2", name: "Pharmacology" },
-    ],
-  },
-  {
-    id: "2",
-    name: "Languages",
-    children: [
-      { id: "2-1", name: "Spanish" },
-      { id: "2-2", name: "Japanese" },
-    ],
-  },
-  { id: "3", name: "Computer Science" },
-];
-
 interface SidebarProps {
   isCollapsed: boolean;
   onToggle: () => void;
-}
-
-function DeckTreeItem({
-  deck,
-  level = 0,
-  isCollapsed,
-}: {
-  deck: DeckItem;
-  level?: number;
-  isCollapsed: boolean;
-}) {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const hasChildren = deck.children && deck.children.length > 0;
-
-  if (isCollapsed) return null;
-
-  return (
-    <div>
-      <button
-        onClick={() => hasChildren && setIsExpanded(!isExpanded)}
-        className={`
-          w-full flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg
-          text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/50
-          transition-colors
-        `}
-        style={{ paddingLeft: `${12 + level * 16}px` }}
-      >
-        {hasChildren ? (
-          <ChevronDown
-            className={`w-3 h-3 transition-transform ${isExpanded ? "" : "-rotate-90"}`}
-          />
-        ) : (
-          <span className="w-3" />
-        )}
-        <span className="truncate">{deck.name}</span>
-      </button>
-      <AnimatePresence>
-        {isExpanded && hasChildren && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="overflow-hidden"
-          >
-            {deck.children!.map((child) => (
-              <DeckTreeItem
-                key={child.id}
-                deck={child}
-                level={level + 1}
-                isCollapsed={isCollapsed}
-              />
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
 }
 
 export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
@@ -128,7 +35,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
     { icon: Home, label: "Home", href: "/dashboard" },
     { icon: BarChart3, label: "Analytics", href: "/analytics" },
     { icon: PenTool, label: "Creation Studio", href: "/create" },
-    { icon: FolderTree, label: "Decks", href: "/decks", hasTree: true },
+    { icon: Compass, label: "Explore", href: "/explore" },
     { icon: Library, label: "Library", href: "/library" },
     { icon: Table2, label: "Card Browser", href: "/browser" },
   ];
@@ -164,7 +71,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
     >
       {/* Header */}
       <div className="h-16 flex items-center justify-between px-4 border-b border-zinc-800">
-        <Link href="/dashboard" className="flex items-center gap-2">
+        <Link href="/" className="flex items-center gap-2">
           <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center shadow-[0_0_20px_rgba(34,211,238,0.3)]">
             <Sparkles className="w-5 h-5 text-[#09090b]" />
           </div>
@@ -199,48 +106,35 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
           {navItems.map((item) => {
             const isActive = pathname === item.href;
             return (
-              <div key={item.href}>
-                <Link
-                  href={item.href}
-                  className={`
-                    flex items-center gap-3 px-3 py-2.5 rounded-xl
-                    transition-all duration-200
-                    ${
-                      isActive
-                        ? "bg-zinc-800 text-cyan-400"
-                        : "text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/50"
-                    }
-                    ${isCollapsed ? "justify-center" : ""}
-                  `}
-                  title={isCollapsed ? item.label : undefined}
-                >
-                  <item.icon className="w-5 h-5 flex-shrink-0" />
-                  <AnimatePresence>
-                    {!isCollapsed && (
-                      <motion.span
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="font-medium"
-                      >
-                        {item.label}
-                      </motion.span>
-                    )}
-                  </AnimatePresence>
-                </Link>
-                {/* Deck Tree View */}
-                {item.hasTree && !isCollapsed && (
-                  <div className="mt-1 ml-2 border-l border-zinc-800 pl-2">
-                    {sampleDecks.map((deck) => (
-                      <DeckTreeItem
-                        key={deck.id}
-                        deck={deck}
-                        isCollapsed={isCollapsed}
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`
+                  flex items-center gap-3 px-3 py-2.5 rounded-xl
+                  transition-all duration-200
+                  ${
+                    isActive
+                      ? "bg-zinc-800 text-cyan-400"
+                      : "text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/50"
+                  }
+                  ${isCollapsed ? "justify-center" : ""}
+                `}
+                title={isCollapsed ? item.label : undefined}
+              >
+                <item.icon className="w-5 h-5 flex-shrink-0" />
+                <AnimatePresence>
+                  {!isCollapsed && (
+                    <motion.span
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="font-medium"
+                    >
+                      {item.label}
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+              </Link>
             );
           })}
         </div>
