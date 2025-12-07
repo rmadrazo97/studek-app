@@ -10,6 +10,7 @@ import {
   Card,
 } from "@/stores/reviewStore";
 import { Button } from "@/components/ui/Button";
+import { apiClient, ApiClientError } from "@/lib/api/client";
 
 interface DeckCard {
   id: string;
@@ -31,6 +32,15 @@ interface DeckCard {
 interface DeckInfo {
   id: string;
   name: string;
+}
+
+interface DeckApiResponse {
+  id: string;
+  name: string;
+}
+
+interface CardsApiResponse {
+  cards: DeckCard[];
 }
 
 function StudyContent() {
@@ -56,25 +66,12 @@ function StudyContent() {
       }
 
       try {
-        // Fetch deck info with credentials
-        const deckRes = await fetch(`/api/decks/${deckId}`, {
-          credentials: 'include',
-        });
-        if (!deckRes.ok) {
-          if (deckRes.status === 401) {
-            throw new Error("Please log in to study this deck");
-          }
-          throw new Error("Failed to load deck");
-        }
-        const deckData = await deckRes.json();
+        // Fetch deck info
+        const deckData = await apiClient.get<DeckApiResponse>(`/api/decks/${deckId}`);
         setDeckInfo({ id: deckData.id, name: deckData.name });
 
-        // Fetch cards with credentials
-        const cardsRes = await fetch(`/api/decks/${deckId}/cards`, {
-          credentials: 'include',
-        });
-        if (!cardsRes.ok) throw new Error("Failed to load cards");
-        const cardsData = await cardsRes.json();
+        // Fetch cards
+        const cardsData = await apiClient.get<CardsApiResponse>(`/api/decks/${deckId}/cards`);
 
         // Transform cards to study format
         const studyCards: Card[] = cardsData.cards.map((card: DeckCard) => ({
@@ -114,7 +111,11 @@ function StudyContent() {
         setQueue(studyCards);
         setIsLoading(false);
       } catch (err) {
-        setLoadError(err instanceof Error ? err.message : "Failed to load cards");
+        if (err instanceof ApiClientError && err.isUnauthorized) {
+          setLoadError("Please log in to study this deck");
+        } else {
+          setLoadError(err instanceof Error ? err.message : "Failed to load cards");
+        }
         setIsLoading(false);
       }
     }

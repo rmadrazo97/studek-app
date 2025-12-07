@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { getAccessToken } from "@/stores/auth";
+import { apiClient } from "@/lib/api/client";
 
 // ============================================
 // Types
@@ -76,28 +76,6 @@ export interface UserShare {
 }
 
 // ============================================
-// API Helpers
-// ============================================
-
-async function authFetch(url: string, options: RequestInit = {}) {
-  const token = getAccessToken();
-  const headers = new Headers(options.headers);
-  if (token) {
-    headers.set("Authorization", `Bearer ${token}`);
-  }
-  headers.set("Content-Type", "application/json");
-
-  const response = await fetch(url, { ...options, headers });
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.error || "Request failed");
-  }
-
-  return data;
-}
-
-// ============================================
 // useDecks Hook
 // ============================================
 
@@ -111,7 +89,7 @@ export function useDecks() {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await authFetch("/api/decks");
+      const data = await apiClient.get<{ owned: DeckWithStats[]; shared: DeckWithStats[] }>("/api/decks");
       setDecks(data.owned || []);
       setSharedDecks(data.shared || []);
     } catch (err) {
@@ -123,32 +101,26 @@ export function useDecks() {
 
   const createDeck = useCallback(
     async (deckData: { name: string; description?: string; is_public?: boolean }) => {
-      const newDeck = await authFetch("/api/decks", {
-        method: "POST",
-        body: JSON.stringify(deckData),
-      });
+      const newDeck = await apiClient.post<Deck>("/api/decks", deckData);
       setDecks((prev) => [{ ...newDeck, card_count: 0, due_count: 0, new_count: 0 }, ...prev]);
-      return newDeck as Deck;
+      return newDeck;
     },
     []
   );
 
   const updateDeck = useCallback(
     async (deckId: string, updates: { name?: string; description?: string; is_public?: boolean }) => {
-      const updatedDeck = await authFetch(`/api/decks/${deckId}`, {
-        method: "PATCH",
-        body: JSON.stringify(updates),
-      });
+      const updatedDeck = await apiClient.patch<Deck>(`/api/decks/${deckId}`, updates);
       setDecks((prev) =>
         prev.map((d) => (d.id === deckId ? { ...d, ...updatedDeck } : d))
       );
-      return updatedDeck as Deck;
+      return updatedDeck;
     },
     []
   );
 
   const deleteDeck = useCallback(async (deckId: string) => {
-    await authFetch(`/api/decks/${deckId}`, { method: "DELETE" });
+    await apiClient.delete(`/api/decks/${deckId}`);
     setDecks((prev) => prev.filter((d) => d.id !== deckId));
   }, []);
 
@@ -188,7 +160,7 @@ export function useCards(deckId: string | null) {
       const params = new URLSearchParams();
       if (filter) params.set("filter", filter);
 
-      const data = await authFetch(`/api/decks/${deckId}/cards?${params}`);
+      const data = await apiClient.get<{ cards: Card[]; total: number }>(`/api/decks/${deckId}/cards?${params}`);
       setCards(data.cards || []);
       setTotal(data.total || 0);
     } catch (err) {
@@ -202,13 +174,10 @@ export function useCards(deckId: string | null) {
     async (cardData: { front: string; back: string; type?: string; tags?: string[] }) => {
       if (!deckId) throw new Error("No deck selected");
 
-      const newCard = await authFetch(`/api/decks/${deckId}/cards`, {
-        method: "POST",
-        body: JSON.stringify(cardData),
-      });
+      const newCard = await apiClient.post<Card>(`/api/decks/${deckId}/cards`, cardData);
       setCards((prev) => [newCard, ...prev]);
       setTotal((prev) => prev + 1);
-      return newCard as Card;
+      return newCard;
     },
     [deckId]
   );
@@ -217,33 +186,27 @@ export function useCards(deckId: string | null) {
     async (cardsData: Array<{ front: string; back: string; type?: string; tags?: string[] }>) => {
       if (!deckId) throw new Error("No deck selected");
 
-      const newCards = await authFetch(`/api/decks/${deckId}/cards`, {
-        method: "POST",
-        body: JSON.stringify(cardsData),
-      });
+      const newCards = await apiClient.post<Card[]>(`/api/decks/${deckId}/cards`, cardsData);
       setCards((prev) => [...newCards, ...prev]);
       setTotal((prev) => prev + newCards.length);
-      return newCards as Card[];
+      return newCards;
     },
     [deckId]
   );
 
   const updateCard = useCallback(
     async (cardId: string, updates: { front?: string; back?: string; type?: string; tags?: string[] }) => {
-      const updatedCard = await authFetch(`/api/cards/${cardId}`, {
-        method: "PATCH",
-        body: JSON.stringify(updates),
-      });
+      const updatedCard = await apiClient.patch<Card>(`/api/cards/${cardId}`, updates);
       setCards((prev) =>
         prev.map((c) => (c.id === cardId ? { ...c, ...updatedCard } : c))
       );
-      return updatedCard as Card;
+      return updatedCard;
     },
     []
   );
 
   const deleteCard = useCallback(async (cardId: string) => {
-    await authFetch(`/api/cards/${cardId}`, { method: "DELETE" });
+    await apiClient.delete(`/api/cards/${cardId}`);
     setCards((prev) => prev.filter((c) => c.id !== cardId));
     setTotal((prev) => prev - 1);
   }, []);
@@ -284,7 +247,7 @@ export function useDeckSharing(deckId: string | null) {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await authFetch(`/api/decks/${deckId}/share`);
+      const data = await apiClient.get<{ links: ShareLink[]; users: UserShare[]; is_public: boolean }>(`/api/decks/${deckId}/share`);
       setShareLinks(data.links || []);
       setUserShares(data.users || []);
       setIsPublic(data.is_public || false);
@@ -299,12 +262,9 @@ export function useDeckSharing(deckId: string | null) {
     async (options: { permission?: "read" | "clone"; expires_at?: string; max_uses?: number }) => {
       if (!deckId) throw new Error("No deck selected");
 
-      const newLink = await authFetch(`/api/decks/${deckId}/share`, {
-        method: "POST",
-        body: JSON.stringify({ type: "link", ...options }),
-      });
+      const newLink = await apiClient.post<ShareLink>(`/api/decks/${deckId}/share`, { type: "link", ...options });
       setShareLinks((prev) => [newLink, ...prev]);
-      return newLink as ShareLink;
+      return newLink;
     },
     [deckId]
   );
@@ -313,12 +273,9 @@ export function useDeckSharing(deckId: string | null) {
     async (email: string, permission: "read" | "write" | "admin" = "read") => {
       if (!deckId) throw new Error("No deck selected");
 
-      const newShare = await authFetch(`/api/decks/${deckId}/share`, {
-        method: "POST",
-        body: JSON.stringify({ type: "user", email, permission }),
-      });
+      const newShare = await apiClient.post<UserShare>(`/api/decks/${deckId}/share`, { type: "user", email, permission });
       setUserShares((prev) => [newShare, ...prev]);
-      return newShare as UserShare;
+      return newShare;
     },
     [deckId]
   );
@@ -327,9 +284,7 @@ export function useDeckSharing(deckId: string | null) {
     async (linkId: string) => {
       if (!deckId) throw new Error("No deck selected");
 
-      await authFetch(`/api/decks/${deckId}/share?linkId=${linkId}`, {
-        method: "DELETE",
-      });
+      await apiClient.delete(`/api/decks/${deckId}/share?linkId=${linkId}`);
       setShareLinks((prev) => prev.map((l) => (l.id === linkId ? { ...l, is_active: false } : l)));
     },
     [deckId]
@@ -339,9 +294,7 @@ export function useDeckSharing(deckId: string | null) {
     async (shareId: string) => {
       if (!deckId) throw new Error("No deck selected");
 
-      await authFetch(`/api/decks/${deckId}/share?shareId=${shareId}`, {
-        method: "DELETE",
-      });
+      await apiClient.delete(`/api/decks/${deckId}/share?shareId=${shareId}`);
       setUserShares((prev) => prev.filter((s) => s.id !== shareId));
     },
     [deckId]
@@ -371,20 +324,24 @@ export function useDeckSharing(deckId: string | null) {
 // useSharedDeck Hook (for viewing shared decks)
 // ============================================
 
+interface SharedDeckData {
+  id: string;
+  name: string;
+  description: string | null;
+  card_count: number;
+}
+
+interface SharedCardData {
+  id: string;
+  type: string;
+  front: string;
+  back: string;
+  tags: string[];
+}
+
 export function useSharedDeck(code: string | null) {
-  const [deck, setDeck] = useState<{
-    id: string;
-    name: string;
-    description: string | null;
-    card_count: number;
-  } | null>(null);
-  const [cards, setCards] = useState<Array<{
-    id: string;
-    type: string;
-    front: string;
-    back: string;
-    tags: string[];
-  }>>([]);
+  const [deck, setDeck] = useState<SharedDeckData | null>(null);
+  const [cards, setCards] = useState<SharedCardData[]>([]);
   const [permission, setPermission] = useState<"read" | "clone">("read");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -395,8 +352,8 @@ export function useSharedDeck(code: string | null) {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await fetch(`/api/decks/shared/${code}`).then((r) => r.json());
-      if (data.error) throw new Error(data.error);
+      // Public endpoint - can skip auth
+      const data = await apiClient.get<{ deck: SharedDeckData; cards: SharedCardData[]; permission: "read" | "clone" }>(`/api/decks/shared/${code}`, { skipAuth: true });
 
       setDeck(data.deck);
       setCards(data.cards || []);
@@ -411,8 +368,8 @@ export function useSharedDeck(code: string | null) {
   const cloneDeck = useCallback(async () => {
     if (!code) throw new Error("No share code");
 
-    const data = await authFetch(`/api/decks/shared/${code}`, { method: "POST" });
-    return data.deck as Deck;
+    const data = await apiClient.post<{ deck: Deck }>(`/api/decks/shared/${code}`);
+    return data.deck;
   }, [code]);
 
   useEffect(() => {
