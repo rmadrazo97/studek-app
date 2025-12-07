@@ -5,6 +5,7 @@
 
 import { NextResponse } from 'next/server';
 import { withAuth, type AuthenticatedRequest } from '@/lib/auth/middleware';
+import { handleApiError } from '@/lib/api/errors';
 import {
   getDecksWithStats,
   createDeck,
@@ -41,11 +42,7 @@ export const GET = withAuth(async (request: AuthenticatedRequest) => {
       shared: sharedDecks,
     });
   } catch (error) {
-    console.error('[API] GET /api/decks error:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch decks' },
-      { status: 500 }
-    );
+    return handleApiError('GET /api/decks', error, 'Failed to fetch decks');
   }
 });
 
@@ -78,10 +75,6 @@ export const POST = withAuth(async (request: AuthenticatedRequest) => {
 
     return NextResponse.json(deck, { status: 201 });
   } catch (error) {
-    console.error('[API] POST /api/decks error:', error);
-    return NextResponse.json(
-      { error: 'Failed to create deck' },
-      { status: 500 }
-    );
+    return handleApiError('POST /api/decks', error, 'Failed to create deck');
   }
 });

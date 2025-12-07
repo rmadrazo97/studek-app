@@ -10,6 +10,7 @@ import {
   type AuthenticatedRequest,
   forbiddenResponse,
 } from '@/lib/auth/middleware';
+import { handleApiError } from '@/lib/api/errors';
 import {
   getCardById,
   getCardWithFSRS,
@@ -50,11 +51,7 @@ export const GET = withAuth(
         permission: access.permission,
       });
     } catch (error) {
-      console.error('[API] GET /api/cards/[id] error:', error);
-      return NextResponse.json(
-        { error: 'Failed to fetch card' },
-        { status: 500 }
-      );
+      return handleApiError('GET /api/cards/[id]', error, 'Failed to fetch card');
     }
   }
 );
@@ -134,11 +131,7 @@ export const PATCH = withAuth(
         tags: updatedCard ? JSON.parse(updatedCard.tags || '[]') : [],
       });
     } catch (error) {
-      console.error('[API] PATCH /api/cards/[id] error:', error);
-      return NextResponse.json(
-        { error: 'Failed to update card' },
-        { status: 500 }
-      );
+      return handleApiError('PATCH /api/cards/[id]', error, 'Failed to update card');
     }
   }
 );
@@ -186,11 +179,7 @@ export const DELETE = withAuth(
 
       return NextResponse.json({ success: true });
     } catch (error) {
-      console.error('[API] DELETE /api/cards/[id] error:', error);
-      return NextResponse.json(
-        { error: 'Failed to delete card' },
-        { status: 500 }
-      );
+      return handleApiError('DELETE /api/cards/[id]', error, 'Failed to delete card');
     }
   }
 );
