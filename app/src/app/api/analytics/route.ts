@@ -9,11 +9,77 @@ import { getDatabase } from '@/lib/db';
 import {
   getReviewCountByDate,
   getRetentionRate,
-  getAverageReviewTime,
-  getDailyStats,
 } from '@/lib/db/services/reviews';
-import { getUserStats } from '@/lib/db/services/gamification';
-import { getLevel, getLeagueTier } from '@/lib/gamification';
+
+// Default stats when gamification tables don't exist
+const DEFAULT_USER_STATS = {
+  total_xp: 0,
+  weekly_xp: 0,
+  current_streak: 0,
+  longest_streak: 0,
+  streak_freezes_available: 1,
+  streak_freezes_used: 0,
+  league_tier: 1,
+  daily_xp_earned: 0,
+  last_study_date: null,
+};
+
+const DEFAULT_LEVEL = {
+  level: 1,
+  progress: 0,
+};
+
+const DEFAULT_TIER = {
+  name: 'Bronze',
+  color: '#cd7f32',
+};
+
+/**
+ * Safely get user stats from gamification tables
+ */
+function safeGetUserStats(userId: string): typeof DEFAULT_USER_STATS {
+  try {
+    const db = getDatabase();
+    // Check if table exists first
+    const tableExists = db.prepare(`
+      SELECT name FROM sqlite_master
+      WHERE type='table' AND name='user_stats'
+    `).get();
+
+    if (!tableExists) {
+      return DEFAULT_USER_STATS;
+    }
+
+    const stats = db.prepare(`SELECT * FROM user_stats WHERE user_id = ?`).get(userId);
+    return stats ? (stats as typeof DEFAULT_USER_STATS) : DEFAULT_USER_STATS;
+  } catch {
+    return DEFAULT_USER_STATS;
+  }
+}
+
+/**
+ * Safely get level info
+ */
+function safeGetLevel(totalXp: number): typeof DEFAULT_LEVEL {
+  try {
+    const { getLevel } = require('@/lib/gamification');
+    return getLevel(totalXp);
+  } catch {
+    return DEFAULT_LEVEL;
+  }
+}
+
+/**
+ * Safely get league tier
+ */
+function safeGetLeagueTier(tierNum: number): typeof DEFAULT_TIER {
+  try {
+    const { getLeagueTier } = require('@/lib/gamification');
+    return getLeagueTier(tierNum);
+  } catch {
+    return DEFAULT_TIER;
+  }
+}
 
 export const GET = withAuth(async (request: AuthenticatedRequest) => {
   try {
@@ -22,10 +88,10 @@ export const GET = withAuth(async (request: AuthenticatedRequest) => {
     const { searchParams } = new URL(request.url);
     const days = parseInt(searchParams.get('days') || '365', 10);
 
-    // Get user stats
-    const stats = getUserStats(userId);
-    const levelInfo = getLevel(stats.total_xp);
-    const tier = getLeagueTier(stats.league_tier);
+    // Get user stats (safely handles missing gamification tables)
+    const stats = safeGetUserStats(userId);
+    const levelInfo = safeGetLevel(stats.total_xp);
+    const tier = safeGetLeagueTier(stats.league_tier);
 
     // Get heatmap data (review count by date)
     const heatmapData = getReviewCountByDate(userId, days);
