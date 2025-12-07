@@ -10,8 +10,8 @@
  */
 
 import Database from 'better-sqlite3';
-import { parseZip, extractFile, hasFile, listFiles, type ZipFile } from './zip';
-import { writeFileSync, mkdirSync, existsSync } from 'fs';
+import { parseZip, extractFile, hasFile, type ZipFile } from './zip';
+import { writeFileSync, mkdirSync, unlinkSync, rmdirSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
 import { randomUUID } from 'crypto';
@@ -199,7 +199,6 @@ export function parseAPKG(buffer: Buffer): APKGParseResult {
 
     // Cleanup temp file
     try {
-      const { unlinkSync, rmdirSync } = require('fs');
       unlinkSync(tempDbPath);
       rmdirSync(tempDir);
     } catch {
@@ -214,7 +213,6 @@ export function parseAPKG(buffer: Buffer): APKGParseResult {
   } catch (error) {
     // Cleanup on error
     try {
-      const { unlinkSync, rmdirSync } = require('fs');
       unlinkSync(tempDbPath);
       rmdirSync(tempDir);
     } catch {
