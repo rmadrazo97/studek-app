@@ -2,6 +2,7 @@
  * Prompt Templates for Specific Use Cases
  *
  * Pre-built templates for common flashcard creation scenarios.
+ * All templates are designed for the Topic Rotation algorithm.
  */
 
 // ============================================
@@ -15,6 +16,7 @@ export interface PromptTemplate {
   category: string;
   promptTemplate: string;
   exampleInput: string;
+  suggestedTopicGroups?: string[]; // Example topic groups for this template
 }
 
 // ============================================
@@ -30,10 +32,16 @@ export const vocabularyTemplate: PromptTemplate = {
 Focus on: {{focus}}
 Level: {{level}}
 
+Organize cards into topic groups for daily rotation:
+- Group related words together (e.g., "food-vocabulary", "travel-words", "greetings")
+- Each topic group should have 5-10 cards for a focused study session
+
 For each word, create a card with:
 - Front: The word in {{language}}
-- Back: English translation with a brief example sentence`,
+- Back: English translation with a brief example sentence
+- topic_group: A category for this word (lowercase with hyphens)`,
   exampleInput: 'Create a deck of 20 common Spanish verbs for beginners',
+  suggestedTopicGroups: ['common-verbs', 'daily-actions', 'communication-verbs', 'movement-verbs'],
 };
 
 export const phrasesTemplate: PromptTemplate = {
@@ -44,10 +52,16 @@ export const phrasesTemplate: PromptTemplate = {
   promptTemplate: `Create a deck of useful {{language}} phrases for {{situation}}.
 Include common expressions that native speakers use.
 
+Organize phrases into topic groups for daily rotation:
+- Group phrases by situation (e.g., "restaurant-phrases", "hotel-phrases", "directions")
+- Each topic group should be studyable in 15-20 minutes
+
 For each phrase:
 - Front: The phrase in {{language}}
-- Back: English translation and when to use it`,
+- Back: English translation and when to use it
+- topic_group: The situation this phrase is used in`,
   exampleInput: 'Create a deck of Japanese phrases for traveling',
+  suggestedTopicGroups: ['greetings', 'restaurant', 'transportation', 'hotel', 'shopping', 'emergencies'],
 };
 
 // ============================================
@@ -165,29 +179,45 @@ Include practical code examples where helpful.`,
 };
 
 // ============================================
-// Medical Templates
+// Medical Templates (Optimized for Topic Rotation)
 // ============================================
 
 export const medicalTermsTemplate: PromptTemplate = {
   id: 'medical-terms',
   name: 'Medical Terminology',
-  description: 'Learn medical vocabulary and terms',
+  description: 'Learn medical vocabulary and terms using topic rotation',
   category: 'medicine',
   promptTemplate: `Create a deck about {{topic}} medical terminology.
+
+IMPORTANT: Use Topic Rotation strategy:
+- Divide content into 4-8 topic groups by body system or concept area
+- Mark complex terms with high complexity for more frequent review
+- Each topic group should take 15-30 minutes to study
+
 For each term:
 - Front: The medical term
-- Back: Definition, etymology if helpful, and clinical relevance`,
+- Back: Definition, etymology if helpful, and clinical relevance
+- topic_group: The body system or concept area (e.g., "cardiac-anatomy", "cardiac-physiology")`,
   exampleInput: 'Create a deck about common cardiac terminology',
+  suggestedTopicGroups: ['cardiac-anatomy', 'cardiac-physiology', 'cardiac-pathology', 'cardiac-pharmacology'],
 };
 
 export const anatomyTemplate: PromptTemplate = {
   id: 'anatomy',
   name: 'Human Anatomy',
-  description: 'Learn anatomical structures and systems',
+  description: 'Learn anatomical structures and systems with rotation scheduling',
   category: 'medicine',
   promptTemplate: `Create a deck about {{topic}} anatomy.
-Include: structure names, locations, and functions.`,
+
+Use Topic Rotation strategy for effective learning:
+- Group by region or system (e.g., "skull-bones", "spine-vertebrae", "upper-limb-bones")
+- Each topic group should have 5-12 structures
+- Complex regions should be marked with high complexity
+
+Include: structure names, locations, and functions.
+Each card needs a topic_group for the rotation schedule.`,
   exampleInput: 'Create a deck about the bones of the human skeleton',
+  suggestedTopicGroups: ['skull-cranial', 'skull-facial', 'spine-vertebrae', 'thorax-ribs', 'upper-limb', 'lower-limb'],
 };
 
 // ============================================

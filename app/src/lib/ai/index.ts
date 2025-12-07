@@ -18,9 +18,14 @@ export {
   type GenerateResult,
 } from './openai';
 
-// MCP Tools and Schemas
+// MCP Tools and Schemas (Topic Rotation Algorithm)
 export {
-  // Schemas
+  // Topic Group schemas
+  TopicGroupSchema,
+  TopicGroupsArraySchema,
+  type TopicGroupInput,
+  type TopicGroup,
+  // Card schemas
   CardSchema,
   CardsArraySchema,
   DeckMetadataSchema,

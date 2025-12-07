@@ -2,11 +2,16 @@
  * MCP (Model Context Protocol) Module
  *
  * Exports schemas and tools for structured AI interactions
- * with deck and card operations.
+ * with deck and card operations using Topic Rotation algorithm.
  */
 
 // Schemas
 export {
+  // Topic Group schemas (for Topic Rotation algorithm)
+  TopicGroupSchema,
+  TopicGroupsArraySchema,
+  type TopicGroupInput,
+  // Card schemas
   CardSchema,
   CardsArraySchema,
   DeckMetadataSchema,
@@ -34,6 +39,7 @@ export {
   createDeckTools,
   addCardsTools,
   parseToolCall,
+  type TopicGroup,
   type CreateDeckToolResult,
   type AddCardsToolResult,
 } from './tools';

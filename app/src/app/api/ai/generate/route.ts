@@ -35,6 +35,13 @@ interface GenerateRequest {
   };
 }
 
+interface TopicGroupInfo {
+  id: string;
+  name: string;
+  card_count?: number;
+  complexity?: 'low' | 'medium' | 'high';
+}
+
 interface GenerateResponse {
   success: boolean;
   action: 'create_deck' | 'add_cards';
@@ -44,10 +51,12 @@ interface GenerateResponse {
     description: string | null;
     category: string | null;
   };
+  topic_groups?: TopicGroupInfo[];
   cards: Array<{
     id?: string;
     front: string;
     back: string;
+    topic_group?: string;
     tags?: string[];
   }>;
   message: string;
@@ -144,13 +153,20 @@ export const POST = withAuth(async (request: AuthenticatedRequest) => {
 
       if (shouldSave) {
         // Save cards to database
+        // Store topic_group as a special tag with "topic:" prefix for Topic Rotation algorithm
         for (const card of result.cards) {
+          const allTags = card.tags ? [...card.tags] : [];
+          // Add topic_group as a special tag if present
+          if (card.topic_group) {
+            allTags.unshift(`topic:${card.topic_group}`);
+          }
+
           const savedCard = createCard({
             deck_id: deckId,
             type: 'basic',
             front: card.front,
             back: card.back,
-            tags: card.tags || null,
+            tags: allTags.length > 0 ? allTags : null,
           });
           savedCards.push({
             id: savedCard.id,
@@ -170,9 +186,11 @@ export const POST = withAuth(async (request: AuthenticatedRequest) => {
           description: existingDeck.description,
           category: existingDeck.category,
         },
+        topic_groups: result.new_topic_groups,
         cards: shouldSave ? savedCards : result.cards.map(c => ({
           front: c.front,
           back: c.back,
+          topic_group: c.topic_group,
           tags: c.tags,
         })),
         message: result.message,
@@ -207,14 +225,20 @@ export const POST = withAuth(async (request: AuthenticatedRequest) => {
           category: deck.category,
         };
 
-        // Create cards
+        // Create cards with topic_group stored as special tag for Topic Rotation
         for (const card of result.cards) {
+          const allTags = card.tags ? [...card.tags] : [];
+          // Add topic_group as a special tag if present
+          if (card.topic_group) {
+            allTags.unshift(`topic:${card.topic_group}`);
+          }
+
           const savedCard = createCard({
             deck_id: deck.id,
             type: 'basic',
             front: card.front,
             back: card.back,
-            tags: card.tags || null,
+            tags: allTags.length > 0 ? allTags : null,
           });
           savedCards.push({
             id: savedCard.id,
@@ -234,9 +258,11 @@ export const POST = withAuth(async (request: AuthenticatedRequest) => {
           description: result.deck.description || null,
           category: result.deck.category || null,
         },
+        topic_groups: result.topic_groups,
         cards: shouldSave ? savedCards : result.cards.map(c => ({
           front: c.front,
           back: c.back,
+          topic_group: c.topic_group,
           tags: c.tags,
         })),
         message: result.message,
