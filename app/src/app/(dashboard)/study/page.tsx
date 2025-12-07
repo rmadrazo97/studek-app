@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useCallback, useState } from "react";
+import { useEffect, useCallback, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Trophy, ArrowRight, RotateCcw, X, Loader2 } from "lucide-react";
+import { X, Loader2 } from "lucide-react";
 import {
   ReviewProvider,
   useReview,
@@ -11,6 +11,8 @@ import {
 } from "@/stores/reviewStore";
 import { Button } from "@/components/ui/Button";
 import { apiClient, ApiClientError } from "@/lib/api/client";
+import { SessionSummary } from "@/components/study/SessionSummary";
+import { scheduleReview } from "@/lib/fsrs";
 
 interface DeckCard {
   id: string;
@@ -43,18 +45,80 @@ interface CardsApiResponse {
   cards: DeckCard[];
 }
 
+interface SessionResult {
+  session: {
+    cardsReviewed: number;
+    cardsCorrect: number;
+    accuracy: number;
+    bestCombo: number;
+    avgTimeMs: number;
+    totalDurationMs: number;
+  };
+  xp: {
+    total: number;
+    breakdown: {
+      baseXP: number;
+      newCardXP: number;
+      comboXP: number;
+      speedXP: number;
+      difficultyXP: number;
+      accuracyBonus: number;
+      streakBonus: number;
+    };
+  };
+  stats: {
+    totalXP: number;
+    dailyXP: number;
+    dailyGoal: number;
+    streak: number;
+    longestStreak: number;
+    streakIncreased: boolean;
+    freezesAvailable: number;
+  };
+  level: {
+    current: number;
+    xpProgress: number;
+    xpNeeded: number;
+    progress: number;
+    leveledUp: boolean;
+  };
+  achievements: Array<{
+    id: string;
+    name: string;
+    description: string;
+    icon: string;
+    xpReward: number;
+    rarity: "common" | "rare" | "epic" | "legendary";
+  }>;
+  message: string;
+}
+
+// Store card data for FSRS calculations
+interface CardFSRSData {
+  stability: number;
+  difficulty: number;
+  state: "new" | "learning" | "review" | "relearning";
+  reps: number;
+  lapses: number;
+}
+
 function StudyContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const deckId = searchParams.get("deckId");
 
   const { state, setQueue, flipCard, answerCard } = useReview();
-  const { currentCard, status, isComplete, completedCount, totalCount, newCount, learningCount, reviewCount } = state;
+  const { currentCard, status, isComplete, completedCount, totalCount, newCount, learningCount, reviewCount, history } = state;
 
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [deckInfo, setDeckInfo] = useState<DeckInfo | null>(null);
   const [originalCards, setOriginalCards] = useState<Card[]>([]);
+  const [sessionResult, setSessionResult] = useState<SessionResult | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Store FSRS data for each card
+  const cardFSRSRef = useRef<Map<string, CardFSRSData>>(new Map());
 
   // Load cards from API
   useEffect(() => {
@@ -73,33 +137,48 @@ function StudyContent() {
         // Fetch cards
         const cardsData = await apiClient.get<CardsApiResponse>(`/api/decks/${deckId}/cards`);
 
-        // Transform cards to study format
-        const studyCards: Card[] = cardsData.cards.map((card: DeckCard) => ({
-          id: card.id,
-          deckId: card.deck_id,
-          deckName: deckData.name,
-          front: card.front,
-          back: card.back,
-          type: card.type || "basic",
-          fsrs: card.fsrs ? {
+        // Transform cards to study format and store FSRS data
+        const fsrsMap = new Map<string, CardFSRSData>();
+        const studyCards: Card[] = cardsData.cards.map((card: DeckCard) => {
+          const fsrsData: CardFSRSData = card.fsrs ? {
             stability: card.fsrs.stability,
             difficulty: card.fsrs.difficulty,
-            due: new Date(card.fsrs.due),
+            state: (card.fsrs.state as CardFSRSData['state']) || 'new',
             reps: card.fsrs.reps,
             lapses: card.fsrs.lapses,
           } : {
             stability: 0,
             difficulty: 5.0,
-            due: new Date(),
+            state: 'new' as const,
             reps: 0,
             lapses: 0,
-          },
-          tags: Array.isArray(card.tags)
-            ? card.tags
-            : typeof card.tags === "string"
-              ? JSON.parse(card.tags)
-              : [],
-        }));
+          };
+
+          fsrsMap.set(card.id, fsrsData);
+
+          return {
+            id: card.id,
+            deckId: card.deck_id,
+            deckName: deckData.name,
+            front: card.front,
+            back: card.back,
+            type: card.type || "basic",
+            fsrs: {
+              stability: fsrsData.stability,
+              difficulty: fsrsData.difficulty,
+              due: card.fsrs?.due ? new Date(card.fsrs.due) : new Date(),
+              reps: fsrsData.reps,
+              lapses: fsrsData.lapses,
+            },
+            tags: Array.isArray(card.tags)
+              ? card.tags
+              : typeof card.tags === "string"
+                ? JSON.parse(card.tags)
+                : [],
+          };
+        });
+
+        cardFSRSRef.current = fsrsMap;
 
         if (studyCards.length === 0) {
           setLoadError("This deck has no cards yet");
@@ -123,21 +202,80 @@ function StudyContent() {
     loadCards();
   }, [deckId, setQueue]);
 
-  // Keyboard shortcuts - keep it simple like Anki
+  // Submit session when complete
+  useEffect(() => {
+    async function submitSession() {
+      if (!isComplete || history.length === 0 || sessionResult || isSubmitting) return;
+
+      setIsSubmitting(true);
+
+      try {
+        // Build review data with FSRS calculations
+        const reviews = history.map((log) => {
+          const fsrsData = cardFSRSRef.current.get(log.cardId);
+          const isNewCard = fsrsData?.state === 'new';
+
+          // Calculate new FSRS values using the algorithm
+          const cardForSchedule = {
+            difficulty: fsrsData?.difficulty || 5,
+            stability: fsrsData?.stability || 0,
+            retrievability: 1,
+            due: new Date(),
+            reps: fsrsData?.reps || 0,
+            lapses: fsrsData?.lapses || 0,
+            state: fsrsData?.state || 'new' as const,
+          };
+
+          const scheduled = scheduleReview(cardForSchedule, log.rating);
+
+          return {
+            cardId: log.cardId,
+            rating: log.rating,
+            durationMs: log.duration,
+            stabilityBefore: fsrsData?.stability || 0,
+            stabilityAfter: scheduled.card.stability,
+            difficultyBefore: fsrsData?.difficulty || 5,
+            difficultyAfter: scheduled.card.difficulty,
+            isNewCard,
+          };
+        });
+
+        const response = await fetch('/api/reviews/session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            deckId,
+            reviews,
+          }),
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          setSessionResult(result);
+        } else {
+          // Fallback to simple display if API fails
+          console.error('Failed to submit session');
+          setSessionResult(createFallbackResult(history));
+        }
+      } catch (error) {
+        console.error('Error submitting session:', error);
+        setSessionResult(createFallbackResult(history));
+      } finally {
+        setIsSubmitting(false);
+      }
+    }
+
+    submitSession();
+  }, [isComplete, history, sessionResult, isSubmitting, deckId]);
+
+  // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
 
       switch (e.key) {
-        case " ": // Space - show answer or rate Good
-          e.preventDefault();
-          if (status === "front") {
-            flipCard();
-          } else {
-            answerCard(3);
-          }
-          break;
-        case "Enter": // Enter - same as space
+        case " ":
+        case "Enter":
           e.preventDefault();
           if (status === "front") {
             flipCard();
@@ -242,59 +380,34 @@ function StudyContent() {
     );
   }
 
-  // Completion screen
-  if (isComplete) {
+  // Session complete - show enhanced summary
+  if (isComplete && sessionResult) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center p-6">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="text-center max-w-md"
-        >
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.2, type: "spring" }}
-            className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center"
-          >
-            <Trophy className="w-10 h-10 text-white" />
-          </motion.div>
+      <SessionSummary
+        session={sessionResult.session}
+        xp={sessionResult.xp}
+        stats={sessionResult.stats}
+        level={sessionResult.level}
+        achievements={sessionResult.achievements}
+        message={sessionResult.message}
+        deckName={deckInfo?.name}
+        onContinue={() => router.push("/library")}
+        onStudyAgain={() => {
+          setSessionResult(null);
+          setQueue(originalCards);
+        }}
+      />
+    );
+  }
 
-          <h1 className="text-2xl font-bold text-zinc-100 mb-2">
-            Congratulations!
-          </h1>
-
-          <p className="text-zinc-500 mb-8">
-            {deckInfo ? `You have finished "${deckInfo.name}" for now.` : "You have finished this deck for now."}
-          </p>
-
-          {/* Simple stats */}
-          <div className="mb-8 py-4 px-6 bg-zinc-900/50 rounded-xl inline-block">
-            <span className="text-3xl font-bold text-emerald-400">{completedCount}</span>
-            <span className="text-zinc-500 ml-2">cards studied</span>
-          </div>
-
-          <div className="flex flex-col gap-3">
-            <Button
-              variant="primary"
-              size="lg"
-              icon={<ArrowRight className="w-5 h-5" />}
-              iconPosition="right"
-              onClick={() => router.push("/library")}
-            >
-              Back to Library
-            </Button>
-            <Button
-              variant="ghost"
-              size="lg"
-              icon={<RotateCcw className="w-4 h-4" />}
-              onClick={() => setQueue(originalCards)}
-              className="text-zinc-500"
-            >
-              Study Again
-            </Button>
-          </div>
-        </motion.div>
+  // Session complete - loading/submitting
+  if (isComplete && !sessionResult) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 text-violet-500 animate-spin mx-auto mb-4" />
+          <p className="text-zinc-400">Calculating your XP...</p>
+        </div>
       </div>
     );
   }
@@ -475,6 +588,54 @@ function RatingButtons({
       </p>
     </div>
   );
+}
+
+// Create fallback result if API fails
+function createFallbackResult(history: Array<{ cardId: string; rating: 1 | 2 | 3 | 4; duration: number }>): SessionResult {
+  const cardsReviewed = history.length;
+  const cardsCorrect = history.filter(h => h.rating > 1).length;
+  const totalDurationMs = history.reduce((sum, h) => sum + h.duration, 0);
+
+  return {
+    session: {
+      cardsReviewed,
+      cardsCorrect,
+      accuracy: cardsReviewed > 0 ? (cardsCorrect / cardsReviewed) * 100 : 0,
+      bestCombo: 0,
+      avgTimeMs: cardsReviewed > 0 ? totalDurationMs / cardsReviewed : 0,
+      totalDurationMs,
+    },
+    xp: {
+      total: cardsReviewed * 10 + cardsCorrect * 5,
+      breakdown: {
+        baseXP: cardsReviewed * 10,
+        newCardXP: 0,
+        comboXP: 0,
+        speedXP: 0,
+        difficultyXP: 0,
+        accuracyBonus: 0,
+        streakBonus: 0,
+      },
+    },
+    stats: {
+      totalXP: 0,
+      dailyXP: cardsReviewed * 10 + cardsCorrect * 5,
+      dailyGoal: 50,
+      streak: 1,
+      longestStreak: 1,
+      streakIncreased: false,
+      freezesAvailable: 1,
+    },
+    level: {
+      current: 1,
+      xpProgress: 0,
+      xpNeeded: 100,
+      progress: 0,
+      leveledUp: false,
+    },
+    achievements: [],
+    message: "Great work! Keep studying to unlock more features.",
+  };
 }
 
 export default function StudyPage() {

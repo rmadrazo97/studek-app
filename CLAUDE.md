@@ -140,6 +140,27 @@ npm run generate:icons
 ```
 Requires `sharp`: `npm install sharp --save-dev`
 
+### Mobile Debug Console (Eruda)
+
+For debugging on mobile devices (iPhone, Android), the app includes an on-device debug console using [Eruda](https://github.com/liriliri/eruda).
+
+**Enable debug console:**
+- Add `?debug=true` to any URL (persists to localStorage)
+- Or run in browser console: `enableDebug()`
+- Or triple-tap the bottom-right corner of the screen (within 1 second)
+
+**Disable debug console:**
+- Add `?debug=false` to any URL
+- Or run in browser console: `disableDebug()`
+- Or triple-tap again to toggle off
+
+**Features:**
+- Console output (logs, errors, warnings)
+- Network request inspector
+- Element inspector
+- Storage viewer (localStorage, sessionStorage, cookies)
+- Resource viewer
+
 ## Mobile App (Capacitor)
 
 Build native iOS/Android apps from the PWA. See `CAPACITOR.md` for full guide.
