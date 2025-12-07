@@ -27,9 +27,11 @@
     "framer-motion": "^12.23.25",
     "lucide-react": "^0.556.0",
     "next": "16.0.7",
+    "openai": "^4.77.0",
     "react": "19.2.0",
     "react-dom": "19.2.0",
-    "resend": "^4.0.0"
+    "resend": "^4.0.0",
+    "zod": "^3.24.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
