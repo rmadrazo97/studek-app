@@ -443,3 +443,105 @@ export interface PaginatedResponse<T> {
   offset: number;
   hasMore: boolean;
 }
+
+// ============================================
+// Gamification Types
+// ============================================
+
+export interface UserStats {
+  user_id: string;
+  total_xp: number;
+  weekly_xp: number;
+  week_start_date: string;
+  current_streak: number;
+  longest_streak: number;
+  last_study_date: string | null;
+  streak_freezes_available: number;
+  streak_freezes_used: number;
+  league_tier: number;
+  league_cohort_id: string | null;
+  league_rank: number | null;
+  best_combo: number;
+  total_reviews: number;
+  total_correct: number;
+  total_study_time_ms: number;
+  daily_xp_goal: number;
+  daily_xp_earned: number;
+  daily_goal_date: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UserStatsCreate {
+  user_id: string;
+  daily_xp_goal?: number;
+}
+
+export interface UserStatsUpdate {
+  total_xp?: number;
+  weekly_xp?: number;
+  week_start_date?: string;
+  current_streak?: number;
+  longest_streak?: number;
+  last_study_date?: string;
+  streak_freezes_available?: number;
+  streak_freezes_used?: number;
+  league_tier?: number;
+  league_cohort_id?: string;
+  league_rank?: number;
+  best_combo?: number;
+  total_reviews?: number;
+  total_correct?: number;
+  total_study_time_ms?: number;
+  daily_xp_goal?: number;
+  daily_xp_earned?: number;
+  daily_goal_date?: string;
+}
+
+export interface XPTransaction {
+  id: string;
+  user_id: string;
+  amount: number;
+  source: 'review' | 'new_card' | 'combo' | 'speed' | 'difficulty' | 'streak' | 'achievement';
+  source_id: string | null;
+  metadata: string | null;
+  created_at: string;
+}
+
+export interface XPTransactionCreate {
+  user_id: string;
+  amount: number;
+  source: XPTransaction['source'];
+  source_id?: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface Achievement {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  category: string;
+  requirement_type: string;
+  requirement_value: number;
+  xp_reward: number;
+  rarity: 'common' | 'rare' | 'epic' | 'legendary';
+}
+
+export interface UserAchievement {
+  id: string;
+  user_id: string;
+  achievement_id: string;
+  unlocked_at: string;
+}
+
+export interface UserAchievementWithDetails extends UserAchievement {
+  achievement: Achievement;
+}
+
+export interface LeagueCohort {
+  id: string;
+  week_start_date: string;
+  league_tier: number;
+  created_at: string;
+}
