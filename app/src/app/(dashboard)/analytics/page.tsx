@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   BarChart3,
@@ -11,6 +11,7 @@ import {
   BookOpen,
   Target,
   Sparkles,
+  AlertCircle,
 } from "lucide-react";
 
 // Analytics Components
@@ -23,134 +24,102 @@ import {
   StreakWidget,
 } from "@/components/analytics";
 
-// Analytics Service
-import {
-  getHeatmapData,
-  generateMockHeatmapData,
-  generateMockReviewLogs,
-  generateMockCards,
-  calculateStreak,
-  calculateRetentionMetrics,
-  calculateCardStats,
-  getWorkloadForecast,
-} from "@/lib/analytics";
-
-import { getHourlyBreakdown } from "@/lib/fsrs";
+interface AnalyticsData {
+  heatmap: Array<{ date: string; count: number; level: 0 | 1 | 2 | 3 | 4 }>;
+  streak: {
+    current: number;
+    longest: number;
+    freezesAvailable: number;
+    freezesUsed: number;
+    lastActiveDate: string | null;
+  };
+  retention: {
+    trueRetention: number;
+    desiredRetention: number;
+    avgRetrievability: number;
+    avgStability: number;
+    avgDifficulty: number;
+    trend: number;
+    historyData: number[];
+  };
+  cardStats: {
+    total: number;
+    new: number;
+    learning: number;
+    review: number;
+    relearning: number;
+    mature: number;
+    young: number;
+    suspended: number;
+    leeches: number;
+  };
+  hourlyStats: Array<{ hour: number; count: number; retention: number }>;
+  futureWorkload: Array<{ date: string; reviews: number; total: number; backlog: number }>;
+  todayStats: {
+    reviewed: number;
+    correct: number;
+    timeSpent: number;
+    newLearned: number;
+  };
+  weekStats: {
+    totalReviews: number;
+    avgRetention: number;
+    avgTimePerDay: number;
+    activeDays: number;
+    studyTime: number;
+  };
+  xp: {
+    today: number;
+    total: number;
+    weekly: number;
+  };
+  level: {
+    current: number;
+    progress: number;
+  };
+  league: {
+    tier: string;
+    tierColor: string;
+  };
+}
 
 export default function AnalyticsPage() {
   const [isLoading, setIsLoading] = useState(true);
-  const [desiredRetention, _setDesiredRetention] = useState(0.9);
+  const [error, setError] = useState<string | null>(null);
+  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
+  const [desiredRetention] = useState(0.9);
 
-  // Analytics Data State
-  const [analyticsData, setAnalyticsData] = useState<{
-    dailyData: ReturnType<typeof generateMockHeatmapData>;
-    logs: ReturnType<typeof generateMockReviewLogs>;
-    cards: ReturnType<typeof generateMockCards>;
-  } | null>(null);
+  // Fetch analytics data from API
+  const loadData = async () => {
+    setIsLoading(true);
+    setError(null);
 
-  // Load analytics data
-  useEffect(() => {
-    // Simulate loading from API/database
-    const loadData = async () => {
-      setIsLoading(true);
-      // In production, this would fetch from API
-      await new Promise((resolve) => setTimeout(resolve, 500));
+    try {
+      const response = await fetch('/api/analytics');
 
-      setAnalyticsData({
-        dailyData: generateMockHeatmapData(365),
-        logs: generateMockReviewLogs(2000),
-        cards: generateMockCards(800),
-      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch analytics');
+      }
+
+      const data = await response.json();
+      setAnalytics(data);
+    } catch (err) {
+      console.error('Error fetching analytics:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load analytics');
+    } finally {
       setIsLoading(false);
-    };
+    }
+  };
 
+  useEffect(() => {
     loadData();
   }, []);
 
-  // Derived analytics
-  const analytics = useMemo(() => {
-    if (!analyticsData) return null;
-
-    const { dailyData, logs, cards } = analyticsData;
-
-    const streak = calculateStreak(dailyData);
-    const retention = calculateRetentionMetrics(logs, cards, desiredRetention);
-    const cardStats = calculateCardStats(cards);
-    const heatmap = getHeatmapData(dailyData, 52);
-    const hourly = getHourlyBreakdown(logs);
-    const workload = getWorkloadForecast(cards, 30);
-
-    // Today's stats
-    const today = new Date().toISOString().split("T")[0];
-    const todayData = dailyData.find((d) => d.date === today);
-    const todayLogs = logs.filter(
-      (l) => l.review.toISOString().split("T")[0] === today
-    );
-
-    const todayStats = {
-      reviewed: todayData?.totalReviews || 35,
-      correct: todayLogs.filter((l) => l.rating > 1).length || 28,
-      timeSpent: Math.round(
-        (todayLogs.reduce((sum, l) => sum + l.duration, 0) || 900000) / 60000
-      ),
-      newLearned: todayData?.newCards || 5,
-    };
-
-    // XP calculation (gamification)
-    const xpToday = todayStats.reviewed * 10 + todayStats.correct * 5 + todayStats.newLearned * 20;
-    const xpTotal = dailyData.reduce(
-      (sum, d) => sum + d.totalReviews * 10 + (d.totalReviews - d.lapses) * 5,
-      0
-    );
-
-    // Week stats
-    const weekDates: string[] = [];
-    for (let i = 0; i < 7; i++) {
-      const d = new Date();
-      d.setDate(d.getDate() - i);
-      weekDates.push(d.toISOString().split("T")[0]);
-    }
-    const weekData = dailyData.filter((d) => weekDates.includes(d.date));
-
-    const weekStats = {
-      totalReviews: weekData.reduce((sum, d) => sum + d.totalReviews, 0),
-      avgRetention:
-        weekData.filter((d) => d.retentionRate > 0).length > 0
-          ? (weekData
-              .filter((d) => d.retentionRate > 0)
-              .reduce((sum, d) => sum + d.retentionRate, 0) /
-              weekData.filter((d) => d.retentionRate > 0).length) *
-            100
-          : 0,
-      activeDays: weekData.filter((d) => d.totalReviews > 0).length,
-      studyTime: Math.round(
-        weekData.reduce((sum, d) => sum + d.avgTimeMs * d.totalReviews, 0) / 60000
-      ),
-    };
-
-    return {
-      streak,
-      retention,
-      cardStats,
-      heatmap,
-      hourly,
-      workload,
-      todayStats,
-      weekStats,
-      xpToday,
-      xpTotal,
-    };
-  }, [analyticsData, desiredRetention]);
-
   const handleRefresh = () => {
-    setAnalyticsData({
-      dailyData: generateMockHeatmapData(365),
-      logs: generateMockReviewLogs(2000),
-      cards: generateMockCards(800),
-    });
+    loadData();
   };
 
-  if (isLoading || !analytics) {
+  if (isLoading) {
     return (
       <div className="max-w-7xl mx-auto">
         <div className="animate-pulse space-y-6">
@@ -170,6 +139,47 @@ export default function AnalyticsPage() {
       </div>
     );
   }
+
+  if (error) {
+    return (
+      <div className="max-w-7xl mx-auto">
+        <div className="text-center py-12">
+          <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-zinc-100 mb-2">Failed to Load Analytics</h2>
+          <p className="text-zinc-500 mb-6">{error}</p>
+          <button
+            onClick={handleRefresh}
+            className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-100 rounded-lg transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!analytics) {
+    return null;
+  }
+
+  // Transform data for components
+  const streakData = {
+    current: analytics.streak.current,
+    longest: analytics.streak.longest,
+    lastActiveDate: analytics.streak.lastActiveDate || new Date().toISOString().split('T')[0],
+    freezesAvailable: analytics.streak.freezesAvailable,
+    freezesUsed: analytics.streak.freezesUsed,
+  };
+
+  const retentionMetrics = {
+    trueRetention: analytics.retention.trueRetention,
+    desiredRetention: analytics.retention.desiredRetention,
+    avgRetrievability: analytics.retention.avgRetrievability,
+    avgStability: analytics.retention.avgStability,
+    avgDifficulty: analytics.retention.avgDifficulty,
+    trend: analytics.retention.trend,
+    historyData: analytics.retention.historyData,
+  };
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -229,15 +239,15 @@ export default function AnalyticsPage() {
           },
           {
             label: "Study Time",
-            value: `${Math.round(analytics.weekStats.studyTime / 60)}h ${analytics.weekStats.studyTime % 60}m`,
+            value: `${Math.floor(analytics.weekStats.studyTime / 60)}h ${analytics.weekStats.studyTime % 60}m`,
             subtext: "this week",
             icon: Clock,
             color: "text-cyan-400",
           },
           {
             label: "XP Earned",
-            value: analytics.xpTotal.toLocaleString(),
-            subtext: `+${analytics.xpToday} today`,
+            value: analytics.xp.total.toLocaleString(),
+            subtext: `+${analytics.xp.today} today`,
             icon: Sparkles,
             color: "text-violet-400",
           },
@@ -275,10 +285,10 @@ export default function AnalyticsPage() {
         >
           <ContributionHeatmap
             data={analytics.heatmap}
-            currentStreak={analytics.streak.current}
-            longestStreak={analytics.streak.longest}
-            freezesAvailable={analytics.streak.freezesAvailable}
-            freezesUsed={analytics.streak.freezesUsed}
+            currentStreak={streakData.current}
+            longestStreak={streakData.longest}
+            freezesAvailable={streakData.freezesAvailable}
+            freezesUsed={streakData.freezesUsed}
           />
         </motion.div>
 
@@ -290,10 +300,10 @@ export default function AnalyticsPage() {
           className="lg:col-span-4 lg:row-span-2 bg-[#0f0f11] border border-zinc-800 rounded-2xl overflow-hidden hover:border-zinc-700 transition-colors relative"
         >
           <StreakWidget
-            streak={analytics.streak}
+            streak={streakData}
             todayStats={analytics.todayStats}
-            xpToday={analytics.xpToday}
-            xpTotal={analytics.xpTotal}
+            xpToday={analytics.xp.today}
+            xpTotal={analytics.xp.total}
           />
         </motion.div>
 
@@ -304,7 +314,7 @@ export default function AnalyticsPage() {
           transition={{ duration: 0.5, delay: 0.3 }}
           className="lg:col-span-4 bg-[#0f0f11] border border-zinc-800 rounded-2xl overflow-hidden hover:border-zinc-700 transition-colors"
         >
-          <TrueRetentionPanel metrics={analytics.retention} compact />
+          <TrueRetentionPanel metrics={retentionMetrics} compact />
         </motion.div>
 
         {/* Forgetting Curve Simulator */}
@@ -315,9 +325,9 @@ export default function AnalyticsPage() {
           className="lg:col-span-4 bg-[#0f0f11] border border-zinc-800 rounded-2xl overflow-hidden hover:border-zinc-700 transition-colors"
         >
           <ForgettingCurveSimulator
-            initialStability={analytics.retention.avgStability}
+            initialStability={analytics.retention.avgStability || 21}
             initialRetention={desiredRetention}
-            avgStability={analytics.retention.avgStability}
+            avgStability={analytics.retention.avgStability || 21}
           />
         </motion.div>
 
@@ -328,7 +338,7 @@ export default function AnalyticsPage() {
           transition={{ duration: 0.5, delay: 0.4 }}
           className="lg:col-span-6 bg-[#0f0f11] border border-zinc-800 rounded-2xl overflow-hidden hover:border-zinc-700 transition-colors"
         >
-          <FutureDueHistogram data={analytics.workload} />
+          <FutureDueHistogram data={analytics.futureWorkload} />
         </motion.div>
 
         {/* Hourly Efficacy Plot */}
@@ -338,7 +348,7 @@ export default function AnalyticsPage() {
           transition={{ duration: 0.5, delay: 0.45 }}
           className="lg:col-span-6 bg-[#0f0f11] border border-zinc-800 rounded-2xl overflow-hidden hover:border-zinc-700 transition-colors"
         >
-          <HourlyEfficacyPlot data={analytics.hourly} />
+          <HourlyEfficacyPlot data={analytics.hourlyStats} />
         </motion.div>
 
         {/* Full FSRS Stats Panel */}
@@ -348,7 +358,7 @@ export default function AnalyticsPage() {
           transition={{ duration: 0.5, delay: 0.5 }}
           className="lg:col-span-8 bg-[#0f0f11] border border-zinc-800 rounded-2xl overflow-hidden hover:border-zinc-700 transition-colors"
         >
-          <TrueRetentionPanel metrics={analytics.retention} />
+          <TrueRetentionPanel metrics={retentionMetrics} />
         </motion.div>
 
         {/* Card Statistics */}
@@ -383,40 +393,42 @@ export default function AnalyticsPage() {
           </div>
 
           {/* Progress bars */}
-          <div className="mt-4 pt-4 border-t border-zinc-800">
-            <div className="flex items-center justify-between text-xs mb-2">
-              <span className="text-zinc-500">Maturity Progress</span>
-              <span className="text-zinc-400">
-                {((analytics.cardStats.mature / analytics.cardStats.total) * 100).toFixed(1)}%
-              </span>
+          {analytics.cardStats.total > 0 && (
+            <div className="mt-4 pt-4 border-t border-zinc-800">
+              <div className="flex items-center justify-between text-xs mb-2">
+                <span className="text-zinc-500">Maturity Progress</span>
+                <span className="text-zinc-400">
+                  {((analytics.cardStats.mature / analytics.cardStats.total) * 100).toFixed(1)}%
+                </span>
+              </div>
+              <div className="h-2 bg-zinc-800 rounded-full overflow-hidden flex">
+                <div
+                  className="bg-violet-500 h-full"
+                  style={{
+                    width: `${(analytics.cardStats.mature / analytics.cardStats.total) * 100}%`,
+                  }}
+                />
+                <div
+                  className="bg-emerald-500 h-full"
+                  style={{
+                    width: `${(Math.max(0, analytics.cardStats.review - analytics.cardStats.mature) / analytics.cardStats.total) * 100}%`,
+                  }}
+                />
+                <div
+                  className="bg-orange-500 h-full"
+                  style={{
+                    width: `${(analytics.cardStats.learning / analytics.cardStats.total) * 100}%`,
+                  }}
+                />
+                <div
+                  className="bg-blue-500 h-full"
+                  style={{
+                    width: `${(analytics.cardStats.new / analytics.cardStats.total) * 100}%`,
+                  }}
+                />
+              </div>
             </div>
-            <div className="h-2 bg-zinc-800 rounded-full overflow-hidden flex">
-              <div
-                className="bg-violet-500 h-full"
-                style={{
-                  width: `${(analytics.cardStats.mature / analytics.cardStats.total) * 100}%`,
-                }}
-              />
-              <div
-                className="bg-emerald-500 h-full"
-                style={{
-                  width: `${((analytics.cardStats.review - analytics.cardStats.mature) / analytics.cardStats.total) * 100}%`,
-                }}
-              />
-              <div
-                className="bg-orange-500 h-full"
-                style={{
-                  width: `${(analytics.cardStats.learning / analytics.cardStats.total) * 100}%`,
-                }}
-              />
-              <div
-                className="bg-blue-500 h-full"
-                style={{
-                  width: `${(analytics.cardStats.new / analytics.cardStats.total) * 100}%`,
-                }}
-              />
-            </div>
-          </div>
+          )}
         </motion.div>
 
         {/* Algorithm Comparison Table */}
@@ -451,14 +463,14 @@ export default function AnalyticsPage() {
                   },
                   {
                     metric: "Predicted Retention",
-                    fsrs: analytics.retention.trueRetention,
-                    sm2: Math.max(analytics.retention.trueRetention - 3, 80),
+                    fsrs: analytics.retention.trueRetention || 90,
+                    sm2: Math.max((analytics.retention.trueRetention || 90) - 3, 80),
                     format: (v: number) => `${v.toFixed(1)}%`,
                   },
                   {
                     metric: "Avg Interval",
-                    fsrs: analytics.retention.avgStability,
-                    sm2: Math.round(analytics.retention.avgStability * 0.75),
+                    fsrs: analytics.retention.avgStability || 21,
+                    sm2: Math.round((analytics.retention.avgStability || 21) * 0.75),
                     format: (v: number) => `${v.toFixed(0)} days`,
                   },
                   {
@@ -468,7 +480,7 @@ export default function AnalyticsPage() {
                     format: (v: number) => `${v.toFixed(1)}%`,
                   },
                 ].map((row) => {
-                  const improvement = ((row.sm2 - row.fsrs) / row.sm2) * -100;
+                  const improvement = row.sm2 !== 0 ? ((row.sm2 - row.fsrs) / row.sm2) * -100 : 0;
                   const isPositive = row.metric === "Weekly Reviews" ? improvement < 0 : improvement > 0;
                   const impDisplay =
                     row.metric === "Weekly Reviews"
