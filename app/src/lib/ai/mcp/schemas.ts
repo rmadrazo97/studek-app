@@ -9,11 +9,45 @@ import { z } from 'zod';
 import { DECK_CATEGORIES, type DeckCategory } from '@/lib/db/types';
 
 // ============================================
+// Topic Group Schema
+// ============================================
+
+/**
+ * Schema for a topic group (used in Topic Rotation algorithm)
+ */
+export const TopicGroupSchema = z.object({
+  id: z
+    .string()
+    .min(1)
+    .regex(/^[a-z0-9-]+$/, 'Topic group ID must be lowercase with hyphens only')
+    .describe('The topic group identifier (lowercase with hyphens)'),
+  name: z
+    .string()
+    .min(1)
+    .describe('Human-readable name for this topic group'),
+  card_count: z
+    .number()
+    .optional()
+    .describe('Number of cards in this topic group'),
+  complexity: z
+    .enum(['low', 'medium', 'high'])
+    .optional()
+    .describe('Overall complexity of this topic group (high = needs more frequent review)'),
+});
+
+export type TopicGroupInput = z.infer<typeof TopicGroupSchema>;
+
+/**
+ * Schema for multiple topic groups
+ */
+export const TopicGroupsArraySchema = z.array(TopicGroupSchema);
+
+// ============================================
 // Card Schemas
 // ============================================
 
 /**
- * Schema for a single flashcard
+ * Schema for a single flashcard with topic group for Topic Rotation
  */
 export const CardSchema = z.object({
   front: z
@@ -24,14 +58,19 @@ export const CardSchema = z.object({
     .string()
     .min(1)
     .describe('The answer or information shown on the back of the card'),
+  topic_group: z
+    .string()
+    .min(1)
+    .regex(/^[a-z0-9-]+$/, 'Topic group must be lowercase with hyphens only')
+    .describe('The topic group this card belongs to (REQUIRED for Topic Rotation scheduling)'),
   tags: z
     .array(z.string())
     .optional()
-    .describe('Optional tags to categorize the card'),
+    .describe('Optional tags to further categorize the card'),
   difficulty_hint: z
     .enum(['easy', 'medium', 'hard'])
     .optional()
-    .describe('Suggested initial difficulty for spaced repetition scheduling'),
+    .describe('Suggested initial difficulty for this specific card'),
 });
 
 export type CardInput = z.infer<typeof CardSchema>;
@@ -68,19 +107,23 @@ export const DeckMetadataSchema = z.object({
 export type DeckMetadataInput = z.infer<typeof DeckMetadataSchema>;
 
 /**
- * Schema for creating a new deck with cards
+ * Schema for creating a new deck with cards (Topic Rotation enabled)
  */
 export const CreateDeckSchema = z.object({
   deck: DeckMetadataSchema,
+  topic_groups: TopicGroupsArraySchema.optional()
+    .describe('Summary of topic groups in this deck for the rotation schedule'),
   cards: CardsArraySchema,
 });
 
 export type CreateDeckInput = z.infer<typeof CreateDeckSchema>;
 
 /**
- * Schema for adding cards to an existing deck
+ * Schema for adding cards to an existing deck (Topic Rotation enabled)
  */
 export const AddCardsSchema = z.object({
+  new_topic_groups: TopicGroupsArraySchema.optional()
+    .describe('Any new topic groups being introduced'),
   cards: CardsArraySchema,
 });
 
@@ -91,13 +134,15 @@ export type AddCardsInput = z.infer<typeof AddCardsSchema>;
 // ============================================
 
 /**
- * Schema for AI generation response
+ * Schema for AI generation response (with Topic Rotation support)
  */
 export const GenerationResponseSchema = z.object({
   action: z.enum(['create_deck', 'add_cards']),
   deck: DeckMetadataSchema.optional(),
+  topic_groups: TopicGroupsArraySchema.optional()
+    .describe('Topic groups for rotation scheduling'),
   cards: CardsArraySchema,
-  message: z.string().describe('A brief message summarizing what was generated'),
+  message: z.string().describe('A brief message summarizing what was generated and the rotation schedule'),
 });
 
 export type GenerationResponse = z.infer<typeof GenerationResponseSchema>;

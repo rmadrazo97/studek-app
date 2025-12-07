@@ -18,9 +18,13 @@ import {
   Stethoscope,
   Music,
   LogIn,
+  Mic,
+  MicOff,
+  Square,
 } from "lucide-react";
 import { useAI } from "@/hooks/useAI";
 import { useAuth } from "@/stores/auth";
+import { useSpeechToText } from "@/hooks/useSpeechToText";
 
 // ============================================
 // Types
@@ -117,7 +121,35 @@ export function AIGenerateModal({
 
   const { isGenerating, error, result, generateDeck, addCards, reset } = useAI();
 
+  // Speech-to-text hook
+  const {
+    isListening,
+    isSupported: isSpeechSupported,
+    transcript,
+    interimTranscript,
+    error: speechError,
+    startListening,
+    stopListening,
+    resetTranscript,
+  } = useSpeechToText({
+    language: 'en-US',
+    continuous: true,
+    interimResults: true,
+  });
+
   const isAddingToExisting = !!deckId;
+
+  // Update prompt when transcript changes
+  useEffect(() => {
+    if (transcript) {
+      setPrompt(prev => {
+        // If starting fresh, use transcript directly
+        if (!prev.trim()) return transcript;
+        // Otherwise append with space
+        return prev + ' ' + transcript;
+      });
+    }
+  }, [transcript]);
 
   // Reset state when modal opens
   useEffect(() => {
@@ -125,12 +157,36 @@ export function AIGenerateModal({
       setPrompt("");
       setShowSuggestions(true);
       reset();
+      resetTranscript();
     }
-  }, [isOpen, reset]);
+  }, [isOpen, reset, resetTranscript]);
+
+  // Stop listening when modal closes
+  useEffect(() => {
+    if (!isOpen && isListening) {
+      stopListening();
+    }
+  }, [isOpen, isListening, stopListening]);
+
+  // Handle microphone toggle
+  const handleMicToggle = useCallback(() => {
+    if (isListening) {
+      stopListening();
+    } else {
+      resetTranscript();
+      startListening();
+      setShowSuggestions(false);
+    }
+  }, [isListening, startListening, stopListening, resetTranscript]);
 
   // Handle generation
   const handleGenerate = useCallback(async () => {
     if (!prompt.trim()) return;
+
+    // Stop recording if active
+    if (isListening) {
+      stopListening();
+    }
 
     setShowSuggestions(false);
 
@@ -139,7 +195,7 @@ export function AIGenerateModal({
     } else {
       await generateDeck(prompt, { isPublic });
     }
-  }, [prompt, isAddingToExisting, deckId, isPublic, addCards, generateDeck]);
+  }, [prompt, isAddingToExisting, deckId, isPublic, addCards, generateDeck, isListening, stopListening]);
 
   // Handle suggestion click
   const handleSuggestionClick = useCallback((suggestion: string) => {
@@ -188,7 +244,9 @@ export function AIGenerateModal({
                   {isAddingToExisting ? `Add Cards to "${deckName}"` : "Create Deck with AI"}
                 </h2>
                 <p className="text-sm text-zinc-500">
-                  Describe what you want to learn
+                  {isSpeechSupported
+                    ? "Type or use voice to describe what you want to learn"
+                    : "Describe what you want to learn"}
                 </p>
               </div>
             </div>
@@ -226,28 +284,80 @@ export function AIGenerateModal({
               </div>
             ) : (
             <>
-            {/* Input */}
-            <div className="relative">
-              <textarea
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                placeholder={
-                  isAddingToExisting
-                    ? "Add the capitals of Central America..."
-                    : "Create a deck with the capitals of South America..."
-                }
-                disabled={isGenerating}
-                className="w-full h-24 px-4 py-3 bg-zinc-900 border border-zinc-700 rounded-xl text-zinc-100 placeholder-zinc-500 resize-none focus:outline-none focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/20 disabled:opacity-50"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    handleGenerate();
+            {/* Input with Voice */}
+            <div className="space-y-2">
+              <div className="relative">
+                <textarea
+                  value={prompt + (interimTranscript ? ' ' + interimTranscript : '')}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  placeholder={
+                    isListening
+                      ? "Listening... speak now"
+                      : isAddingToExisting
+                        ? "Add the capitals of Central America..."
+                        : "Create a deck with the capitals of South America..."
                   }
-                }}
-              />
-              <div className="absolute bottom-3 right-3 text-xs text-zinc-500">
-                Press Enter to generate
+                  disabled={isGenerating || isListening}
+                  className={`w-full h-24 px-4 py-3 pr-14 bg-zinc-900 border rounded-xl text-zinc-100 placeholder-zinc-500 resize-none focus:outline-none focus:ring-2 disabled:opacity-50 transition-all ${
+                    isListening
+                      ? "border-red-500/50 focus:border-red-500/50 focus:ring-red-500/20"
+                      : "border-zinc-700 focus:border-violet-500/50 focus:ring-violet-500/20"
+                  }`}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey && !isListening) {
+                      e.preventDefault();
+                      handleGenerate();
+                    }
+                  }}
+                />
+
+                {/* Microphone button */}
+                {isSpeechSupported && (
+                  <button
+                    onClick={handleMicToggle}
+                    disabled={isGenerating}
+                    className={`absolute top-3 right-3 p-2 rounded-lg transition-all ${
+                      isListening
+                        ? "bg-red-500 text-white animate-pulse"
+                        : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-zinc-200"
+                    } disabled:opacity-50`}
+                    title={isListening ? "Stop recording" : "Start voice input"}
+                  >
+                    {isListening ? (
+                      <Square className="w-4 h-4" />
+                    ) : (
+                      <Mic className="w-4 h-4" />
+                    )}
+                  </button>
+                )}
+
+                <div className="absolute bottom-3 right-3 text-xs text-zinc-500">
+                  {isListening ? (
+                    <span className="text-red-400 flex items-center gap-1">
+                      <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                      Recording...
+                    </span>
+                  ) : (
+                    "Press Enter to generate"
+                  )}
+                </div>
               </div>
+
+              {/* Voice input hint */}
+              {isSpeechSupported && !isListening && !prompt && !isGenerating && !result && (
+                <div className="flex items-center gap-2 text-xs text-zinc-500">
+                  <Mic className="w-3 h-3" />
+                  <span>Tap the microphone to describe your deck with voice</span>
+                </div>
+              )}
+
+              {/* Speech error */}
+              {speechError && (
+                <div className="flex items-center gap-2 text-xs text-amber-400">
+                  <MicOff className="w-3 h-3" />
+                  <span>{speechError}</span>
+                </div>
+              )}
             </div>
 
             {/* Public toggle (only for new decks) */}
