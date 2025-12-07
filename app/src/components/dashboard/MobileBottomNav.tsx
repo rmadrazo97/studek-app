@@ -12,11 +12,13 @@ import {
   BarChart3,
 } from "lucide-react";
 import { AddDeckSheet } from "@/components/AddDeckSheet";
+import AIGenerateModal from "@/components/decks/AIGenerateModal";
 
 export function MobileBottomNav() {
   const pathname = usePathname();
   const router = useRouter();
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [isAIModalOpen, setIsAIModalOpen] = useState(false);
 
   const navItems = [
     { icon: Home, label: "Home", href: "/dashboard" },
@@ -27,15 +29,20 @@ export function MobileBottomNav() {
   ];
 
   const handleCreateWithAI = useCallback(() => {
-    router.push("/create?mode=ai");
-  }, [router]);
+    setIsAIModalOpen(true);
+  }, []);
 
   const handleCreateManual = useCallback(() => {
-    router.push("/create?mode=manual");
+    router.push("/library");
   }, [router]);
 
   const handleImportAnki = useCallback(() => {
-    router.push("/import");
+    router.push("/library");
+  }, [router]);
+
+  const handleAISuccess = useCallback(() => {
+    // Optionally navigate to library after successful creation
+    router.push("/library");
   }, [router]);
 
   return (
@@ -120,6 +127,13 @@ export function MobileBottomNav() {
         onCreateWithAI={handleCreateWithAI}
         onCreateManual={handleCreateManual}
         onImportAnki={handleImportAnki}
+      />
+
+      {/* AI Generate Modal */}
+      <AIGenerateModal
+        isOpen={isAIModalOpen}
+        onClose={() => setIsAIModalOpen(false)}
+        onSuccess={handleAISuccess}
       />
     </>
   );

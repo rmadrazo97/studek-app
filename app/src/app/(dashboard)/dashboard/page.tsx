@@ -325,13 +325,16 @@ export default function DashboardPage() {
       >
         <h2 className="text-lg font-semibold text-zinc-100 mb-4">Quick Actions</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <QuickAction
-            icon={Plus}
-            label="Create Deck"
-            description="Start a new flashcard deck"
-            onClick={() => setShowCreateModal(true)}
-            gradient="from-cyan-600 to-blue-700"
-          />
+          {/* Hidden on mobile - Create action available via bottom nav */}
+          <div className="hidden md:block">
+            <QuickAction
+              icon={Plus}
+              label="Create Deck"
+              description="Start a new flashcard deck"
+              onClick={() => setShowCreateModal(true)}
+              gradient="from-cyan-600 to-blue-700"
+            />
+          </div>
           <QuickAction
             icon={Sparkles}
             label="Creation Studio"
@@ -444,9 +447,10 @@ export default function DashboardPage() {
             Create your first deck to start learning with spaced repetition. Or explore public decks from the community.
           </p>
           <div className="flex items-center justify-center gap-4">
+            {/* Hidden on mobile - Create action available via bottom nav */}
             <button
               onClick={() => setShowCreateModal(true)}
-              className="px-6 py-3 text-sm font-medium text-white bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl hover:opacity-90 transition-all"
+              className="hidden md:block px-6 py-3 text-sm font-medium text-white bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl hover:opacity-90 transition-all"
             >
               Create Your First Deck
             </button>

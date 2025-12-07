@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useRouter } from "next/navigation";
-import { Trophy, ArrowRight, RotateCcw, X } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Trophy, ArrowRight, RotateCcw, X, Loader2 } from "lucide-react";
 import {
   ReviewProvider,
   useReview,
@@ -11,99 +11,107 @@ import {
 } from "@/stores/reviewStore";
 import { Button } from "@/components/ui/Button";
 
-// Sample cards for demonstration
-const sampleCards: Card[] = [
-  {
-    id: "1",
-    deckId: "med-anatomy",
-    deckName: "Medicine::Anatomy::Heart",
-    front: "What is the main function of the left ventricle?",
-    back: "The left ventricle pumps oxygenated blood through the aorta to the rest of the body (systemic circulation).",
-    type: "basic",
-    fsrs: {
-      stability: 4,
-      difficulty: 5.2,
-      due: new Date(),
-      reps: 0,
-      lapses: 0,
-    },
-    tags: ["cardiology", "anatomy"],
-  },
-  {
-    id: "2",
-    deckId: "med-anatomy",
-    deckName: "Medicine::Anatomy::Heart",
-    front: "What are the four chambers of the heart?",
-    back: "1. Right Atrium\n2. Right Ventricle\n3. Left Atrium\n4. Left Ventricle",
-    type: "basic",
-    fsrs: {
-      stability: 12,
-      difficulty: 4.8,
-      due: new Date(),
-      reps: 5,
-      lapses: 1,
-    },
-    tags: ["cardiology", "anatomy"],
-  },
-  {
-    id: "3",
-    deckId: "cs-algo",
-    deckName: "Computer Science::Algorithms",
-    front: "What is the time complexity of binary search?",
-    back: "O(log n)\n\n```python\ndef binary_search(arr, target):\n    left, right = 0, len(arr) - 1\n    while left <= right:\n        mid = (left + right) // 2\n        if arr[mid] == target:\n            return mid\n        elif arr[mid] < target:\n            left = mid + 1\n        else:\n            right = mid - 1\n    return -1\n```",
-    type: "basic",
-    fsrs: {
-      stability: 28,
-      difficulty: 4.2,
-      due: new Date(),
-      reps: 12,
-      lapses: 0,
-    },
-    tags: ["algorithms", "searching"],
-  },
-  {
-    id: "4",
-    deckId: "japanese",
-    deckName: "Japanese::N3 Vocabulary",
-    front: "経験 (けいけん)",
-    back: "Experience",
-    type: "basic",
-    fsrs: {
-      stability: 7,
-      difficulty: 5.5,
-      due: new Date(),
-      reps: 3,
-      lapses: 2,
-    },
-    tags: ["n3", "noun"],
-  },
-  {
-    id: "5",
-    deckId: "med-pharm",
-    deckName: "Medicine::Pharmacology",
-    front: "What is the mechanism of action of aspirin?",
-    back: "Aspirin irreversibly inhibits cyclooxygenase (COX-1 and COX-2), reducing the synthesis of prostaglandins and thromboxanes.",
-    type: "basic",
-    fsrs: {
-      stability: 2,
-      difficulty: 6.1,
-      due: new Date(),
-      reps: 1,
-      lapses: 1,
-    },
-    tags: ["pharmacology", "nsaids"],
-  },
-];
+interface DeckCard {
+  id: string;
+  deck_id: string;
+  type: string;
+  front: string;
+  back: string;
+  tags: string | string[] | null;
+  fsrs?: {
+    stability: number;
+    difficulty: number;
+    due: string;
+    reps: number;
+    lapses: number;
+    state: string;
+  };
+}
+
+interface DeckInfo {
+  id: string;
+  name: string;
+}
 
 function StudyContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const deckId = searchParams.get("deckId");
+
   const { state, setQueue, flipCard, answerCard } = useReview();
   const { currentCard, status, isComplete, completedCount, totalCount, newCount, learningCount, reviewCount } = state;
 
-  // Initialize queue
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [deckInfo, setDeckInfo] = useState<DeckInfo | null>(null);
+  const [originalCards, setOriginalCards] = useState<Card[]>([]);
+
+  // Load cards from API
   useEffect(() => {
-    setQueue(sampleCards);
-  }, [setQueue]);
+    async function loadCards() {
+      if (!deckId) {
+        setLoadError("No deck selected");
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        // Fetch deck info
+        const deckRes = await fetch(`/api/decks/${deckId}`);
+        if (!deckRes.ok) throw new Error("Failed to load deck");
+        const deckData = await deckRes.json();
+        setDeckInfo({ id: deckData.id, name: deckData.name });
+
+        // Fetch cards
+        const cardsRes = await fetch(`/api/decks/${deckId}/cards`);
+        if (!cardsRes.ok) throw new Error("Failed to load cards");
+        const cardsData = await cardsRes.json();
+
+        // Transform cards to study format
+        const studyCards: Card[] = cardsData.cards.map((card: DeckCard) => ({
+          id: card.id,
+          deckId: card.deck_id,
+          deckName: deckData.name,
+          front: card.front,
+          back: card.back,
+          type: card.type || "basic",
+          fsrs: card.fsrs ? {
+            stability: card.fsrs.stability,
+            difficulty: card.fsrs.difficulty,
+            due: new Date(card.fsrs.due),
+            reps: card.fsrs.reps,
+            lapses: card.fsrs.lapses,
+          } : {
+            stability: 0,
+            difficulty: 5.0,
+            due: new Date(),
+            reps: 0,
+            lapses: 0,
+          },
+          tags: Array.isArray(card.tags)
+            ? card.tags
+            : typeof card.tags === "string"
+              ? JSON.parse(card.tags)
+              : [],
+        }));
+
+        if (studyCards.length === 0) {
+          setLoadError("This deck has no cards yet");
+          setIsLoading(false);
+          return;
+        }
+
+        setOriginalCards(studyCards);
+        setQueue(studyCards);
+        setIsLoading(false);
+      } catch (err) {
+        setLoadError(err instanceof Error ? err.message : "Failed to load cards");
+        setIsLoading(false);
+      }
+    }
+
+    loadCards();
+  }, [deckId, setQueue]);
 
   // Keyboard shortcuts - keep it simple like Anki
   useEffect(() => {
@@ -191,6 +199,39 @@ function StudyContent() {
     return parts.length > 0 ? parts : content;
   }, []);
 
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 text-cyan-500 animate-spin mx-auto mb-4" />
+          <p className="text-zinc-400">Loading cards...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (loadError) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center p-6">
+        <div className="text-center max-w-md">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-500/10 flex items-center justify-center">
+            <X className="w-8 h-8 text-red-400" />
+          </div>
+          <h2 className="text-xl font-bold text-zinc-100 mb-2">Cannot Start Study</h2>
+          <p className="text-zinc-500 mb-6">{loadError}</p>
+          <Button
+            variant="primary"
+            onClick={() => router.push("/library")}
+          >
+            Back to Library
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   // Completion screen
   if (isComplete) {
     return (
@@ -214,7 +255,7 @@ function StudyContent() {
           </h1>
 
           <p className="text-zinc-500 mb-8">
-            You have finished this deck for now.
+            {deckInfo ? `You have finished "${deckInfo.name}" for now.` : "You have finished this deck for now."}
           </p>
 
           {/* Simple stats */}
@@ -229,15 +270,15 @@ function StudyContent() {
               size="lg"
               icon={<ArrowRight className="w-5 h-5" />}
               iconPosition="right"
-              onClick={() => router.push("/dashboard")}
+              onClick={() => router.push("/library")}
             >
-              Done
+              Back to Library
             </Button>
             <Button
               variant="ghost"
               size="lg"
               icon={<RotateCcw className="w-4 h-4" />}
-              onClick={() => setQueue(sampleCards)}
+              onClick={() => setQueue(originalCards)}
               className="text-zinc-500"
             >
               Study Again
