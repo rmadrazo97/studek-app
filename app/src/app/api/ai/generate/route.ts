@@ -63,9 +63,25 @@ interface GenerateResponse {
 // ============================================
 
 export const POST = withAuth(async (request: AuthenticatedRequest) => {
+  console.log('[AI Route] POST /api/ai/generate - Request received');
+  console.log('[AI Route] Auth context:', JSON.stringify({
+    userId: request.auth?.userId,
+    email: request.auth?.email,
+    roles: request.auth?.roles,
+  }));
+  console.log('[AI Route] User:', JSON.stringify({
+    id: request.user?.id,
+    email: request.user?.email,
+  }));
+
   try {
     // Check if OpenAI is configured
+    console.log('[AI Route] Checking OpenAI configuration...');
+    console.log('[AI Route] OPENAI_APIKEY env present:', !!process.env.OPENAI_APIKEY);
+    console.log('[AI Route] OPENAI_APIKEY preview:', process.env.OPENAI_APIKEY ? `${process.env.OPENAI_APIKEY.substring(0, 10)}...` : 'not set');
+
     if (!isOpenAIConfigured()) {
+      console.log('[AI Route] OpenAI not configured - returning 503');
       return NextResponse.json(
         { error: 'AI generation is not configured. Please set OPENAI_API_KEY.' },
         { status: 503 }
@@ -73,7 +89,14 @@ export const POST = withAuth(async (request: AuthenticatedRequest) => {
     }
 
     const userId = request.auth.userId;
+    console.log('[AI Route] Processing request for userId:', userId);
+
     const body = (await request.json()) as GenerateRequest;
+    console.log('[AI Route] Request body:', JSON.stringify({
+      prompt: body.prompt?.substring(0, 50),
+      deck_id: body.deck_id,
+      options: body.options,
+    }));
 
     // Validate request
     if (!body.prompt || typeof body.prompt !== 'string' || body.prompt.trim() === '') {

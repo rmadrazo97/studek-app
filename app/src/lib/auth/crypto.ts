@@ -72,8 +72,12 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
  */
 function getJwtSecret(): string {
   const secret = process.env.JWT_SECRET;
+  console.log('[Crypto] getJwtSecret called');
+  console.log('[Crypto] JWT_SECRET env present:', !!secret);
+  console.log('[Crypto] JWT_SECRET preview:', secret ? `${secret.substring(0, 10)}...` : 'not set');
+
   if (!secret) {
-    console.warn('[Auth] JWT_SECRET not set, using a random secret. This will invalidate all tokens on restart!');
+    console.warn('[Crypto] JWT_SECRET not set, using a random secret. This will invalidate all tokens on restart!');
     // In development, we could generate a random secret, but it's better to warn
     return crypto.randomBytes(32).toString('hex');
   }
@@ -142,14 +146,23 @@ export function createToken(payload: Omit<TokenPayload, 'iat' | 'exp'>, expiresI
  * Verify and decode a JWT token
  */
 export function verifyToken(token: string): TokenPayload {
+  console.log('[Crypto] verifyToken called');
+
   const secret = getSecret();
+  console.log('[Crypto] Secret obtained, length:', secret.length);
+
   const parts = token.split('.');
+  console.log('[Crypto] Token parts count:', parts.length);
 
   if (parts.length !== 3) {
+    console.log('[Crypto] Invalid token format - expected 3 parts');
     throw new AuthError('Invalid token format', 'INVALID_TOKEN');
   }
 
   const [headerEncoded, payloadEncoded, signatureEncoded] = parts;
+  console.log('[Crypto] Header length:', headerEncoded.length);
+  console.log('[Crypto] Payload length:', payloadEncoded.length);
+  console.log('[Crypto] Signature length:', signatureEncoded.length);
 
   // Verify signature
   const expectedSignature = crypto
@@ -162,19 +175,39 @@ export function verifyToken(token: string): TokenPayload {
     'base64'
   );
 
-  if (!crypto.timingSafeEqual(expectedSignature, actualSignature)) {
+  console.log('[Crypto] Expected signature length:', expectedSignature.length);
+  console.log('[Crypto] Actual signature length:', actualSignature.length);
+
+  if (expectedSignature.length !== actualSignature.length) {
+    console.log('[Crypto] Signature length mismatch');
     throw new AuthError('Invalid token signature', 'INVALID_TOKEN');
   }
 
+  if (!crypto.timingSafeEqual(expectedSignature, actualSignature)) {
+    console.log('[Crypto] Signature verification FAILED');
+    throw new AuthError('Invalid token signature', 'INVALID_TOKEN');
+  }
+
+  console.log('[Crypto] Signature verification SUCCESS');
+
   // Decode payload
   const payload = JSON.parse(base64UrlDecode(payloadEncoded)) as TokenPayload;
+  console.log('[Crypto] Decoded payload userId:', payload.userId);
+  console.log('[Crypto] Decoded payload email:', payload.email);
+  console.log('[Crypto] Decoded payload exp:', payload.exp);
 
   // Check expiration
   const now = Math.floor(Date.now() / 1000);
+  console.log('[Crypto] Current time:', now);
+  console.log('[Crypto] Token expires:', payload.exp);
+  console.log('[Crypto] Token expired:', payload.exp < now);
+
   if (payload.exp < now) {
+    console.log('[Crypto] Token is EXPIRED');
     throw new AuthError('Token expired', 'TOKEN_EXPIRED');
   }
 
+  console.log('[Crypto] Token is VALID');
   return payload;
 }
 

@@ -271,13 +271,25 @@ export function cleanupExpiredTokens(): number {
  * Verify an access token and return the payload
  */
 export function verifyAccessToken(token: string): TokenPayload {
-  const payload = verifyToken(token);
+  console.log('[Auth] verifyAccessToken called');
+  console.log('[Auth] Token length:', token.length);
+  console.log('[Auth] Token preview:', token.substring(0, 30) + '...');
 
-  if (payload.type !== 'access') {
-    throw new AuthError('Invalid token type', 'INVALID_TOKEN');
+  try {
+    const payload = verifyToken(token);
+    console.log('[Auth] Token verified, type:', payload.type);
+
+    if (payload.type !== 'access') {
+      console.log('[Auth] Invalid token type:', payload.type);
+      throw new AuthError('Invalid token type', 'INVALID_TOKEN');
+    }
+
+    console.log('[Auth] Access token valid for userId:', payload.userId);
+    return payload;
+  } catch (error) {
+    console.log('[Auth] Token verification error:', error instanceof Error ? error.message : 'Unknown error');
+    throw error;
   }
-
-  return payload;
 }
 
 // ============================================

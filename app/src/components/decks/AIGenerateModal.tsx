@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useRouter } from "next/navigation";
 import {
   X,
   Sparkles,
@@ -16,8 +17,10 @@ import {
   Code,
   Stethoscope,
   Music,
+  LogIn,
 } from "lucide-react";
 import { useAI } from "@/hooks/useAI";
+import { useAuth } from "@/stores/auth";
 
 // ============================================
 // Types
@@ -106,6 +109,8 @@ export function AIGenerateModal({
   deckId,
   deckName,
 }: AIGenerateModalProps) {
+  const router = useRouter();
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [prompt, setPrompt] = useState("");
   const [isPublic, setIsPublic] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(true);
@@ -197,6 +202,30 @@ export function AIGenerateModal({
 
           {/* Content */}
           <div className="p-4 space-y-4">
+            {/* Auth check - show login prompt if not authenticated */}
+            {!authLoading && !isAuthenticated ? (
+              <div className="text-center py-8">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-violet-500/10 flex items-center justify-center">
+                  <LogIn className="w-8 h-8 text-violet-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-zinc-100 mb-2">
+                  Sign in to create decks
+                </h3>
+                <p className="text-sm text-zinc-500 mb-6">
+                  You need to be logged in to create AI-generated decks
+                </p>
+                <button
+                  onClick={() => {
+                    onClose();
+                    router.push("/login");
+                  }}
+                  className="px-6 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-violet-500 to-purple-600 rounded-lg hover:opacity-90 transition-all"
+                >
+                  Sign In
+                </button>
+              </div>
+            ) : (
+            <>
             {/* Input */}
             <div className="relative">
               <textarea
@@ -349,6 +378,8 @@ export function AIGenerateModal({
                 </div>
               </motion.div>
             )}
+            </>
+            )}
           </div>
 
           {/* Footer */}
@@ -359,7 +390,7 @@ export function AIGenerateModal({
             >
               {result?.success ? "Close" : "Cancel"}
             </button>
-            {!result?.success && (
+            {isAuthenticated && !result?.success && (
               <button
                 onClick={handleGenerate}
                 disabled={!prompt.trim() || isGenerating}
