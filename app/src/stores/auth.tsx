@@ -18,6 +18,7 @@ interface User {
   email: string;
   name: string | null;
   avatar_url: string | null;
+  email_verified: boolean;
   roles: string[];
   permissions: string[];
   created_at: string;
@@ -36,6 +37,7 @@ interface AuthContextValue extends AuthState {
   register: (email: string, password: string, name?: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshToken: () => Promise<void>;
+  refreshUser: () => Promise<void>;
 }
 
 interface AuthResponse {
@@ -236,6 +238,29 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }, [clearAuth]);
 
+  // Refresh user data from server
+  const refreshUser = useCallback(async () => {
+    const token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+    if (!token) return;
+
+    try {
+      const response = await fetch("/api/auth/me", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const user = data.user as User;
+        localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
+        setState((prev) => ({ ...prev, user }));
+      }
+    } catch {
+      // Ignore refresh errors
+    }
+  }, []);
+
   // Auto-refresh token before expiry
   useEffect(() => {
     if (!state.isAuthenticated) return;
@@ -257,6 +282,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     register,
     logout,
     refreshToken,
+    refreshUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
