@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus,
@@ -15,6 +16,8 @@ import {
   Globe,
   Lock,
   Upload,
+  Play,
+  Settings,
 } from "lucide-react";
 import { useDecks, type DeckWithStats } from "@/hooks/useDecks";
 import CreateDeckModal from "./CreateDeckModal";
@@ -32,12 +35,15 @@ interface DeckCardProps {
   onEdit: (deck: DeckWithStats) => void;
   onDelete: (deck: DeckWithStats) => void;
   onShare: (deck: DeckWithStats) => void;
-  onSelect: (deck: DeckWithStats) => void;
+  onManageCards: (deck: DeckWithStats) => void;
+  onStudy: (deck: DeckWithStats) => void;
   isShared?: boolean;
 }
 
-function DeckCard({ deck, onEdit, onDelete, onShare, onSelect, isShared }: DeckCardProps) {
+function DeckCard({ deck, onEdit, onDelete, onShare, onManageCards, onStudy, isShared }: DeckCardProps) {
   const [showMenu, setShowMenu] = useState(false);
+  const hasCards = deck.card_count > 0;
+  const hasDueCards = deck.due_count > 0 || deck.new_count > 0;
 
   return (
     <motion.div
@@ -48,10 +54,7 @@ function DeckCard({ deck, onEdit, onDelete, onShare, onSelect, isShared }: DeckC
       className="group relative bg-background-secondary/50 rounded-xl border border-white/5 hover:border-white/10 transition-all overflow-hidden"
     >
       {/* Card Content */}
-      <button
-        onClick={() => onSelect(deck)}
-        className="w-full p-4 text-left"
-      >
+      <div className="p-4">
         {/* Header */}
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center gap-3">
@@ -81,7 +84,7 @@ function DeckCard({ deck, onEdit, onDelete, onShare, onSelect, isShared }: DeckC
         </div>
 
         {/* Stats */}
-        <div className="flex items-center gap-4 text-xs">
+        <div className="flex items-center gap-4 text-xs mb-4">
           <div className="flex items-center gap-1.5 text-gray-400">
             <BookOpen className="w-3.5 h-3.5" />
             <span>{deck.card_count} cards</span>
@@ -100,6 +103,34 @@ function DeckCard({ deck, onEdit, onDelete, onShare, onSelect, isShared }: DeckC
           )}
         </div>
 
+        {/* Action Buttons */}
+        <div className="flex items-center gap-2">
+          {/* Study Button - Primary action */}
+          <button
+            onClick={() => onStudy(deck)}
+            disabled={!hasCards}
+            className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-all ${
+              hasCards
+                ? hasDueCards
+                  ? "bg-gradient-to-r from-emerald-500 to-cyan-500 text-white hover:opacity-90"
+                  : "bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20"
+                : "bg-gray-500/10 text-gray-500 cursor-not-allowed"
+            }`}
+          >
+            <Play className="w-4 h-4" />
+            {hasDueCards ? "Study Now" : hasCards ? "Review" : "No Cards"}
+          </button>
+
+          {/* Manage Cards Button */}
+          <button
+            onClick={() => onManageCards(deck)}
+            className="flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-gray-300 bg-white/5 hover:bg-white/10 rounded-lg transition-all"
+          >
+            <Settings className="w-4 h-4" />
+            Cards
+          </button>
+        </div>
+
         {/* Shared indicator */}
         {isShared && deck.shared_permission && (
           <div className="mt-3 pt-3 border-t border-white/5">
@@ -108,7 +139,7 @@ function DeckCard({ deck, onEdit, onDelete, onShare, onSelect, isShared }: DeckC
             </span>
           </div>
         )}
-      </button>
+      </div>
 
       {/* Menu Button */}
       {!isShared && (
@@ -146,7 +177,7 @@ function DeckCard({ deck, onEdit, onDelete, onShare, onSelect, isShared }: DeckC
                     className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-300 hover:bg-white/5"
                   >
                     <Edit2 className="w-4 h-4" />
-                    Edit
+                    Edit Deck
                   </button>
                   <button
                     onClick={(e) => {
@@ -189,6 +220,7 @@ interface DeckManagerProps {
 }
 
 export default function DeckManager({ onSelectDeck }: DeckManagerProps) {
+  const router = useRouter();
   const { decks, sharedDecks, isLoading, error, createDeck, updateDeck, deleteDeck, refresh } = useDecks();
 
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -238,6 +270,10 @@ export default function DeckManager({ onSelectDeck }: DeckManagerProps) {
     setSelectedDeck(deck);
     setShowDeleteConfirm(true);
   }, []);
+
+  const handleStudy = useCallback((deck: DeckWithStats) => {
+    router.push(`/study?deckId=${deck.id}`);
+  }, [router]);
 
   if (isLoading) {
     return (
@@ -324,7 +360,8 @@ export default function DeckManager({ onSelectDeck }: DeckManagerProps) {
                   onEdit={openEdit}
                   onDelete={openDelete}
                   onShare={openShare}
-                  onSelect={onSelectDeck}
+                  onManageCards={onSelectDeck}
+                  onStudy={handleStudy}
                 />
               ))}
             </AnimatePresence>
@@ -349,7 +386,8 @@ export default function DeckManager({ onSelectDeck }: DeckManagerProps) {
                     onEdit={() => {}}
                     onDelete={() => {}}
                     onShare={() => {}}
-                    onSelect={onSelectDeck}
+                    onManageCards={onSelectDeck}
+                    onStudy={handleStudy}
                     isShared
                   />
                 ))}
