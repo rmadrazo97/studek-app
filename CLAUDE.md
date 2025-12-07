@@ -21,6 +21,7 @@ On push to `main`:
 | `VPS_USERNAME` | SSH user: `root` |
 | `VPS_SSH_KEY` | Private SSH key (contents of `id_ed25519`) |
 | `GHCR_PAT` | GitHub PAT with `read:packages` scope |
+| `OPENAI_API_KEY` | OpenAI API key for AI deck generation (optional) |
 
 ## Server Access
 ```bash
