@@ -43,12 +43,11 @@ const simulatedResponses: Record<string, string> = {
 };
 
 export function AISidebar({ isOpen, onClose }: AISidebarProps) {
-  const { state, startAIStream, appendAIStream, endAIStream, acceptAISuggestion } = useCreationStudio();
+  useCreationStudio();
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [draggedContent, setDraggedContent] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 

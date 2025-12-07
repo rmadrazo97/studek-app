@@ -11,7 +11,16 @@
     "db:rollback": "npx tsx src/lib/db/migrate.ts rollback",
     "db:status": "npx tsx src/lib/db/migrate.ts status",
     "db:create": "npx tsx src/lib/db/migrate.ts create",
-    "db:seed": "npx tsx src/lib/auth/seed.ts"
+    "db:seed": "npx tsx src/lib/auth/seed.ts",
+    "generate:icons": "node scripts/generate-icons.js",
+    "capacitor:init": "npx cap init Studek com.studek.app --web-dir=out",
+    "capacitor:sync": "npx cap sync",
+    "capacitor:build": "npm run build:static && npx cap sync",
+    "build:static": "NEXT_OUTPUT=export next build",
+    "ios": "npx cap open ios",
+    "android": "npx cap open android",
+    "ios:run": "npx cap run ios",
+    "android:run": "npx cap run android"
   },
   "dependencies": {
     "better-sqlite3": "^11.10.0",

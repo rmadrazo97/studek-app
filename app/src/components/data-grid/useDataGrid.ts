@@ -24,7 +24,6 @@ import type {
   SelectionState,
   SortState,
   ViewState,
-  FilterOperator,
 } from "./types";
 
 // ============================================

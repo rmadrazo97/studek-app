@@ -5,7 +5,7 @@
  */
 
 import { getDatabase, transaction } from '../index';
-import { create, findById, findAll, query, generateId, now } from '../crud';
+import { create, findById, findAll, query, now } from '../crud';
 import type {
   ReviewLog,
   ReviewLogCreate,

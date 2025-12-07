@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Home,
+  Compass,
   Table2,
   Library,
   Sparkles,
@@ -19,7 +20,6 @@ import {
   HelpCircle,
   BarChart3,
   PenTool,
-  Compass,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -106,36 +106,35 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
           {navItems.map((item) => {
             const isActive = pathname === item.href;
             return (
-              <div key={item.href}>
-                <Link
-                  href={item.href}
-                  className={`
-                    flex items-center gap-3 px-3 py-2.5 rounded-xl
-                    transition-all duration-200
-                    ${
-                      isActive
-                        ? "bg-zinc-800 text-cyan-400"
-                        : "text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/50"
-                    }
-                    ${isCollapsed ? "justify-center" : ""}
-                  `}
-                  title={isCollapsed ? item.label : undefined}
-                >
-                  <item.icon className="w-5 h-5 flex-shrink-0" />
-                  <AnimatePresence>
-                    {!isCollapsed && (
-                      <motion.span
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="font-medium"
-                      >
-                        {item.label}
-                      </motion.span>
-                    )}
-                  </AnimatePresence>
-                </Link>
-              </div>
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`
+                  flex items-center gap-3 px-3 py-2.5 rounded-xl
+                  transition-all duration-200
+                  ${
+                    isActive
+                      ? "bg-zinc-800 text-cyan-400"
+                      : "text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/50"
+                  }
+                  ${isCollapsed ? "justify-center" : ""}
+                `}
+                title={isCollapsed ? item.label : undefined}
+              >
+                <item.icon className="w-5 h-5 flex-shrink-0" />
+                <AnimatePresence>
+                  {!isCollapsed && (
+                    <motion.span
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="font-medium"
+                    >
+                      {item.label}
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+              </Link>
             );
           })}
         </div>

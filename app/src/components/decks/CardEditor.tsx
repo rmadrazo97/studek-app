@@ -4,13 +4,11 @@ import { useState, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus,
-  X,
   ArrowLeft,
   Save,
   Trash2,
   Tag,
   FileText,
-  BookOpen,
   MoreVertical,
   Edit2,
   Search,
@@ -308,7 +306,6 @@ export default function CardEditor({ deck, onBack }: CardEditorProps) {
     error,
     total,
     createCard,
-    updateCard,
     deleteCard,
   } = useCards(deck.id);
 

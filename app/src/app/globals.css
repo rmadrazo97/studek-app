@@ -239,9 +239,24 @@ body {
 .stagger-5 { animation-delay: 0.5s; }
 .stagger-6 { animation-delay: 0.6s; }
 
-/* Safe area padding for mobile devices (iOS notch, etc.) */
+/* Safe area padding for mobile devices (iOS notch, Dynamic Island, etc.) */
+.safe-area-inset-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
 .safe-area-inset-bottom {
   padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0.75rem));
+}
+
+/* PWA standalone mode detection */
+@media (display-mode: standalone) {
+  .pwa-header-safe {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
+  .pwa-bottom-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
 }
 
 /* Prevent pull-to-refresh on mobile when at top */

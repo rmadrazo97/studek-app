@@ -25,7 +25,6 @@ import type {
   DeckClone,
   DeckCloneCreate,
   Deck,
-  Card,
 } from '../types';
 import crypto from 'crypto';
 

@@ -40,6 +40,9 @@ export function create<T extends Record<string, unknown>>(
   table: string,
   data: Omit<T, 'id' | 'created_at' | 'updated_at'>
 ): T {
+  console.log(`[CRUD] create - Table: ${table}`);
+  console.log('[CRUD] create - Input data:', JSON.stringify(data, null, 2));
+
   const db = getDatabase();
   const id = generateId();
   const timestamp = now();
@@ -51,14 +54,56 @@ export function create<T extends Record<string, unknown>>(
     updated_at: timestamp,
   };
 
-  const columns = Object.keys(record);
+  console.log('[CRUD] create - Full record before filtering:', JSON.stringify(record, null, 2));
+
+  // Log each field before filtering
+  for (const [key, value] of Object.entries(record)) {
+    const valueType = typeof value;
+    const isUndefined = value === undefined;
+    const isNull = value === null;
+    const isValidType = isNull || ['string', 'number', 'boolean', 'bigint'].includes(valueType) || (value instanceof Buffer);
+    console.log(`[CRUD] Pre-filter "${key}": value=${JSON.stringify(value)}, type=${valueType}, isUndefined=${isUndefined}, isNull=${isNull}, isValidSQLite=${isValidType}`);
+  }
+
+  // Filter out undefined values and convert to entries for SQLite compatibility
+  const entries = Object.entries(record).filter(([, value]) => value !== undefined);
+  const columns = entries.map(([key]) => key);
   const placeholders = columns.map(() => '?').join(', ');
-  const values = Object.values(record);
+  // Convert any remaining undefined to null (shouldn't happen after filter, but safety check)
+  const values = entries.map(([, value]) => value === undefined ? null : value);
+
+  console.log('[CRUD] create - Columns:', columns);
+  console.log('[CRUD] create - Values:', JSON.stringify(values));
+
+  // Log each value being bound to SQLite
+  values.forEach((value, index) => {
+    const valueType = typeof value;
+    const isNull = value === null;
+    const isValidType = isNull || ['string', 'number', 'boolean', 'bigint'].includes(valueType) || (value instanceof Buffer);
+    console.log(`[CRUD] Binding[${index}] "${columns[index]}": value=${JSON.stringify(value)}, type=${valueType}, isNull=${isNull}, isValidSQLite=${isValidType}`);
+    if (!isValidType) {
+      console.error(`[CRUD] INVALID VALUE DETECTED at index ${index} for column "${columns[index]}": ${JSON.stringify(value)}`);
+    }
+  });
 
   const sql = `INSERT INTO ${table} (${columns.join(', ')}) VALUES (${placeholders})`;
-  db.prepare(sql).run(...values);
+  console.log('[CRUD] create - SQL:', sql);
 
-  return record as T;
+  try {
+    db.prepare(sql).run(...values);
+    console.log('[CRUD] create - Insert successful');
+  } catch (error) {
+    console.error('[CRUD] create - SQLite error:', error);
+    console.error('[CRUD] create - Failed SQL:', sql);
+    console.error('[CRUD] create - Failed values:', JSON.stringify(values));
+    throw error;
+  }
+
+  // Return record with undefined values converted to null for consistency
+  const sanitizedRecord = Object.fromEntries(
+    Object.entries(record).map(([key, value]) => [key, value === undefined ? null : value])
+  );
+  return sanitizedRecord as T;
 }
 
 /**
@@ -190,14 +235,16 @@ export function update<T>(
   const timestamp = now();
 
   const updateData = { ...data, updated_at: timestamp };
-  const entries = Object.entries(updateData);
+  // Filter out undefined values for SQLite compatibility
+  const entries = Object.entries(updateData).filter(([, value]) => value !== undefined);
 
   if (entries.length === 0) {
     return findById<T>(table, id);
   }
 
   const setClause = entries.map(([col]) => `${col} = ?`).join(', ');
-  const values = entries.map(([, val]) => val);
+  // Convert any remaining undefined to null (safety check)
+  const values = entries.map(([, val]) => val === undefined ? null : val);
 
   const sql = `UPDATE ${table} SET ${setClause} WHERE id = ?`;
   const result = db.prepare(sql).run(...values, id);
@@ -283,9 +330,11 @@ export function upsert<T extends Record<string, unknown>>(
     created_at: data.created_at || timestamp,
   };
 
-  const columns = Object.keys(record);
+  // Filter out undefined values for SQLite compatibility
+  const entries = Object.entries(record).filter(([, value]) => value !== undefined);
+  const columns = entries.map(([key]) => key);
   const placeholders = columns.map(() => '?').join(', ');
-  const values = Object.values(record);
+  const values = entries.map(([, value]) => value === undefined ? null : value);
 
   const updateColumns = columns.filter((col) => !conflictColumns.includes(col) && col !== 'created_at');
   const updateClause = updateColumns.map((col) => `${col} = excluded.${col}`).join(', ');

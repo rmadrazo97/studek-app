@@ -12,7 +12,6 @@ import {
 import { handleApiError } from '@/lib/api/errors';
 import {
   getDeckById,
-  getCardsByDeckId,
   getCardsPaginated,
   getDueCards,
   getNewCards,

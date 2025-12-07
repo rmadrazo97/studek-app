@@ -34,10 +34,23 @@ const VISITS_TABLE = 'deck_visits';
  * Create a new deck
  */
 export function createDeck(data: DeckCreate): Deck {
-  return create<Deck>(TABLE, {
+  console.log('[DeckService] createDeck - Input data:', JSON.stringify(data, null, 2));
+
+  const preparedData = {
     ...data,
     is_public: data.is_public ?? false,
-  });
+  };
+
+  console.log('[DeckService] createDeck - Prepared data for CRUD:', JSON.stringify(preparedData, null, 2));
+
+  // Log each field with type info
+  for (const [key, value] of Object.entries(preparedData)) {
+    const valueType = typeof value;
+    const isValidSqlite = value === null || ['string', 'number', 'boolean', 'bigint'].includes(valueType) || Buffer.isBuffer(value);
+    console.log(`[DeckService] Field "${key}": value=${JSON.stringify(value)}, type=${valueType}, isValidSQLite=${isValidSqlite}`);
+  }
+
+  return create<Deck>(TABLE, preparedData);
 }
 
 /**

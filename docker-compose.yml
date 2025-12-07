@@ -25,7 +25,8 @@ services:
     networks:
       - studek-network
 
-  # Log viewer - password protected
+  # Log viewer - password protected (default: admin/admin)
+  # To change password: docker run --rm amir20/dozzle:latest generate <user> --password <pass> > dozzle-data/users.yml
   logs:
     image: amir20/dozzle:latest
     container_name: studek-logs
@@ -33,13 +34,11 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - LOGS_USERNAME=${LOGS_USERNAME:-admin}
-      - LOGS_PASSWORD=${LOGS_PASSWORD:-admin}
       - DOZZLE_NO_ANALYTICS=true
+      - DOZZLE_AUTH_PROVIDER=simple
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./dozzle-entrypoint.sh:/dozzle-entrypoint.sh:ro
-    entrypoint: ["/bin/sh", "/dozzle-entrypoint.sh"]
+      - ./dozzle-data/users.yml:/data/users.yml:ro
     networks:
       - studek-network
 
