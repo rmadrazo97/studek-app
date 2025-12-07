@@ -3,6 +3,7 @@
 import { ReactNode } from "react";
 import { AuthProvider } from "@/stores/auth";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";
+import { DebugConsole } from "@/components/debug";
 
 interface ProvidersProps {
   children: ReactNode;
@@ -13,6 +14,7 @@ export function Providers({ children }: ProvidersProps) {
     <AuthProvider>
       {children}
       <InstallPrompt />
+      <DebugConsole />
     </AuthProvider>
   );
 }
