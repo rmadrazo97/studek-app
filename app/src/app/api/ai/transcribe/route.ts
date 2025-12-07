@@ -5,7 +5,7 @@
  */
 
 import { NextResponse } from 'next/server';
-import { verifyAccessToken } from '@/lib/auth/jwt';
+import { verifyAccessToken } from '@/lib/auth';
 import OpenAI from 'openai';
 
 // Initialize OpenAI client
