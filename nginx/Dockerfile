@@ -9,13 +9,13 @@ RUN apk add --no-cache \
     bash
 
 # Create directories
-RUN mkdir -p /var/www/certbot /etc/letsencrypt
+RUN mkdir -p /var/www/certbot /etc/letsencrypt /etc/nginx/templates
 
 # Copy nginx configuration
 COPY nginx.conf /etc/nginx/nginx.conf
-COPY conf.d/http-only.conf /etc/nginx/conf.d/http-only.conf
-COPY conf.d/https.conf /etc/nginx/conf.d/https.conf
-COPY conf.d/http-only.conf /etc/nginx/conf.d/default.conf
+# Only copy templates - entrypoint.sh will copy the active config to default.conf
+COPY conf.d/http-only.conf /etc/nginx/templates/http-only.conf
+COPY conf.d/https.conf /etc/nginx/templates/https.conf
 
 # Copy entrypoint script
 COPY docker-entrypoint.sh /docker-entrypoint.sh

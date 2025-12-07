@@ -59,13 +59,13 @@ start_renewal_daemon() {
 # Check if we should skip SSL (for local development)
 if [ "$SKIP_SSL" = "true" ]; then
     echo "SKIP_SSL is set, running without SSL..."
-    cp /etc/nginx/conf.d/http-only.conf /etc/nginx/conf.d/default.conf
+    cp /etc/nginx/templates/http-only.conf /etc/nginx/conf.d/default.conf
     exec nginx -g "daemon off;"
 fi
 
 # Start nginx with HTTP-only config first (for ACME challenge)
 echo "Starting Nginx with HTTP configuration..."
-cp /etc/nginx/conf.d/http-only.conf /etc/nginx/conf.d/default.conf
+cp /etc/nginx/templates/http-only.conf /etc/nginx/conf.d/default.conf
 nginx
 
 # Wait for nginx to start
@@ -95,7 +95,7 @@ fi
 
 # Switch to HTTPS config
 echo "Switching to HTTPS configuration..."
-cp /etc/nginx/conf.d/https.conf /etc/nginx/conf.d/default.conf
+cp /etc/nginx/templates/https.conf /etc/nginx/conf.d/default.conf
 
 # Reload nginx with new config
 nginx -s reload
