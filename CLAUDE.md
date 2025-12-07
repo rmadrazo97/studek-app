@@ -1,7 +1,11 @@
 # Studek App
 
 ## Live Site
-http://155.138.237.103
+https://studek.com
+
+## Server
+- **IP:** 155.138.237.103
+- **Domain:** studek.com
 
 ## Workflow
 - Develop locally on `main` branch
@@ -22,6 +26,42 @@ On push to `main`:
 | `VPS_SSH_KEY` | Private SSH key (contents of `id_ed25519`) |
 | `GHCR_PAT` | GitHub PAT with `read:packages` scope |
 | `OPENAI_APIKEY` | OpenAI API key for AI deck generation (optional) |
+| `RESEND_API_KEY` | Resend API key for transactional emails |
+
+## Domain Configuration (studek.com)
+
+### Namecheap DNS Settings
+In Namecheap dashboard → Domain List → Manage → Advanced DNS:
+
+| Type | Host | Value | TTL |
+|------|------|-------|-----|
+| A Record | @ | 155.138.237.103 | Automatic |
+| A Record | www | 155.138.237.103 | Automatic |
+
+### Automatic SSL (Let's Encrypt)
+SSL certificates are **automatically obtained** when containers start.
+The Nginx container:
+1. Starts with HTTP-only config
+2. Requests SSL certificate from Let's Encrypt
+3. Switches to HTTPS config
+4. Auto-renews certificates every 12 hours
+
+**Environment variables:**
+- `DOMAIN` - Domain name (default: studek.com)
+- `SSL_EMAIL` - Email for Let's Encrypt notifications
+- `SKIP_SSL=true` - Disable SSL for local development
+
+### Manual SSL Commands (if needed)
+```bash
+# Check certificate status
+docker compose exec nginx certbot certificates
+
+# Force certificate renewal
+docker compose exec nginx certbot renew --force-renewal
+
+# View nginx logs
+docker compose logs -f nginx
+```
 
 ## Server Access
 ```bash

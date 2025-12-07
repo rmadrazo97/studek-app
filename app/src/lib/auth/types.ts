@@ -112,6 +112,7 @@ export interface SafeUser {
   email: string;
   name: string | null;
   avatar_url: string | null;
+  email_verified: boolean;
   roles: string[];
   permissions: string[];
   created_at: string;

@@ -69,6 +69,13 @@ export {
   getUserFromToken,
   changePassword,
   resetPassword,
+  // Email verification
+  verifyEmail,
+  resendVerificationEmail,
+  // Password reset
+  requestPasswordReset,
+  resetPasswordWithToken,
+  validatePasswordResetToken,
 } from './auth';
 
 // Middleware
