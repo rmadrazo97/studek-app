@@ -1,7 +1,11 @@
 # Studek App
 
 ## Live Site
-http://155.138.237.103
+https://studek.com
+
+## Server
+- **IP:** 155.138.237.103
+- **Domain:** studek.com
 
 ## Workflow
 - Develop locally on `main` branch
@@ -21,6 +25,52 @@ On push to `main`:
 | `VPS_USERNAME` | SSH user: `root` |
 | `VPS_SSH_KEY` | Private SSH key (contents of `id_ed25519`) |
 | `GHCR_PAT` | GitHub PAT with `read:packages` scope |
+| `RESEND_API_KEY` | Resend API key for transactional emails |
+
+## Domain Configuration (studek.com)
+
+### Namecheap DNS Settings
+In Namecheap dashboard → Domain List → Manage → Advanced DNS:
+
+| Type | Host | Value | TTL |
+|------|------|-------|-----|
+| A Record | @ | 155.138.237.103 | Automatic |
+| A Record | www | 155.138.237.103 | Automatic |
+
+### SSL Setup (after DNS propagation)
+```bash
+# SSH into server
+ssh -i development-credentials/id_ed25519 root@155.138.237.103
+
+# Run SSL setup script
+cd ~/studek-app
+./scripts/setup-ssl.sh your-email@example.com
+
+# After certificate is obtained, edit nginx config:
+nano nginx/conf.d/default.conf
+# - Comment out HTTP proxy section
+# - Uncomment 'return 301' redirect
+# - Uncomment HTTPS server block
+
+# Restart nginx
+docker compose restart nginx
+```
+
+### Manual SSL Commands
+```bash
+# Obtain certificate
+docker compose run --rm certbot certonly \
+  --webroot -w /var/www/certbot \
+  -d studek.com -d www.studek.com \
+  --email your-email@example.com \
+  --agree-tos --no-eff-email
+
+# Renew certificates (auto-runs every 12h)
+docker compose run --rm certbot renew
+
+# Test certificate
+curl -I https://studek.com
+```
 
 ## Server Access
 ```bash
