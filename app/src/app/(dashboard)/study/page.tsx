@@ -56,14 +56,23 @@ function StudyContent() {
       }
 
       try {
-        // Fetch deck info
-        const deckRes = await fetch(`/api/decks/${deckId}`);
-        if (!deckRes.ok) throw new Error("Failed to load deck");
+        // Fetch deck info with credentials
+        const deckRes = await fetch(`/api/decks/${deckId}`, {
+          credentials: 'include',
+        });
+        if (!deckRes.ok) {
+          if (deckRes.status === 401) {
+            throw new Error("Please log in to study this deck");
+          }
+          throw new Error("Failed to load deck");
+        }
         const deckData = await deckRes.json();
         setDeckInfo({ id: deckData.id, name: deckData.name });
 
-        // Fetch cards
-        const cardsRes = await fetch(`/api/decks/${deckId}/cards`);
+        // Fetch cards with credentials
+        const cardsRes = await fetch(`/api/decks/${deckId}/cards`, {
+          credentials: 'include',
+        });
         if (!cardsRes.ok) throw new Error("Failed to load cards");
         const cardsData = await cardsRes.json();
 
