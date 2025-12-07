@@ -313,10 +313,10 @@ Using GPT-4o-mini pricing (~$0.15/1M input, ~$0.60/1M output):
 
 ## Setup Instructions
 
-1. Add `OPENAI_API_KEY` as a separate secret in your GitHub repository:
+1. Add `OPENAI_APIKEY` as a separate secret in your GitHub repository:
    - Go to Settings > Secrets and variables > Actions
    - Click "New repository secret"
-   - Name: `OPENAI_API_KEY`
+   - Name: `OPENAI_APIKEY`
    - Value: `sk-your-openai-key`
 
 2. The deployment workflow will automatically add it to the `.env` file on the server.

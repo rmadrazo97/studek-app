@@ -97,13 +97,13 @@ jobs:
           GHCR_PAT: ${{ secrets.GHCR_PAT }}
           GITHUB_ACTOR: ${{ github.actor }}
           BACKEND_SECRETS: ${{ secrets.BACKEND_SECRETS }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_APIKEY: ${{ secrets.OPENAI_APIKEY }}
           VPS_HOST: ${{ secrets.VPS_HOST }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USERNAME }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          envs: GHCR_PAT,GITHUB_ACTOR,BACKEND_SECRETS,OPENAI_API_KEY,VPS_HOST
+          envs: GHCR_PAT,GITHUB_ACTOR,BACKEND_SECRETS,OPENAI_APIKEY,VPS_HOST
           script: |
             cd ~/studek-app
 
@@ -119,8 +119,8 @@ jobs:
             fi
 
             # Add OpenAI API key if provided
-            if [ -n "$OPENAI_API_KEY" ]; then
-              echo "OPENAI_API_KEY=$OPENAI_API_KEY" >> .env
+            if [ -n "$OPENAI_APIKEY" ]; then
+              echo "OPENAI_APIKEY=$OPENAI_APIKEY" >> .env
               echo "OpenAI API key added to .env"
             fi
 

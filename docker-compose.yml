@@ -11,7 +11,7 @@ services:
       - NODE_ENV=production
       - DATABASE_PATH=/app/data/studek.db
       - JWT_SECRET=${JWT_SECRET:-default-dev-secret-change-in-production}
-      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - OPENAI_APIKEY=${OPENAI_APIKEY:-}
     volumes:
       # Persist SQLite database
       - sqlite_data:/app/data

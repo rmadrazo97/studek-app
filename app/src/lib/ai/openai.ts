@@ -11,7 +11,7 @@ import OpenAI from 'openai';
 // Configuration
 // ============================================
 
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const OPENAI_API_KEY = process.env.OPENAI_APIKEY;
 const DEFAULT_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
 const DEFAULT_MAX_TOKENS = parseInt(process.env.OPENAI_MAX_TOKENS || '4096', 10);
 
