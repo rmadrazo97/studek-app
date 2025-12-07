@@ -5,7 +5,7 @@
  */
 
 import { useState, useCallback } from 'react';
-import { getAccessToken } from '@/stores/auth';
+import { apiClient, ApiClientError } from '@/lib/api/client';
 
 // ============================================
 // Types
@@ -63,11 +63,10 @@ export function useAI(options: UseAIOptions = {}) {
    */
   const checkStatus = useCallback(async (): Promise<AIStatus> => {
     try {
-      const response = await fetch('/api/ai/generate');
-      const data = await response.json();
+      const data = await apiClient.get<AIStatus>('/api/ai/generate');
       setStatus(data);
       return data;
-    } catch (err) {
+    } catch {
       const status = { configured: false, model: 'unknown' };
       setStatus(status);
       return status;
@@ -88,15 +87,6 @@ export function useAI(options: UseAIOptions = {}) {
     setError(null);
 
     try {
-      const token = getAccessToken();
-
-      // Debug logging
-      console.log('[useAI] generateDeck called');
-      console.log('[useAI] Token present:', !!token);
-      console.log('[useAI] Token preview:', token ? `${token.substring(0, 20)}...` : 'null');
-      console.log('[useAI] Prompt:', prompt.substring(0, 50));
-      console.log('[useAI] Options:', { save: options?.save ?? true, isPublic: options?.isPublic ?? false });
-
       const requestBody = {
         prompt,
         deck_id: null,
@@ -106,35 +96,14 @@ export function useAI(options: UseAIOptions = {}) {
         },
       };
 
-      console.log('[useAI] Request body:', JSON.stringify(requestBody).substring(0, 200));
-
-      const response = await fetch('/api/ai/generate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify(requestBody),
-      });
-
-      console.log('[useAI] Response status:', response.status);
-      console.log('[useAI] Response ok:', response.ok);
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.log('[useAI] Error response:', errorData);
-        throw new Error(errorData.error || 'Failed to generate deck');
-      }
-
-      const data = await response.json() as GenerateResult;
+      const data = await apiClient.post<GenerateResult>('/api/ai/generate', requestBody);
       setResult(data);
       options?.save !== false && window.location.reload(); // Refresh to show new deck
       return data;
 
     } catch (err) {
-      const error = err instanceof Error ? err : new Error('Unknown error');
+      const error = err instanceof ApiClientError ? err : err instanceof Error ? err : new Error('Unknown error');
       setError(error);
-      options?.onError?.(error);
       return null;
     } finally {
       setIsGenerating(false);
@@ -155,35 +124,20 @@ export function useAI(options: UseAIOptions = {}) {
     setError(null);
 
     try {
-      const token = getAccessToken();
-      const response = await fetch('/api/ai/generate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      const data = await apiClient.post<GenerateResult>('/api/ai/generate', {
+        prompt,
+        deck_id: deckId,
+        options: {
+          save: options?.save ?? true,
         },
-        body: JSON.stringify({
-          prompt,
-          deck_id: deckId,
-          options: {
-            save: options?.save ?? true,
-          },
-        }),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to generate cards');
-      }
-
-      const data = await response.json() as GenerateResult;
       setResult(data);
       return data;
 
     } catch (err) {
-      const error = err instanceof Error ? err : new Error('Unknown error');
+      const error = err instanceof ApiClientError ? err : err instanceof Error ? err : new Error('Unknown error');
       setError(error);
-      options?.onError?.(error);
       return null;
     } finally {
       setIsGenerating(false);
