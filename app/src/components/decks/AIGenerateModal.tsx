@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 import { useAI } from "@/hooks/useAI";
 import { useAuth } from "@/stores/auth";
-import { useSpeechToText } from "@/hooks/useSpeechToText";
+import { useOpenAITranscription } from "@/hooks/useOpenAITranscription";
 
 // ============================================
 // Types
@@ -121,21 +121,23 @@ export function AIGenerateModal({
 
   const { isGenerating, error, result, generateDeck, addCards, reset } = useAI();
 
-  // Speech-to-text hook
+  // OpenAI Transcription hook (higher quality than browser speech recognition)
   const {
-    isListening,
+    isRecording,
+    isTranscribing,
     isSupported: isSpeechSupported,
+    isAvailable: isTranscriptionAvailable,
     transcript,
-    interimTranscript,
     error: speechError,
-    startListening,
-    stopListening,
+    startRecording,
+    stopRecording,
     resetTranscript,
-  } = useSpeechToText({
-    language: 'en-US',
-    continuous: true,
-    interimResults: true,
+  } = useOpenAITranscription({
+    language: 'en',
   });
+
+  // Combined listening state (recording or transcribing)
+  const isListening = isRecording || isTranscribing;
 
   const isAddingToExisting = !!deckId;
 
@@ -161,31 +163,31 @@ export function AIGenerateModal({
     }
   }, [isOpen, reset, resetTranscript]);
 
-  // Stop listening when modal closes
+  // Stop recording when modal closes
   useEffect(() => {
-    if (!isOpen && isListening) {
-      stopListening();
+    if (!isOpen && isRecording) {
+      stopRecording();
     }
-  }, [isOpen, isListening, stopListening]);
+  }, [isOpen, isRecording, stopRecording]);
 
   // Handle microphone toggle
-  const handleMicToggle = useCallback(() => {
-    if (isListening) {
-      stopListening();
-    } else {
+  const handleMicToggle = useCallback(async () => {
+    if (isRecording) {
+      stopRecording();
+    } else if (!isTranscribing) {
       resetTranscript();
-      startListening();
+      await startRecording();
       setShowSuggestions(false);
     }
-  }, [isListening, startListening, stopListening, resetTranscript]);
+  }, [isRecording, isTranscribing, startRecording, stopRecording, resetTranscript]);
 
   // Handle generation
   const handleGenerate = useCallback(async () => {
     if (!prompt.trim()) return;
 
     // Stop recording if active
-    if (isListening) {
-      stopListening();
+    if (isRecording) {
+      stopRecording();
     }
 
     setShowSuggestions(false);
@@ -195,7 +197,7 @@ export function AIGenerateModal({
     } else {
       await generateDeck(prompt, { isPublic });
     }
-  }, [prompt, isAddingToExisting, deckId, isPublic, addCards, generateDeck, isListening, stopListening]);
+  }, [prompt, isAddingToExisting, deckId, isPublic, addCards, generateDeck, isRecording, stopRecording]);
 
   // Handle suggestion click
   const handleSuggestionClick = useCallback((suggestion: string) => {
@@ -244,8 +246,8 @@ export function AIGenerateModal({
                   {isAddingToExisting ? `Add Cards to "${deckName}"` : "Create Deck with AI"}
                 </h2>
                 <p className="text-sm text-zinc-500">
-                  {isSpeechSupported
-                    ? "Type or use voice to describe what you want to learn"
+                  {isSpeechSupported && isTranscriptionAvailable !== false
+                    ? "Type or use AI voice to describe what you want to learn"
                     : "Describe what you want to learn"}
                 </p>
               </div>
@@ -288,20 +290,24 @@ export function AIGenerateModal({
             <div className="space-y-2">
               <div className="relative">
                 <textarea
-                  value={prompt + (interimTranscript ? ' ' + interimTranscript : '')}
+                  value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
                   placeholder={
-                    isListening
-                      ? "Listening... speak now"
-                      : isAddingToExisting
-                        ? "Add the capitals of Central America..."
-                        : "Create a deck with the capitals of South America..."
+                    isRecording
+                      ? "Recording... speak now"
+                      : isTranscribing
+                        ? "Transcribing..."
+                        : isAddingToExisting
+                          ? "Add the capitals of Central America..."
+                          : "Create a deck with the capitals of South America..."
                   }
                   disabled={isGenerating || isListening}
                   className={`w-full h-24 px-4 py-3 pr-14 bg-zinc-900 border rounded-xl text-zinc-100 placeholder-zinc-500 resize-none focus:outline-none focus:ring-2 disabled:opacity-50 transition-all ${
-                    isListening
+                    isRecording
                       ? "border-red-500/50 focus:border-red-500/50 focus:ring-red-500/20"
-                      : "border-zinc-700 focus:border-violet-500/50 focus:ring-violet-500/20"
+                      : isTranscribing
+                        ? "border-violet-500/50 focus:border-violet-500/50 focus:ring-violet-500/20"
+                        : "border-zinc-700 focus:border-violet-500/50 focus:ring-violet-500/20"
                   }`}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && !e.shiftKey && !isListening) {
@@ -312,19 +318,23 @@ export function AIGenerateModal({
                 />
 
                 {/* Microphone button */}
-                {isSpeechSupported && (
+                {isSpeechSupported && isTranscriptionAvailable !== false && (
                   <button
                     onClick={handleMicToggle}
-                    disabled={isGenerating}
+                    disabled={isGenerating || isTranscribing}
                     className={`absolute top-3 right-3 p-2 rounded-lg transition-all ${
-                      isListening
+                      isRecording
                         ? "bg-red-500 text-white animate-pulse"
-                        : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-zinc-200"
+                        : isTranscribing
+                          ? "bg-violet-500 text-white"
+                          : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-zinc-200"
                     } disabled:opacity-50`}
-                    title={isListening ? "Stop recording" : "Start voice input"}
+                    title={isRecording ? "Stop recording" : isTranscribing ? "Transcribing..." : "Start voice input"}
                   >
-                    {isListening ? (
+                    {isRecording ? (
                       <Square className="w-4 h-4" />
+                    ) : isTranscribing ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (
                       <Mic className="w-4 h-4" />
                     )}
@@ -332,10 +342,15 @@ export function AIGenerateModal({
                 )}
 
                 <div className="absolute bottom-3 right-3 text-xs text-zinc-500">
-                  {isListening ? (
+                  {isRecording ? (
                     <span className="text-red-400 flex items-center gap-1">
                       <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
                       Recording...
+                    </span>
+                  ) : isTranscribing ? (
+                    <span className="text-violet-400 flex items-center gap-1">
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                      Transcribing...
                     </span>
                   ) : (
                     "Press Enter to generate"
@@ -344,10 +359,10 @@ export function AIGenerateModal({
               </div>
 
               {/* Voice input hint */}
-              {isSpeechSupported && !isListening && !prompt && !isGenerating && !result && (
+              {isSpeechSupported && isTranscriptionAvailable !== false && !isListening && !prompt && !isGenerating && !result && (
                 <div className="flex items-center gap-2 text-xs text-zinc-500">
                   <Mic className="w-3 h-3" />
-                  <span>Tap the microphone to describe your deck with voice</span>
+                  <span>Tap the microphone to describe your deck with voice (powered by AI)</span>
                 </div>
               )}
 
