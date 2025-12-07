@@ -15,6 +15,11 @@ export interface User {
   password_hash: string;
   name: string | null;
   avatar_url: string | null;
+  email_verified: number; // SQLite stores booleans as 0/1
+  verification_token: string | null;
+  verification_token_expires_at: string | null;
+  password_reset_token: string | null;
+  password_reset_token_expires_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -24,6 +29,9 @@ export interface UserCreate {
   password_hash: string;
   name?: string;
   avatar_url?: string;
+  email_verified?: number;
+  verification_token?: string;
+  verification_token_expires_at?: string;
 }
 
 export interface UserUpdate {
@@ -31,6 +39,11 @@ export interface UserUpdate {
   password_hash?: string;
   name?: string;
   avatar_url?: string;
+  email_verified?: number;
+  verification_token?: string | null;
+  verification_token_expires_at?: string | null;
+  password_reset_token?: string | null;
+  password_reset_token_expires_at?: string | null;
 }
 
 // ============================================

@@ -98,11 +98,12 @@ jobs:
           GITHUB_ACTOR: ${{ github.actor }}
           BACKEND_SECRETS: ${{ secrets.BACKEND_SECRETS }}
           VPS_HOST: ${{ secrets.VPS_HOST }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USERNAME }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          envs: GHCR_PAT,GITHUB_ACTOR,BACKEND_SECRETS,VPS_HOST
+          envs: GHCR_PAT,GITHUB_ACTOR,BACKEND_SECRETS,VPS_HOST,RESEND_API_KEY
           script: |
             cd ~/studek-app
 
@@ -115,6 +116,12 @@ jobs:
               echo "$BACKEND_SECRETS" | python3 -c "import sys,json; [print(f'{k}={v}') for k,v in json.load(sys.stdin).items()]" > .env
               chmod 600 .env
               echo ".env file created with $(wc -l < .env) variables"
+            fi
+
+            # Add RESEND_API_KEY if provided separately
+            if [ -n "$RESEND_API_KEY" ]; then
+              echo "RESEND_API_KEY=$RESEND_API_KEY" >> .env
+              echo "RESEND_API_KEY added to .env"
             fi
 
             # Login to GitHub Container Registry

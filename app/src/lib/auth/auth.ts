@@ -6,7 +6,21 @@
 
 import { executeRaw, runRaw } from '../db';
 import { generateId, now } from '../db/crud';
-import { createUser, getUserByEmail, getUserById, emailExists } from '../db/services/users';
+import {
+  createUser,
+  getUserByEmail,
+  getUserById,
+  emailExists,
+  getUserByVerificationToken,
+  getUserByPasswordResetToken,
+  setVerificationToken,
+  verifyUserEmail,
+  setPasswordResetToken,
+  clearPasswordResetToken,
+  isVerificationTokenValid,
+  isPasswordResetTokenValid,
+} from '../db/services/users';
+import { emailService } from '../email';
 import {
   hashPassword,
   verifyPassword,
@@ -59,15 +73,33 @@ export async function register(data: RegisterRequest): Promise<AuthResponse> {
   // Hash password
   const passwordHash = await hashPassword(data.password);
 
-  // Create user
+  // Generate verification token
+  const verificationToken = generateRandomToken();
+  const verificationTokenExpiry = new Date(
+    Date.now() + 24 * 60 * 60 * 1000 // 24 hours
+  ).toISOString();
+
+  // Create user with verification token
   const user = createUser({
     email: data.email.toLowerCase().trim(),
     password_hash: passwordHash,
     name: data.name?.trim() || null,
+    email_verified: 0,
+    verification_token: hashToken(verificationToken),
+    verification_token_expires_at: verificationTokenExpiry,
   });
 
   // Assign default user role
   assignRoleToUserByName(user.id, DEFAULT_ROLES.USER);
+
+  // Send welcome email with verification link (non-blocking)
+  emailService.sendWelcomeEmail(
+    user.email,
+    user.name,
+    verificationToken
+  ).catch((err) => {
+    console.error('[Auth] Failed to send welcome email:', err);
+  });
 
   // Generate tokens
   const tokens = await generateTokens(user.id, user.email);
@@ -267,6 +299,7 @@ export function getSafeUser(userId: string): SafeUser | null {
     email: user.email,
     name: user.name,
     avatar_url: user.avatar_url,
+    email_verified: user.email_verified === 1,
     roles,
     permissions,
     created_at: user.created_at,
@@ -361,4 +394,156 @@ export async function resetPassword(userId: string, newPassword: string): Promis
   revokeAllUserTokens(userId);
 
   return true;
+}
+
+// ============================================
+// Email Verification
+// ============================================
+
+/**
+ * Verify email using token
+ */
+export function verifyEmail(token: string): { success: boolean; message: string } {
+  const tokenHash = hashToken(token);
+
+  // Find user with this verification token
+  const user = getUserByVerificationToken(tokenHash);
+  if (!user) {
+    return { success: false, message: 'Invalid or expired verification link' };
+  }
+
+  // Check if token is expired
+  if (!isVerificationTokenValid(user)) {
+    return { success: false, message: 'Verification link has expired. Please request a new one.' };
+  }
+
+  // Verify the email
+  verifyUserEmail(user.id);
+
+  return { success: true, message: 'Email verified successfully' };
+}
+
+/**
+ * Resend verification email
+ */
+export async function resendVerificationEmail(userId: string): Promise<{ success: boolean; message: string }> {
+  const user = getUserById(userId);
+  if (!user) {
+    throw new AuthError('User not found', 'USER_NOT_FOUND');
+  }
+
+  // Check if already verified
+  if (user.email_verified === 1) {
+    return { success: false, message: 'Email is already verified' };
+  }
+
+  // Generate new verification token
+  const verificationToken = generateRandomToken();
+  setVerificationToken(user.id, hashToken(verificationToken));
+
+  // Send verification email
+  const result = await emailService.sendVerificationEmail(
+    user.email,
+    user.name,
+    verificationToken
+  );
+
+  if (!result.success) {
+    return { success: false, message: 'Failed to send verification email. Please try again.' };
+  }
+
+  return { success: true, message: 'Verification email sent successfully' };
+}
+
+// ============================================
+// Password Reset via Email
+// ============================================
+
+/**
+ * Request password reset (send email with reset link)
+ */
+export async function requestPasswordReset(email: string): Promise<{ success: boolean; message: string }> {
+  const user = getUserByEmail(email.toLowerCase().trim());
+
+  // Always return success message to prevent email enumeration
+  const successMessage = 'If an account exists with this email, you will receive a password reset link shortly.';
+
+  if (!user) {
+    // Don't reveal that user doesn't exist
+    return { success: true, message: successMessage };
+  }
+
+  // Generate password reset token
+  const resetToken = generateRandomToken();
+  setPasswordResetToken(user.id, hashToken(resetToken));
+
+  // Send password reset email
+  const result = await emailService.sendPasswordResetEmail(
+    user.email,
+    user.name,
+    resetToken
+  );
+
+  if (!result.success) {
+    console.error('[Auth] Failed to send password reset email:', result.error);
+    // Still return success to prevent enumeration
+    return { success: true, message: successMessage };
+  }
+
+  return { success: true, message: successMessage };
+}
+
+/**
+ * Reset password using token
+ */
+export async function resetPasswordWithToken(
+  token: string,
+  newPassword: string
+): Promise<{ success: boolean; message: string }> {
+  const tokenHash = hashToken(token);
+
+  // Find user with this reset token
+  const user = getUserByPasswordResetToken(tokenHash);
+  if (!user) {
+    return { success: false, message: 'Invalid or expired password reset link' };
+  }
+
+  // Check if token is expired
+  if (!isPasswordResetTokenValid(user)) {
+    return { success: false, message: 'Password reset link has expired. Please request a new one.' };
+  }
+
+  // Validate new password
+  if (newPassword.length < AUTH_CONSTANTS.PASSWORD_MIN_LENGTH) {
+    return {
+      success: false,
+      message: `Password must be at least ${AUTH_CONSTANTS.PASSWORD_MIN_LENGTH} characters`,
+    };
+  }
+
+  // Reset the password
+  await resetPassword(user.id, newPassword);
+
+  // Clear the reset token
+  clearPasswordResetToken(user.id);
+
+  return { success: true, message: 'Password reset successfully. You can now log in with your new password.' };
+}
+
+/**
+ * Validate password reset token (for UI to show reset form)
+ */
+export function validatePasswordResetToken(token: string): { valid: boolean; message?: string } {
+  const tokenHash = hashToken(token);
+
+  const user = getUserByPasswordResetToken(tokenHash);
+  if (!user) {
+    return { valid: false, message: 'Invalid password reset link' };
+  }
+
+  if (!isPasswordResetTokenValid(user)) {
+    return { valid: false, message: 'Password reset link has expired' };
+  }
+
+  return { valid: true };
 }
