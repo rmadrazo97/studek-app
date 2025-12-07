@@ -18,18 +18,22 @@
  * - favicon-16x16.png
  */
 
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 async function generateIcons() {
   let sharp;
   try {
-    sharp = require('sharp');
+    sharp = (await import('sharp')).default;
   } catch {
     console.log('Sharp not installed. Installing...');
-    const { execSync } = require('child_process');
+    const { execSync } = await import('child_process');
     execSync('npm install sharp', { stdio: 'inherit' });
-    sharp = require('sharp');
+    sharp = (await import('sharp')).default;
   }
 
   const publicDir = path.join(__dirname, '..', 'public');
@@ -84,7 +88,6 @@ async function generateIcons() {
   // Generate ICO file from favicon SVG
   try {
     const icoPath = path.join(publicDir, 'favicon.ico');
-    const sizes = [16, 32, 48];
 
     // Create multi-size ICO by using the 32x32 version
     await sharp(path.join(publicDir, 'favicon.svg'))

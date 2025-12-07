@@ -11,7 +11,6 @@ import {
 } from '@/lib/auth/middleware';
 import {
   getDeckById,
-  getCardsByDeckId,
   getCardsPaginated,
   getDueCards,
   getNewCards,

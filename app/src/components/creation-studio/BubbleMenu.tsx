@@ -13,7 +13,6 @@ import {
   Sparkles,
   ArrowRight,
   Copy,
-  MessageSquare,
   Wand2,
   Quote,
 } from "lucide-react";

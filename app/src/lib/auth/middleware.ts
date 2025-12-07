@@ -6,8 +6,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAccessToken, getSafeUser } from './auth';
-import { userHasPermission, userHasAnyPermission, userHasRole, isSuperAdmin } from './rbac';
-import type { AuthContext, SafeUser, TokenPayload } from './types';
+import { userHasAnyPermission, isSuperAdmin } from './rbac';
+import type { AuthContext, SafeUser } from './types';
 import { AuthError } from './types';
 
 // ============================================

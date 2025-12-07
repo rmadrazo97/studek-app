@@ -14,7 +14,6 @@ import {
   GripVertical,
   Trash2,
   MoreHorizontal,
-  ChevronDown,
   Sparkles,
   BookOpen,
   Save,
@@ -57,7 +56,7 @@ const BlockRenderer = memo(function BlockRenderer({
 }: BlockRendererProps) {
   const inputRef = useRef<HTMLTextAreaElement | HTMLDivElement>(null);
   const [showMenu, setShowMenu] = useState(false);
-  const { openBubbleMenu, state } = useCreationStudio();
+  const { openBubbleMenu } = useCreationStudio();
 
   // Auto-resize textarea
   const resizeTextarea = useCallback((element: HTMLTextAreaElement | null) => {

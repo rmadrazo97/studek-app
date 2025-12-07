@@ -5,7 +5,6 @@ import { motion } from "framer-motion";
 import {
   Folder,
   BookOpen,
-  Copy,
   Check,
   Download,
   ChevronRight,

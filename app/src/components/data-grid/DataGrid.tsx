@@ -12,7 +12,6 @@ import {
   useImperativeHandle,
   useMemo,
   useRef,
-  KeyboardEvent,
   MouseEvent,
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -23,7 +22,6 @@ import {
   Loader2,
   Inbox,
   ChevronRight,
-  GripVertical,
 } from "lucide-react";
 import type {
   ColumnDef,
@@ -31,9 +29,8 @@ import type {
   DataGridProps,
   DensityMode,
   GroupedRow,
-  DENSITY_CONFIG,
 } from "./types";
-import { DataGridProvider, useDataGridContext } from "./DataGridContext";
+import { DataGridProvider } from "./DataGridContext";
 import { useDataGrid } from "./useDataGrid";
 import { useVirtualization } from "./useVirtualization";
 import { getCellRenderer } from "./CellRenderers";
@@ -584,11 +581,9 @@ function DataGridInner<TData>(
     data,
     columns,
     getRowId = (row, index) => String(index),
-    enableSorting = true,
     enableSelection = false,
     selectionMode = enableSelection ? "multiple" : "none",
     enableVirtualization = true,
-    enableColumnResize = true,
     enableKeyboardNavigation = true,
     density: defaultDensity = "default",
     striped = false,
@@ -601,7 +596,6 @@ function DataGridInner<TData>(
     onRowDoubleClick,
     onSelectionChange,
     className = "",
-    ...rest
   } = props;
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -636,7 +630,6 @@ function DataGridInner<TData>(
     virtualItems,
     totalSize,
     scrollToIndex,
-    isScrolling,
   } = useVirtualization({
     count: table.processedData.length,
     getItemSize: () => densityConfig[table.density].rowHeight,
@@ -724,8 +717,6 @@ function DataGridInner<TData>(
       }
     }
   }, [table.selectionState.focusedRowId, enableVirtualization, scrollToIndex, table.processedData, getRowId]);
-
-  const config = densityConfig[table.density];
 
   // Handle column resize
   const handleColumnResize = useCallback(

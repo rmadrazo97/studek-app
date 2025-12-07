@@ -65,8 +65,9 @@ export function MobileHeader({ syncStatus = "synced" }: MobileHeaderProps) {
 
   return (
     <>
-      {/* Mobile Header Bar */}
-      <header className="fixed top-0 left-0 right-0 h-14 bg-[#09090b]/95 backdrop-blur-lg border-b border-zinc-800 flex items-center justify-between px-4 z-50 md:hidden">
+      {/* Mobile Header Bar - with safe area for iOS Dynamic Island/notch */}
+      <header className="fixed top-0 left-0 right-0 bg-[#09090b]/95 backdrop-blur-lg border-b border-zinc-800 z-50 md:hidden pt-[env(safe-area-inset-top,0px)]">
+        <div className="h-14 flex items-center justify-between px-4">
         {/* Logo - links to landing page */}
         <Link href="/" className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center shadow-[0_0_20px_rgba(34,211,238,0.3)]">
@@ -77,14 +78,15 @@ export function MobileHeader({ syncStatus = "synced" }: MobileHeaderProps) {
           </span>
         </Link>
 
-        {/* Burger Menu Button */}
-        <button
-          onClick={() => setIsMenuOpen(true)}
-          className="p-2 rounded-lg text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/50 transition-colors"
-          aria-label="Open menu"
-        >
-          <Menu className="w-6 h-6" />
-        </button>
+          {/* Burger Menu Button */}
+          <button
+            onClick={() => setIsMenuOpen(true)}
+            className="p-2 rounded-lg text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/50 transition-colors"
+            aria-label="Open menu"
+          >
+            <Menu className="w-6 h-6" />
+          </button>
+        </div>
       </header>
 
       {/* Mobile Slide-out Menu */}
@@ -101,13 +103,13 @@ export function MobileHeader({ syncStatus = "synced" }: MobileHeaderProps) {
               onClick={closeMenu}
             />
 
-            {/* Slide-out Panel */}
+            {/* Slide-out Panel - with safe area for iOS Dynamic Island/notch */}
             <motion.div
               initial={{ x: "100%" }}
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="fixed top-0 right-0 bottom-0 w-[280px] bg-[#09090b] border-l border-zinc-800 z-50 md:hidden flex flex-col pb-20"
+              className="fixed top-0 right-0 bottom-0 w-[280px] bg-[#09090b] border-l border-zinc-800 z-50 md:hidden flex flex-col pt-[env(safe-area-inset-top,0px)] pb-20"
             >
               {/* Menu Header */}
               <div className="h-14 flex items-center justify-between px-4 border-b border-zinc-800">
