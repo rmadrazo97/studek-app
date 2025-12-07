@@ -107,7 +107,7 @@ export function MobileHeader({ syncStatus = "synced" }: MobileHeaderProps) {
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="fixed top-0 right-0 bottom-0 w-[280px] bg-[#09090b] border-l border-zinc-800 z-50 md:hidden flex flex-col"
+              className="fixed top-0 right-0 bottom-0 w-[280px] bg-[#09090b] border-l border-zinc-800 z-50 md:hidden flex flex-col pb-20"
             >
               {/* Menu Header */}
               <div className="h-14 flex items-center justify-between px-4 border-b border-zinc-800">
