@@ -3,6 +3,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { handleApiError } from '@/lib/api/errors';
 import {
   getPublicDecksWithAuthor,
   getCategoriesWithCounts,
@@ -45,10 +46,6 @@ export async function GET(request: NextRequest) {
       hasMore: offset + decks.length < total,
     });
   } catch (error) {
-    console.error('[API] GET /api/explore error:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch public decks' },
-      { status: 500 }
-    );
+    return handleApiError('GET /api/explore', error, 'Failed to fetch public decks');
   }
 }

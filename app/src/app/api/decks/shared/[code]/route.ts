@@ -5,6 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth, withOptionalAuth, type AuthenticatedRequest } from '@/lib/auth/middleware';
+import { handleApiError } from '@/lib/api/errors';
 import {
   validateShareLink,
   incrementShareLinkAccess,
@@ -70,11 +71,7 @@ export const GET = withOptionalAuth(
         can_clone: link.permission === 'clone',
       });
     } catch (error) {
-      console.error('[API] GET /api/decks/shared/[code] error:', error);
-      return NextResponse.json(
-        { error: 'Failed to access shared deck' },
-        { status: 500 }
-      );
+      return handleApiError('GET /api/decks/shared/[code]', error, 'Failed to access shared deck');
     }
   }
 );
@@ -123,11 +120,7 @@ export const POST = withAuth(
         message: `Successfully cloned "${deck.name}" with ${cardCount} cards`,
       }, { status: 201 });
     } catch (error) {
-      console.error('[API] POST /api/decks/shared/[code] error:', error);
-      return NextResponse.json(
-        { error: 'Failed to clone deck' },
-        { status: 500 }
-      );
+      return handleApiError('POST /api/decks/shared/[code]', error, 'Failed to clone deck');
     }
   }
 );
