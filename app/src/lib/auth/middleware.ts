@@ -39,16 +39,23 @@ export type AuthenticatedHandler<T = unknown> = (
 export function extractToken(request: NextRequest): string | null {
   const authHeader = request.headers.get('authorization');
 
+  console.log('[Auth Middleware] extractToken called');
+  console.log('[Auth Middleware] Authorization header present:', !!authHeader);
+  console.log('[Auth Middleware] Authorization header value:', authHeader ? `${authHeader.substring(0, 30)}...` : 'null');
+
   if (!authHeader) {
+    console.log('[Auth Middleware] No authorization header found');
     return null;
   }
 
   const parts = authHeader.split(' ');
 
   if (parts.length !== 2 || parts[0].toLowerCase() !== 'bearer') {
+    console.log('[Auth Middleware] Invalid authorization header format. Parts:', parts.length, 'Type:', parts[0]);
     return null;
   }
 
+  console.log('[Auth Middleware] Token extracted successfully, length:', parts[1].length);
   return parts[1];
 }
 
@@ -60,21 +67,35 @@ export function extractToken(request: NextRequest): string | null {
  * Verify token and get auth context
  */
 export function getAuthContext(request: NextRequest): AuthContext | null {
+  console.log('[Auth Middleware] getAuthContext called');
+  console.log('[Auth Middleware] Request URL:', request.url);
+  console.log('[Auth Middleware] Request method:', request.method);
+
   const token = extractToken(request);
 
   if (!token) {
+    console.log('[Auth Middleware] No token found - returning null');
     return null;
   }
 
   try {
+    console.log('[Auth Middleware] Verifying token...');
     const payload = verifyAccessToken(token);
+    console.log('[Auth Middleware] Token verified successfully');
+    console.log('[Auth Middleware] Payload:', JSON.stringify({
+      userId: payload.userId,
+      email: payload.email,
+      roles: payload.roles,
+    }));
+
     return {
       userId: payload.userId,
       email: payload.email,
       roles: payload.roles,
       permissions: [], // Will be populated if needed
     };
-  } catch {
+  } catch (error) {
+    console.log('[Auth Middleware] Token verification failed:', error instanceof Error ? error.message : 'Unknown error');
     return null;
   }
 }
@@ -131,16 +152,26 @@ export function handleAuthError(error: unknown): NextResponse {
  */
 export function withAuth<T>(handler: AuthenticatedHandler<T>): RouteHandler<T> {
   return async (request: NextRequest, context) => {
+    console.log('[Auth Middleware] withAuth wrapper called');
+    console.log('[Auth Middleware] Processing request:', request.method, request.url);
+
     const auth = getAuthContext(request);
 
     if (!auth) {
+      console.log('[Auth Middleware] No auth context - returning 401 Unauthorized');
       return unauthorizedResponse() as NextResponse<T>;
     }
 
+    console.log('[Auth Middleware] Auth context obtained for userId:', auth.userId);
+
     const user = getSafeUser(auth.userId);
     if (!user) {
+      console.log('[Auth Middleware] User not found in database for userId:', auth.userId);
       return unauthorizedResponse('User not found') as NextResponse<T>;
     }
+
+    console.log('[Auth Middleware] User found:', user.email);
+    console.log('[Auth Middleware] Authentication successful - proceeding to handler');
 
     // Add auth info to request
     const authenticatedRequest = request as AuthenticatedRequest;

@@ -89,24 +89,40 @@ export function useAI(options: UseAIOptions = {}) {
 
     try {
       const token = getAccessToken();
+
+      // Debug logging
+      console.log('[useAI] generateDeck called');
+      console.log('[useAI] Token present:', !!token);
+      console.log('[useAI] Token preview:', token ? `${token.substring(0, 20)}...` : 'null');
+      console.log('[useAI] Prompt:', prompt.substring(0, 50));
+      console.log('[useAI] Options:', { save: options?.save ?? true, isPublic: options?.isPublic ?? false });
+
+      const requestBody = {
+        prompt,
+        deck_id: null,
+        options: {
+          save: options?.save ?? true,
+          is_public: options?.isPublic ?? false,
+        },
+      };
+
+      console.log('[useAI] Request body:', JSON.stringify(requestBody).substring(0, 200));
+
       const response = await fetch('/api/ai/generate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({
-          prompt,
-          deck_id: null,
-          options: {
-            save: options?.save ?? true,
-            is_public: options?.isPublic ?? false,
-          },
-        }),
+        body: JSON.stringify(requestBody),
       });
+
+      console.log('[useAI] Response status:', response.status);
+      console.log('[useAI] Response ok:', response.ok);
 
       if (!response.ok) {
         const errorData = await response.json();
+        console.log('[useAI] Error response:', errorData);
         throw new Error(errorData.error || 'Failed to generate deck');
       }
 
