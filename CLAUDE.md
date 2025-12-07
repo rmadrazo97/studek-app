@@ -37,39 +37,29 @@ In Namecheap dashboard → Domain List → Manage → Advanced DNS:
 | A Record | @ | 155.138.237.103 | Automatic |
 | A Record | www | 155.138.237.103 | Automatic |
 
-### SSL Setup (after DNS propagation)
+### Automatic SSL (Let's Encrypt)
+SSL certificates are **automatically obtained** when containers start.
+The Nginx container:
+1. Starts with HTTP-only config
+2. Requests SSL certificate from Let's Encrypt
+3. Switches to HTTPS config
+4. Auto-renews certificates every 12 hours
+
+**Environment variables:**
+- `DOMAIN` - Domain name (default: studek.com)
+- `SSL_EMAIL` - Email for Let's Encrypt notifications
+- `SKIP_SSL=true` - Disable SSL for local development
+
+### Manual SSL Commands (if needed)
 ```bash
-# SSH into server
-ssh -i development-credentials/id_ed25519 root@155.138.237.103
+# Check certificate status
+docker compose exec nginx certbot certificates
 
-# Run SSL setup script
-cd ~/studek-app
-./scripts/setup-ssl.sh your-email@example.com
+# Force certificate renewal
+docker compose exec nginx certbot renew --force-renewal
 
-# After certificate is obtained, edit nginx config:
-nano nginx/conf.d/default.conf
-# - Comment out HTTP proxy section
-# - Uncomment 'return 301' redirect
-# - Uncomment HTTPS server block
-
-# Restart nginx
-docker compose restart nginx
-```
-
-### Manual SSL Commands
-```bash
-# Obtain certificate
-docker compose run --rm certbot certonly \
-  --webroot -w /var/www/certbot \
-  -d studek.com -d www.studek.com \
-  --email your-email@example.com \
-  --agree-tos --no-eff-email
-
-# Renew certificates (auto-runs every 12h)
-docker compose run --rm certbot renew
-
-# Test certificate
-curl -I https://studek.com
+# View nginx logs
+docker compose logs -f nginx
 ```
 
 ## Server Access

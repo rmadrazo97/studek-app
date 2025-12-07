@@ -1,38 +1,33 @@
 services:
-  # Nginx reverse proxy
+  # Nginx reverse proxy with automatic SSL
   nginx:
-    image: nginx:alpine
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
     container_name: studek-nginx
     restart: unless-stopped
     ports:
       - "80:80"
       - "443:443"
+    environment:
+      - DOMAIN=studek.com
+      - SSL_EMAIL=${SSL_EMAIL:-admin@studek.com}
+      # Set SKIP_SSL=true for local development without SSL
+      - SKIP_SSL=${SKIP_SSL:-false}
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./nginx/conf.d:/etc/nginx/conf.d:ro
-      - certbot_www:/var/www/certbot:ro
-      - certbot_conf:/etc/letsencrypt:ro
+      # Persist SSL certificates
+      - certbot_conf:/etc/letsencrypt
+      - certbot_www:/var/www/certbot
     depends_on:
       - app
     networks:
       - studek-network
     healthcheck:
-      test: ["CMD", "nginx", "-t"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3
-
-  # Certbot for SSL certificates
-  certbot:
-    image: certbot/certbot
-    container_name: studek-certbot
-    volumes:
-      - certbot_www:/var/www/certbot
-      - certbot_conf:/etc/letsencrypt
-    # Run with: docker compose run --rm certbot certonly --webroot -w /var/www/certbot -d studek.com -d www.studek.com
-    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
-    networks:
-      - studek-network
+      start_period: 60s
 
   app:
     # Use pre-built image from GitHub Container Registry in production
@@ -40,7 +35,7 @@ services:
     image: ghcr.io/rmadrazo97/studek-app:latest
     container_name: studek-app
     restart: unless-stopped
-    # Remove external port mapping - only accessible through nginx
+    # Only accessible through nginx
     expose:
       - "3000"
     environment:
@@ -64,8 +59,7 @@ services:
     networks:
       - studek-network
 
-  # Log viewer - password protected (default: admin/admin)
-  # To change password: docker run --rm amir20/dozzle:latest generate <user> --password <pass> > dozzle-data/users.yml
+  # Log viewer - password protected
   logs:
     image: amir20/dozzle:latest
     container_name: studek-logs
@@ -102,9 +96,9 @@ services:
 volumes:
   sqlite_data:
     driver: local
-  certbot_www:
-    driver: local
   certbot_conf:
+    driver: local
+  certbot_www:
     driver: local
 
 networks:
