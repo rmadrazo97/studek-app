@@ -124,6 +124,7 @@ export const POST = withAuth(async (request: AuthenticatedRequest) => {
         for (const card of result.cards) {
           const savedCard = createCard({
             deck_id: deckId,
+            type: 'basic',
             front: card.front,
             back: card.back,
             tags: card.tags || null,
@@ -187,6 +188,7 @@ export const POST = withAuth(async (request: AuthenticatedRequest) => {
         for (const card of result.cards) {
           const savedCard = createCard({
             deck_id: deck.id,
+            type: 'basic',
             front: card.front,
             back: card.back,
             tags: card.tags || null,
