@@ -21,6 +21,7 @@ import CreateDeckModal from "./CreateDeckModal";
 import ShareDeckModal from "./ShareDeckModal";
 import EditDeckModal from "./EditDeckModal";
 import ImportAPKGModal from "./ImportAPKGModal";
+import AIGenerateModal from "./AIGenerateModal";
 
 // ============================================
 // DeckCard Component
@@ -192,6 +193,7 @@ export default function DeckManager({ onSelectDeck }: DeckManagerProps) {
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
+  const [showAIModal, setShowAIModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -272,6 +274,14 @@ export default function DeckManager({ onSelectDeck }: DeckManagerProps) {
             >
               <Upload className="w-4 h-4" />
               Import
+            </motion.button>
+            <motion.button
+              onClick={() => setShowAIModal(true)}
+              className="flex items-center gap-2 px-4 py-2 text-sm text-white font-medium bg-gradient-to-r from-violet-500 to-purple-600 rounded-lg hover:opacity-90 transition-colors"
+              whileTap={{ scale: 0.98 }}
+            >
+              <Sparkles className="w-4 h-4" />
+              AI Generate
             </motion.button>
             <motion.button
               onClick={() => setShowCreateModal(true)}
@@ -360,6 +370,12 @@ export default function DeckManager({ onSelectDeck }: DeckManagerProps) {
         isOpen={showImportModal}
         onClose={() => setShowImportModal(false)}
         onImportComplete={refresh}
+      />
+
+      <AIGenerateModal
+        isOpen={showAIModal}
+        onClose={() => setShowAIModal(false)}
+        onSuccess={refresh}
       />
 
       {selectedDeck && (
