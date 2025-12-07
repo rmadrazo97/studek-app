@@ -25,6 +25,18 @@ export function now(): string {
   return new Date().toISOString();
 }
 
+/**
+ * Convert a JavaScript value to SQLite-compatible value
+ * - Booleans become 0/1
+ * - undefined becomes null
+ * - Other types pass through
+ */
+function toSqliteValue(value: unknown): unknown {
+  if (value === undefined) return null;
+  if (typeof value === 'boolean') return value ? 1 : 0;
+  return value;
+}
+
 // ============================================
 // Generic CRUD Operations
 // ============================================
@@ -69,8 +81,8 @@ export function create<T extends Record<string, unknown>>(
   const entries = Object.entries(record).filter(([, value]) => value !== undefined);
   const columns = entries.map(([key]) => key);
   const placeholders = columns.map(() => '?').join(', ');
-  // Convert any remaining undefined to null (shouldn't happen after filter, but safety check)
-  const values = entries.map(([, value]) => value === undefined ? null : value);
+  // Convert values to SQLite-compatible types (booleans -> 0/1, undefined -> null)
+  const values = entries.map(([, value]) => toSqliteValue(value));
 
   console.log('[CRUD] create - Columns:', columns);
   console.log('[CRUD] create - Values:', JSON.stringify(values));
@@ -243,8 +255,8 @@ export function update<T>(
   }
 
   const setClause = entries.map(([col]) => `${col} = ?`).join(', ');
-  // Convert any remaining undefined to null (safety check)
-  const values = entries.map(([, val]) => val === undefined ? null : val);
+  // Convert values to SQLite-compatible types (booleans -> 0/1, undefined -> null)
+  const values = entries.map(([, val]) => toSqliteValue(val));
 
   const sql = `UPDATE ${table} SET ${setClause} WHERE id = ?`;
   const result = db.prepare(sql).run(...values, id);
