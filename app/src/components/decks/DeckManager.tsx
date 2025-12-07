@@ -14,11 +14,13 @@ import {
   Sparkles,
   Globe,
   Lock,
+  Upload,
 } from "lucide-react";
 import { useDecks, type DeckWithStats } from "@/hooks/useDecks";
 import CreateDeckModal from "./CreateDeckModal";
 import ShareDeckModal from "./ShareDeckModal";
 import EditDeckModal from "./EditDeckModal";
+import ImportAPKGModal from "./ImportAPKGModal";
 
 // ============================================
 // DeckCard Component
@@ -186,9 +188,10 @@ interface DeckManagerProps {
 }
 
 export default function DeckManager({ onSelectDeck }: DeckManagerProps) {
-  const { decks, sharedDecks, isLoading, error, createDeck, updateDeck, deleteDeck } = useDecks();
+  const { decks, sharedDecks, isLoading, error, createDeck, updateDeck, deleteDeck, refresh } = useDecks();
 
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -261,14 +264,24 @@ export default function DeckManager({ onSelectDeck }: DeckManagerProps) {
               {decks.length} {decks.length === 1 ? "deck" : "decks"}
             </p>
           </div>
-          <motion.button
-            onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-2 px-4 py-2 text-sm text-white font-medium bg-gradient-to-r from-cyan-500 to-blue-600 rounded-lg hover:opacity-90 transition-colors"
-            whileTap={{ scale: 0.98 }}
-          >
-            <Plus className="w-4 h-4" />
-            New Deck
-          </motion.button>
+          <div className="flex items-center gap-2">
+            <motion.button
+              onClick={() => setShowImportModal(true)}
+              className="flex items-center gap-2 px-4 py-2 text-sm text-gray-300 font-medium border border-white/10 rounded-lg hover:bg-white/5 hover:border-white/20 transition-all"
+              whileTap={{ scale: 0.98 }}
+            >
+              <Upload className="w-4 h-4" />
+              Import
+            </motion.button>
+            <motion.button
+              onClick={() => setShowCreateModal(true)}
+              className="flex items-center gap-2 px-4 py-2 text-sm text-white font-medium bg-gradient-to-r from-cyan-500 to-blue-600 rounded-lg hover:opacity-90 transition-colors"
+              whileTap={{ scale: 0.98 }}
+            >
+              <Plus className="w-4 h-4" />
+              New Deck
+            </motion.button>
+          </div>
         </div>
 
         {/* Decks Grid */}
@@ -341,6 +354,12 @@ export default function DeckManager({ onSelectDeck }: DeckManagerProps) {
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
         onCreate={handleCreate}
+      />
+
+      <ImportAPKGModal
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        onImportComplete={refresh}
       />
 
       {selectedDeck && (

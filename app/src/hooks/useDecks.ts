@@ -162,6 +162,7 @@ export function useDecks() {
     isLoading,
     error,
     fetchDecks,
+    refresh: fetchDecks,
     createDeck,
     updateDeck,
     deleteDeck,
