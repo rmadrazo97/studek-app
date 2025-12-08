@@ -25,8 +25,17 @@ On push to `main`:
 | `VPS_USERNAME` | SSH user: `root` |
 | `VPS_SSH_KEY` | Private SSH key (contents of `id_ed25519`) |
 | `GHCR_PAT` | GitHub PAT with `read:packages` scope |
+| `BACKEND_SECRETS` | JSON object with env vars (must include `JWT_SECRET`) |
 | `OPENAI_APIKEY` | OpenAI API key for AI deck generation (optional) |
 | `RESEND_API_KEY` | Resend API key for transactional emails |
+
+**Important:** `BACKEND_SECRETS` must be a JSON object containing at minimum:
+```json
+{
+  "JWT_SECRET": "your-secure-random-string-at-least-32-chars"
+}
+```
+Without a consistent `JWT_SECRET`, tokens will be invalidated on each deployment.
 
 ## Domain Configuration (studek.com)
 

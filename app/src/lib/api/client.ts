@@ -3,6 +3,7 @@
  *
  * Centralized fetch wrapper that automatically includes credentials
  * (both cookies and Bearer token) and handles common response patterns.
+ * Automatically refreshes expired tokens and retries failed requests.
  */
 
 export interface ApiError {
@@ -13,14 +14,79 @@ export interface ApiError {
 
 export interface ApiRequestOptions extends Omit<RequestInit, 'credentials'> {
   skipAuth?: boolean; // Skip adding auth header (for public endpoints)
+  skipRetry?: boolean; // Skip automatic retry on 401 (internal use)
 }
+
+const STORAGE_KEYS = {
+  ACCESS_TOKEN: 'studek_access_token',
+  REFRESH_TOKEN: 'studek_refresh_token',
+};
+
+// Track if a refresh is in progress to prevent multiple simultaneous refreshes
+let refreshPromise: Promise<string | null> | null = null;
 
 /**
  * Get access token from localStorage
  */
 function getAccessToken(): string | null {
   if (typeof window === 'undefined') return null;
-  return localStorage.getItem('studek_access_token');
+  return localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+}
+
+/**
+ * Get refresh token from localStorage
+ */
+function getRefreshToken(): string | null {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
+}
+
+/**
+ * Refresh the access token using the refresh token
+ * Uses a singleton promise to prevent multiple simultaneous refresh requests
+ */
+async function refreshAccessToken(): Promise<string | null> {
+  // If a refresh is already in progress, wait for it
+  if (refreshPromise) {
+    return refreshPromise;
+  }
+
+  const refreshToken = getRefreshToken();
+  if (!refreshToken) return null;
+
+  // Create the refresh promise
+  refreshPromise = (async () => {
+    try {
+      const response = await fetch('/api/auth/refresh', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken }),
+      });
+
+      if (!response.ok) {
+        // Refresh failed - clear tokens
+        localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
+        localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+        localStorage.removeItem('studek_user');
+        return null;
+      }
+
+      const data = await response.json();
+
+      // Store new tokens
+      localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, data.accessToken);
+      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, data.refreshToken);
+
+      return data.accessToken as string;
+    } catch {
+      return null;
+    } finally {
+      // Clear the promise so future requests can try again
+      refreshPromise = null;
+    }
+  })();
+
+  return refreshPromise;
 }
 
 /**
@@ -30,7 +96,7 @@ export async function api<T = unknown>(
   url: string,
   options: ApiRequestOptions = {}
 ): Promise<T> {
-  const { skipAuth, ...fetchOptions } = options;
+  const { skipAuth, skipRetry, ...fetchOptions } = options;
 
   // Build headers with auth token if available
   const headers: Record<string, string> = {
@@ -54,6 +120,43 @@ export async function api<T = unknown>(
     credentials: 'include', // Always include cookies for auth
     headers: mergedHeaders,
   });
+
+  // Handle 401 Unauthorized - try to refresh token and retry
+  if (response.status === 401 && !skipAuth && !skipRetry) {
+    const newToken = await refreshAccessToken();
+
+    if (newToken) {
+      // Retry the request with the new token
+      const retryHeaders = { ...mergedHeaders, Authorization: `Bearer ${newToken}` };
+      const retryResponse = await fetch(url, {
+        ...fetchOptions,
+        credentials: 'include',
+        headers: retryHeaders,
+      });
+
+      if (retryResponse.ok) {
+        const contentType = retryResponse.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          return {} as T;
+        }
+        return retryResponse.json();
+      }
+
+      // Retry also failed
+      let errorData: ApiError;
+      try {
+        errorData = await retryResponse.json();
+      } catch {
+        errorData = { error: retryResponse.statusText || 'Request failed' };
+      }
+      throw new ApiClientError(
+        errorData.error || 'Request failed',
+        retryResponse.status,
+        errorData.code,
+        errorData.details
+      );
+    }
+  }
 
   // Handle non-OK responses
   if (!response.ok) {
