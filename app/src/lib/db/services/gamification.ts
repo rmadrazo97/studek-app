@@ -257,7 +257,7 @@ export function awardXP(
       newDaily,
       transaction: txn,
     };
-  })();
+  });
 }
 
 /**
@@ -345,7 +345,7 @@ export function recordStudySession(
     );
 
     return getUserStats(userId);
-  })();
+  });
 }
 
 // ============================================
@@ -473,7 +473,7 @@ export function unlockAchievement(
       achievement,
       xpAwarded: achievement.xp_reward,
     };
-  })();
+  });
 }
 
 /**
