@@ -11,45 +11,45 @@ interface BeforeInstallPromptEvent extends Event {
 
 type Platform = "android" | "ios" | "desktop" | "unknown";
 
+// Detect platform at module level to avoid setState in effect
+function detectPlatform(): Platform {
+  if (typeof navigator === "undefined") return "unknown";
+  const userAgent = navigator.userAgent.toLowerCase();
+  if (/iphone|ipad|ipod/.test(userAgent)) return "ios";
+  if (/android/.test(userAgent)) return "android";
+  return "desktop";
+}
+
+function checkIsInstalled(): boolean {
+  if (typeof window === "undefined") return false;
+  return (
+    window.matchMedia("(display-mode: standalone)").matches ||
+    // @ts-expect-error - iOS specific property
+    window.navigator.standalone === true
+  );
+}
+
+function checkWasDismissed(): boolean {
+  if (typeof localStorage === "undefined") return false;
+  const wasDismissed = localStorage.getItem("pwa-install-dismissed");
+  if (wasDismissed) {
+    const dismissedTime = parseInt(wasDismissed, 10);
+    // Show again after 7 days
+    return Date.now() - dismissedTime < 7 * 24 * 60 * 60 * 1000;
+  }
+  return false;
+}
+
 export function InstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] =
     useState<BeforeInstallPromptEvent | null>(null);
   const [showPrompt, setShowPrompt] = useState(false);
-  const [platform, setPlatform] = useState<Platform>("unknown");
-  const [isInstalled, setIsInstalled] = useState(false);
-  const [dismissed, setDismissed] = useState(false);
+  // Initialize platform from detection function
+  const [platform] = useState<Platform>(detectPlatform);
+  const [isInstalled] = useState(checkIsInstalled);
+  const [dismissed, setDismissed] = useState(checkWasDismissed);
 
-  // Detect platform
-  useEffect(() => {
-    const userAgent = navigator.userAgent.toLowerCase();
-
-    if (/iphone|ipad|ipod/.test(userAgent)) {
-      setPlatform("ios");
-    } else if (/android/.test(userAgent)) {
-      setPlatform("android");
-    } else {
-      setPlatform("desktop");
-    }
-
-    // Check if already installed
-    if (
-      window.matchMedia("(display-mode: standalone)").matches ||
-      // @ts-expect-error - iOS specific property
-      window.navigator.standalone === true
-    ) {
-      setIsInstalled(true);
-    }
-
-    // Check if user previously dismissed
-    const wasDismissed = localStorage.getItem("pwa-install-dismissed");
-    if (wasDismissed) {
-      const dismissedTime = parseInt(wasDismissed, 10);
-      // Show again after 7 days
-      if (Date.now() - dismissedTime < 7 * 24 * 60 * 60 * 1000) {
-        setDismissed(true);
-      }
-    }
-  }, []);
+  // Platform, isInstalled, and dismissed are now initialized via useState
 
   // Listen for beforeinstallprompt event
   useEffect(() => {
