@@ -240,23 +240,11 @@ function StudyContent() {
           };
         });
 
-        const response = await fetch('/api/reviews/session', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            deckId,
-            reviews,
-          }),
+        const result = await apiClient.post<SessionResult>('/api/reviews/session', {
+          deckId,
+          reviews,
         });
-
-        if (response.ok) {
-          const result = await response.json();
-          setSessionResult(result);
-        } else {
-          // Fallback to simple display if API fails
-          console.error('Failed to submit session');
-          setSessionResult(createFallbackResult(history));
-        }
+        setSessionResult(result);
       } catch (error) {
         console.error('Error submitting session:', error);
         setSessionResult(createFallbackResult(history));
