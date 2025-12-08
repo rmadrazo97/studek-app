@@ -13,6 +13,7 @@ import {
   Sparkles,
   AlertCircle,
 } from "lucide-react";
+import { apiClient } from "@/lib/api/client";
 
 // Analytics Components
 import {
@@ -95,13 +96,7 @@ export default function AnalyticsPage() {
     setError(null);
 
     try {
-      const response = await fetch('/api/analytics');
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch analytics');
-      }
-
-      const data = await response.json();
+      const data = await apiClient.get<AnalyticsData>('/api/analytics');
       setAnalytics(data);
     } catch (err) {
       console.error('Error fetching analytics:', err);

@@ -15,7 +15,7 @@ import {
   FolderOpen,
 } from "lucide-react";
 import Link from "next/link";
-import { getAccessToken } from "@/stores/auth";
+import { apiClient } from "@/lib/api/client";
 import { CreateDeckModal } from "@/components/decks";
 
 // ============================================
@@ -205,15 +205,8 @@ export default function DashboardPage() {
 
   const fetchDashboard = useCallback(async () => {
     try {
-      const token = getAccessToken();
-      const response = await fetch("/api/dashboard", {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
-
-      if (response.ok) {
-        const dashboardData = await response.json();
-        setData(dashboardData);
-      }
+      const dashboardData = await apiClient.get<DashboardData>("/api/dashboard");
+      setData(dashboardData);
     } catch (error) {
       console.error("Failed to fetch dashboard:", error);
     } finally {
@@ -231,20 +224,7 @@ export default function DashboardPage() {
     category?: string;
     is_public?: boolean;
   }) => {
-    const token = getAccessToken();
-    const response = await fetch("/api/decks", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
-      body: JSON.stringify(deckData),
-    });
-
-    if (!response.ok) {
-      throw new Error("Failed to create deck");
-    }
-
+    await apiClient.post("/api/decks", deckData);
     setShowCreateModal(false);
     fetchDashboard();
   }, [fetchDashboard]);
