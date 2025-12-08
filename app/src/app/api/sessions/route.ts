@@ -19,6 +19,21 @@ interface SessionData {
   xp_earned: number;
 }
 
+/**
+ * Check if xp_transactions table exists
+ */
+function hasXPTransactionsTable(db: ReturnType<typeof getDatabase>): boolean {
+  try {
+    const result = db.prepare(`
+      SELECT name FROM sqlite_master
+      WHERE type='table' AND name='xp_transactions'
+    `).get();
+    return !!result;
+  } catch {
+    return false;
+  }
+}
+
 export const GET = withAuth(async (request: AuthenticatedRequest) => {
   try {
     const userId = request.auth.userId;
@@ -27,7 +42,14 @@ export const GET = withAuth(async (request: AuthenticatedRequest) => {
     const limit = Math.min(parseInt(searchParams.get('limit') || '10', 10), 50);
     const offset = parseInt(searchParams.get('offset') || '0', 10);
 
+    const hasXP = hasXPTransactionsTable(db);
+
     // Get recent study sessions with deck names
+    // Use conditional XP query based on table existence
+    const xpSubquery = hasXP
+      ? `COALESCE((SELECT SUM(amount) FROM xp_transactions WHERE source_id = ss.id AND source = 'session'), 0)`
+      : '0';
+
     const sessions = db.prepare(`
       SELECT
         ss.id,
@@ -38,10 +60,7 @@ export const GET = withAuth(async (request: AuthenticatedRequest) => {
         ss.cards_reviewed,
         ss.cards_correct,
         ss.total_duration_ms,
-        COALESCE(
-          (SELECT SUM(amount) FROM xp_transactions WHERE source_id = ss.id AND source = 'session'),
-          0
-        ) as xp_earned
+        ${xpSubquery} as xp_earned
       FROM study_sessions ss
       LEFT JOIN decks d ON d.id = ss.deck_id
       WHERE ss.user_id = ?
