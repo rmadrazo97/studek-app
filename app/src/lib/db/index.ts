@@ -7,15 +7,100 @@
 
 import Database from 'better-sqlite3';
 import path from 'path';
+import fs from 'fs';
 
 // Database connection singleton
 let db: Database.Database | null = null;
+let migrationsRan = false;
 
 /**
  * Get the database file path from environment or use default
  */
 function getDatabasePath(): string {
   return process.env.DATABASE_PATH || path.join(process.cwd(), 'data', 'studek.db');
+}
+
+/**
+ * Get migrations directory path
+ */
+function getMigrationsDir(): string {
+  const possiblePaths = [
+    path.join(process.cwd(), 'migrations'),
+    path.join(process.cwd(), 'app', 'migrations'),
+    path.join(__dirname, '..', '..', '..', 'migrations'),
+  ];
+
+  for (const p of possiblePaths) {
+    if (fs.existsSync(p)) {
+      return p;
+    }
+  }
+
+  return possiblePaths[0]; // Fallback
+}
+
+/**
+ * Run migrations inline (to avoid circular dependencies with migrate.ts)
+ */
+function runMigrationsInline(database: Database.Database): void {
+  if (migrationsRan) return;
+
+  try {
+    // Create migrations table
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS migrations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT UNIQUE NOT NULL,
+        applied_at TEXT NOT NULL DEFAULT (datetime('now'))
+      )
+    `);
+
+    const migrationsDir = getMigrationsDir();
+    if (!fs.existsSync(migrationsDir)) {
+      console.log('[DB] No migrations directory found, skipping migrations');
+      migrationsRan = true;
+      return;
+    }
+
+    // Get applied migrations
+    const applied = database
+      .prepare('SELECT name FROM migrations ORDER BY id')
+      .all() as { name: string }[];
+    const appliedNames = new Set(applied.map((r) => r.name));
+
+    // Get pending migrations
+    const files = fs
+      .readdirSync(migrationsDir)
+      .filter((f) => f.endsWith('.sql') && !f.includes('.down.'))
+      .sort();
+
+    const pending = files.filter((f) => !appliedNames.has(f));
+
+    if (pending.length === 0) {
+      migrationsRan = true;
+      return;
+    }
+
+    console.log(`[DB] Applying ${pending.length} pending migration(s)...`);
+
+    for (const migration of pending) {
+      const filePath = path.join(migrationsDir, migration);
+      const sql = fs.readFileSync(filePath, 'utf-8');
+
+      database.transaction(() => {
+        database.exec(sql);
+        database.prepare('INSERT INTO migrations (name) VALUES (?)').run(migration);
+      })();
+
+      console.log(`[DB] Applied migration: ${migration}`);
+    }
+
+    migrationsRan = true;
+  } catch (error) {
+    console.error('[DB] Migration error:', error);
+    // Don't throw - allow app to continue with potentially missing tables
+    migrationsRan = true;
+  }
 }
 
 /**
@@ -44,6 +129,9 @@ export function getDatabase(): Database.Database {
     db.pragma('temp_store = MEMORY');
 
     console.log(`[DB] Connected to SQLite database at ${dbPath}`);
+
+    // Auto-run migrations on first connection
+    runMigrationsInline(db);
   }
 
   return db;
