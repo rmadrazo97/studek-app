@@ -22,6 +22,118 @@ const XP_TRANSACTIONS_TABLE = 'xp_transactions';
 const ACHIEVEMENTS_TABLE = 'achievements';
 const USER_ACHIEVEMENTS_TABLE = 'user_achievements';
 
+// Track if we've ensured tables exist
+let tablesEnsured = false;
+
+/**
+ * Ensure gamification tables exist (fallback if migrations didn't run)
+ */
+function ensureTablesExist(): void {
+  if (tablesEnsured) return;
+
+  const db = getDatabase();
+
+  try {
+    // Check if user_stats table exists
+    const tableExists = db.prepare(`
+      SELECT name FROM sqlite_master
+      WHERE type='table' AND name='user_stats'
+    `).get();
+
+    if (!tableExists) {
+      console.log('[Gamification] Creating gamification tables...');
+
+      // Create user_stats table
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS user_stats (
+          user_id TEXT PRIMARY KEY,
+          total_xp INTEGER NOT NULL DEFAULT 0,
+          weekly_xp INTEGER NOT NULL DEFAULT 0,
+          week_start_date TEXT NOT NULL DEFAULT (date('now', 'weekday 0', '-7 days')),
+          current_streak INTEGER NOT NULL DEFAULT 0,
+          longest_streak INTEGER NOT NULL DEFAULT 0,
+          last_study_date TEXT,
+          streak_freezes_available INTEGER NOT NULL DEFAULT 1,
+          streak_freezes_used INTEGER NOT NULL DEFAULT 0,
+          league_tier INTEGER NOT NULL DEFAULT 1,
+          league_cohort_id TEXT,
+          league_rank INTEGER,
+          best_combo INTEGER NOT NULL DEFAULT 0,
+          total_reviews INTEGER NOT NULL DEFAULT 0,
+          total_correct INTEGER NOT NULL DEFAULT 0,
+          total_study_time_ms INTEGER NOT NULL DEFAULT 0,
+          daily_xp_goal INTEGER NOT NULL DEFAULT 50,
+          daily_xp_earned INTEGER NOT NULL DEFAULT 0,
+          daily_goal_date TEXT,
+          created_at TEXT NOT NULL DEFAULT (datetime('now')),
+          updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+          FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )
+      `);
+
+      // Create xp_transactions table
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS xp_transactions (
+          id TEXT PRIMARY KEY,
+          user_id TEXT NOT NULL,
+          amount INTEGER NOT NULL,
+          source TEXT NOT NULL,
+          source_id TEXT,
+          metadata TEXT,
+          created_at TEXT NOT NULL DEFAULT (datetime('now')),
+          FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )
+      `);
+
+      // Create achievements tables
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS achievements (
+          id TEXT PRIMARY KEY,
+          name TEXT NOT NULL,
+          description TEXT NOT NULL,
+          icon TEXT NOT NULL,
+          category TEXT NOT NULL,
+          requirement_type TEXT NOT NULL,
+          requirement_value INTEGER NOT NULL,
+          xp_reward INTEGER NOT NULL DEFAULT 0,
+          rarity TEXT NOT NULL DEFAULT 'common'
+        )
+      `);
+
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS user_achievements (
+          id TEXT PRIMARY KEY,
+          user_id TEXT NOT NULL,
+          achievement_id TEXT NOT NULL,
+          unlocked_at TEXT NOT NULL DEFAULT (datetime('now')),
+          FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+          FOREIGN KEY (achievement_id) REFERENCES achievements(id) ON DELETE CASCADE,
+          UNIQUE(user_id, achievement_id)
+        )
+      `);
+
+      // Seed default achievements
+      const achievementCount = db.prepare('SELECT COUNT(*) as count FROM achievements').get() as { count: number };
+      if (achievementCount.count === 0) {
+        db.exec(`
+          INSERT OR IGNORE INTO achievements (id, name, description, icon, category, requirement_type, requirement_value, xp_reward, rarity) VALUES
+          ('streak_7', 'Week Warrior', 'Maintain a 7-day streak', 'flame', 'streak', 'streak', 7, 100, 'common'),
+          ('streak_30', 'Monthly Master', 'Maintain a 30-day streak', 'flame', 'streak', 'streak', 30, 500, 'rare'),
+          ('reviews_100', 'Getting Started', 'Complete 100 reviews', 'book', 'reviews', 'count', 100, 50, 'common'),
+          ('reviews_1000', 'Thousand Cards', 'Complete 1,000 reviews', 'book-open', 'reviews', 'count', 1000, 200, 'common')
+        `);
+      }
+
+      console.log('[Gamification] Tables created successfully');
+    }
+
+    tablesEnsured = true;
+  } catch (error) {
+    console.error('[Gamification] Failed to ensure tables:', error);
+    tablesEnsured = true; // Prevent repeated attempts
+  }
+}
+
 // ============================================
 // User Stats
 // ============================================
@@ -30,6 +142,9 @@ const USER_ACHIEVEMENTS_TABLE = 'user_achievements';
  * Get user stats, creating if doesn't exist
  */
 export function getUserStats(userId: string): UserStats {
+  // Ensure tables exist before querying
+  ensureTablesExist();
+
   const db = getDatabase();
   const existing = db.prepare(`SELECT * FROM ${USER_STATS_TABLE} WHERE user_id = ?`).get(userId) as UserStats | undefined;
 
