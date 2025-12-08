@@ -9,7 +9,7 @@ import {
   Compass,
   PenTool,
   Library,
-  BarChart3,
+  User,
 } from "lucide-react";
 import { AddDeckSheet } from "@/components/AddDeckSheet";
 import AIGenerateModal from "@/components/decks/AIGenerateModal";
@@ -25,7 +25,7 @@ export function MobileBottomNav() {
     { icon: Compass, label: "Explore", href: "/explore" },
     { icon: PenTool, label: "Create", href: "/create", isMain: true },
     { icon: Library, label: "Library", href: "/library" },
-    { icon: BarChart3, label: "Stats", href: "/analytics" },
+    { icon: User, label: "Profile", href: "/profile" },
   ];
 
   const handleCreateWithAI = useCallback(() => {

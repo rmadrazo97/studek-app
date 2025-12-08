@@ -20,6 +20,7 @@ import {
   HelpCircle,
   BarChart3,
   PenTool,
+  User,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -33,6 +34,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
 
   const navItems = [
     { icon: Home, label: "Home", href: "/dashboard" },
+    { icon: User, label: "Profile", href: "/profile" },
     { icon: BarChart3, label: "Analytics", href: "/analytics" },
     { icon: PenTool, label: "Creation Studio", href: "/create" },
     { icon: Compass, label: "Explore", href: "/explore" },
