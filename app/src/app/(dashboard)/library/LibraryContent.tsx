@@ -16,15 +16,15 @@ export default function LibraryContent() {
   }, []);
 
   return (
-    <div className="p-6">
+    <div className="p-4 sm:p-6">
       {selectedDeck ? (
         <CardEditor deck={selectedDeck} onBack={handleBack} />
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {/* Header */}
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Library</h1>
-            <p className="text-sm text-gray-500">
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground">Library</h1>
+            <p className="text-xs sm:text-sm text-gray-500">
               Manage your decks and flashcards
             </p>
           </div>

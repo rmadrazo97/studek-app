@@ -135,6 +135,170 @@ function CardItem({ card, onEdit, onDelete }: CardItemProps) {
 }
 
 // ============================================
+// EditCardForm Component
+// ============================================
+
+interface EditCardFormProps {
+  card: Card;
+  onSubmit: (data: { front: string; back: string; type: string; tags: string[] }) => Promise<void>;
+  onCancel: () => void;
+}
+
+function EditCardForm({ card, onSubmit, onCancel }: EditCardFormProps) {
+  const [front, setFront] = useState(card.front);
+  const [back, setBack] = useState(card.back);
+  const [type, setType] = useState<"basic" | "cloze" | "image-occlusion">(card.type);
+  const [tagsInput, setTagsInput] = useState(card.tags?.join(", ") || "");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!front.trim()) {
+      setError("Front is required");
+      return;
+    }
+    if (!back.trim()) {
+      setError("Back is required");
+      return;
+    }
+
+    setIsSubmitting(true);
+    setError(null);
+
+    try {
+      const tags = tagsInput
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean);
+
+      await onSubmit({
+        front: front.trim(),
+        back: back.trim(),
+        type,
+        tags,
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update card");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [front, back, type, tagsInput, onSubmit]);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+      onClick={onCancel}
+    >
+      <motion.div
+        initial={{ scale: 0.95, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.95, opacity: 0 }}
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-lg bg-background-secondary rounded-xl border border-white/10 p-6 max-h-[90vh] overflow-y-auto"
+      >
+        <h3 className="text-lg font-semibold text-foreground mb-4">Edit Card</h3>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Type */}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Card Type
+            </label>
+            <div className="flex gap-2">
+              {(["basic", "cloze", "image-occlusion"] as const).map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setType(t)}
+                  className={`px-3 py-1.5 text-sm rounded-lg border transition-all ${
+                    type === t
+                      ? "bg-cyan-500/10 border-cyan-500/50 text-cyan-400"
+                      : "bg-background border-white/10 text-gray-400 hover:border-white/20"
+                  }`}
+                >
+                  {t === "image-occlusion" ? "Image" : t.charAt(0).toUpperCase() + t.slice(1)}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Front */}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1.5">
+              Front
+            </label>
+            <textarea
+              value={front}
+              onChange={(e) => setFront(e.target.value)}
+              placeholder="Question or prompt..."
+              rows={3}
+              className="w-full px-4 py-2.5 bg-background text-foreground placeholder-gray-500 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500/50 resize-none"
+            />
+          </div>
+
+          {/* Back */}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1.5">
+              Back
+            </label>
+            <textarea
+              value={back}
+              onChange={(e) => setBack(e.target.value)}
+              placeholder="Answer or response..."
+              rows={3}
+              className="w-full px-4 py-2.5 bg-background text-foreground placeholder-gray-500 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500/50 resize-none"
+            />
+          </div>
+
+          {/* Tags */}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1.5">
+              Tags <span className="text-gray-500">(comma separated)</span>
+            </label>
+            <div className="relative">
+              <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+              <input
+                type="text"
+                value={tagsInput}
+                onChange={(e) => setTagsInput(e.target.value)}
+                placeholder="anatomy, high-yield, exam"
+                className="w-full pl-10 pr-4 py-2.5 bg-background text-foreground placeholder-gray-500 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+              />
+            </div>
+          </div>
+
+          {error && <p className="text-sm text-red-400">{error}</p>}
+
+          {/* Actions */}
+          <div className="flex justify-end gap-3 pt-2">
+            <button
+              type="button"
+              onClick={onCancel}
+              className="px-4 py-2 text-sm text-gray-300 hover:text-foreground transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmitting || !front.trim() || !back.trim()}
+              className="flex items-center gap-2 px-4 py-2 text-sm text-white font-medium bg-gradient-to-r from-cyan-500 to-blue-600 rounded-lg hover:opacity-90 transition-all disabled:opacity-50"
+            >
+              <Save className="w-4 h-4" />
+              {isSubmitting ? "Saving..." : "Save Changes"}
+            </button>
+          </div>
+        </form>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+// ============================================
 // CreateCardForm Component
 // ============================================
 
@@ -306,6 +470,7 @@ export default function CardEditor({ deck, onBack }: CardEditorProps) {
     error,
     total,
     createCard,
+    updateCard,
     deleteCard,
   } = useCards(deck.id);
 
@@ -334,6 +499,20 @@ export default function CardEditor({ deck, onBack }: CardEditorProps) {
       });
     },
     [createCard]
+  );
+
+  const handleEditCard = useCallback(
+    async (data: { front: string; back: string; type: string; tags: string[] }) => {
+      if (!editingCard) return;
+      await updateCard(editingCard.id, {
+        front: data.front,
+        back: data.back,
+        type: data.type as "basic" | "cloze" | "image-occlusion",
+        tags: data.tags,
+      });
+      setEditingCard(null);
+    },
+    [editingCard, updateCard]
   );
 
   const handleDeleteCard = useCallback(async () => {
@@ -452,6 +631,17 @@ export default function CardEditor({ deck, onBack }: CardEditorProps) {
           </motion.div>
         )}
       </div>
+
+      {/* Edit Card Form */}
+      <AnimatePresence>
+        {editingCard && (
+          <EditCardForm
+            card={editingCard}
+            onSubmit={handleEditCard}
+            onCancel={() => setEditingCard(null)}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Delete Confirmation */}
       <AnimatePresence>
