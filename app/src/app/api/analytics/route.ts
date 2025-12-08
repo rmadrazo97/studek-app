@@ -58,27 +58,36 @@ function safeGetUserStats(userId: string): typeof DEFAULT_USER_STATS {
 }
 
 /**
- * Safely get level info
+ * Get level info from XP (inline to avoid import issues)
  */
 function safeGetLevel(totalXp: number): typeof DEFAULT_LEVEL {
   try {
-    const { getLevel } = require('@/lib/gamification');
-    return getLevel(totalXp);
+    // Level = floor(sqrt(XP / 100))
+    const level = Math.max(1, Math.floor(Math.sqrt(totalXp / 100)));
+    const xpForCurrentLevel = Math.pow(level, 2) * 100;
+    const xpForNextLevel = Math.pow(level + 1, 2) * 100;
+    const progress = (totalXp - xpForCurrentLevel) / (xpForNextLevel - xpForCurrentLevel);
+    return {
+      level,
+      progress: Math.min(Math.max(progress, 0), 1),
+    };
   } catch {
     return DEFAULT_LEVEL;
   }
 }
 
 /**
- * Safely get league tier
+ * Get league tier info (inline to avoid import issues)
  */
 function safeGetLeagueTier(tierNum: number): typeof DEFAULT_TIER {
-  try {
-    const { getLeagueTier } = require('@/lib/gamification');
-    return getLeagueTier(tierNum);
-  } catch {
-    return DEFAULT_TIER;
-  }
+  const tiers = [
+    { name: 'Bronze', color: '#cd7f32' },
+    { name: 'Silver', color: '#c0c0c0' },
+    { name: 'Gold', color: '#ffd700' },
+    { name: 'Diamond', color: '#00d4ff' },
+    { name: 'Champion', color: '#a855f7' },
+  ];
+  return tiers[Math.min(Math.max(tierNum - 1, 0), tiers.length - 1)] || DEFAULT_TIER;
 }
 
 export const GET = withAuth(async (request: AuthenticatedRequest) => {
