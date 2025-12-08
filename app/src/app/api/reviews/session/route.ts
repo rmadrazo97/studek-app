@@ -114,7 +114,7 @@ export const POST = withAuth(async (request: AuthenticatedRequest) => {
       }
 
       return session;
-    })();
+    });
 
     // Calculate session XP
     const xpResult = calculateSessionXP(
