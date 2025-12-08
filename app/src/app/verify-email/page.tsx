@@ -11,13 +11,16 @@ function VerifyEmailContent() {
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
 
-  const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
-  const [message, setMessage] = useState("");
+  // Derive initial state from token - avoid setState in effect
+  const initialStatus = token ? "loading" : "error";
+  const initialMessage = token ? "" : "No verification token provided";
+
+  const [status, setStatus] = useState<"loading" | "success" | "error">(initialStatus);
+  const [message, setMessage] = useState(initialMessage);
 
   useEffect(() => {
     if (!token) {
-      setStatus("error");
-      setMessage("No verification token provided");
+      // Already handled via initial state
       return;
     }
 

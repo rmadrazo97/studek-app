@@ -9,11 +9,86 @@ import { getDatabase } from '@/lib/db';
 import {
   getReviewCountByDate,
   getRetentionRate,
-  getAverageReviewTime,
-  getDailyStats,
 } from '@/lib/db/services/reviews';
-import { getUserStats } from '@/lib/db/services/gamification';
-import { getLevel, getLeagueTier } from '@/lib/gamification';
+
+// Default stats when gamification tables don't exist
+const DEFAULT_USER_STATS = {
+  total_xp: 0,
+  weekly_xp: 0,
+  current_streak: 0,
+  longest_streak: 0,
+  streak_freezes_available: 1,
+  streak_freezes_used: 0,
+  league_tier: 1,
+  daily_xp_earned: 0,
+  last_study_date: null,
+};
+
+const DEFAULT_LEVEL = {
+  level: 1,
+  progress: 0,
+};
+
+const DEFAULT_TIER = {
+  name: 'Bronze',
+  color: '#cd7f32',
+};
+
+/**
+ * Safely get user stats from gamification tables
+ */
+function safeGetUserStats(userId: string): typeof DEFAULT_USER_STATS {
+  try {
+    const db = getDatabase();
+    // Check if table exists first
+    const tableExists = db.prepare(`
+      SELECT name FROM sqlite_master
+      WHERE type='table' AND name='user_stats'
+    `).get();
+
+    if (!tableExists) {
+      return DEFAULT_USER_STATS;
+    }
+
+    const stats = db.prepare(`SELECT * FROM user_stats WHERE user_id = ?`).get(userId);
+    return stats ? (stats as typeof DEFAULT_USER_STATS) : DEFAULT_USER_STATS;
+  } catch {
+    return DEFAULT_USER_STATS;
+  }
+}
+
+/**
+ * Get level info from XP (inline to avoid import issues)
+ */
+function safeGetLevel(totalXp: number): typeof DEFAULT_LEVEL {
+  try {
+    // Level = floor(sqrt(XP / 100))
+    const level = Math.max(1, Math.floor(Math.sqrt(totalXp / 100)));
+    const xpForCurrentLevel = Math.pow(level, 2) * 100;
+    const xpForNextLevel = Math.pow(level + 1, 2) * 100;
+    const progress = (totalXp - xpForCurrentLevel) / (xpForNextLevel - xpForCurrentLevel);
+    return {
+      level,
+      progress: Math.min(Math.max(progress, 0), 1),
+    };
+  } catch {
+    return DEFAULT_LEVEL;
+  }
+}
+
+/**
+ * Get league tier info (inline to avoid import issues)
+ */
+function safeGetLeagueTier(tierNum: number): typeof DEFAULT_TIER {
+  const tiers = [
+    { name: 'Bronze', color: '#cd7f32' },
+    { name: 'Silver', color: '#c0c0c0' },
+    { name: 'Gold', color: '#ffd700' },
+    { name: 'Diamond', color: '#00d4ff' },
+    { name: 'Champion', color: '#a855f7' },
+  ];
+  return tiers[Math.min(Math.max(tierNum - 1, 0), tiers.length - 1)] || DEFAULT_TIER;
+}
 
 export const GET = withAuth(async (request: AuthenticatedRequest) => {
   try {
@@ -22,10 +97,10 @@ export const GET = withAuth(async (request: AuthenticatedRequest) => {
     const { searchParams } = new URL(request.url);
     const days = parseInt(searchParams.get('days') || '365', 10);
 
-    // Get user stats
-    const stats = getUserStats(userId);
-    const levelInfo = getLevel(stats.total_xp);
-    const tier = getLeagueTier(stats.league_tier);
+    // Get user stats (safely handles missing gamification tables)
+    const stats = safeGetUserStats(userId);
+    const levelInfo = safeGetLevel(stats.total_xp);
+    const tier = safeGetLeagueTier(stats.league_tier);
 
     // Get heatmap data (review count by date)
     const heatmapData = getReviewCountByDate(userId, days);

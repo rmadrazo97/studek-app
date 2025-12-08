@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import {
@@ -141,6 +141,9 @@ export function AIGenerateModal({
 
   const isAddingToExisting = !!deckId;
 
+  // Track previous isOpen state to detect open transition
+  const prevIsOpenRef = useRef(isOpen);
+
   // Update prompt when transcript changes
   useEffect(() => {
     if (transcript) {
@@ -153,9 +156,13 @@ export function AIGenerateModal({
     }
   }, [transcript]);
 
-  // Reset state when modal opens
+  // Reset state when modal opens (only on transition from closed to open)
   useEffect(() => {
-    if (isOpen) {
+    const wasOpen = prevIsOpenRef.current;
+    prevIsOpenRef.current = isOpen;
+
+    // Only reset when transitioning from closed to open
+    if (isOpen && !wasOpen) {
       setPrompt("");
       setShowSuggestions(true);
       reset();
