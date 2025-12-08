@@ -18,6 +18,9 @@ import {
   Upload,
   Play,
   Settings,
+  LayoutGrid,
+  List,
+  ChevronRight,
 } from "lucide-react";
 import { useDecks, type DeckWithStats } from "@/hooks/useDecks";
 import CreateDeckModal from "./CreateDeckModal";
@@ -212,8 +215,132 @@ function DeckCard({ deck, onEdit, onDelete, onShare, onManageCards, onStudy, isS
 }
 
 // ============================================
+// DeckListItem Component (List View)
+// ============================================
+
+interface DeckListItemProps {
+  deck: DeckWithStats;
+  onEdit: (deck: DeckWithStats) => void;
+  onDelete: (deck: DeckWithStats) => void;
+  onShare: (deck: DeckWithStats) => void;
+  onManageCards: (deck: DeckWithStats) => void;
+  onStudy: (deck: DeckWithStats) => void;
+  isShared?: boolean;
+}
+
+function DeckListItem({ deck, onEdit, onDelete, onShare, onManageCards, onStudy, isShared }: DeckListItemProps) {
+  const [showMenu, setShowMenu] = useState(false);
+  const hasCards = deck.card_count > 0;
+  const hasDueCards = deck.due_count > 0 || deck.new_count > 0;
+
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, x: -10 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: 10 }}
+      className="group flex items-center gap-3 p-3 bg-background-secondary/30 rounded-lg border border-white/5 hover:border-white/10 transition-all"
+    >
+      {/* Icon */}
+      <div className="p-2 bg-gradient-to-br from-cyan-500/20 to-blue-600/20 rounded-lg shrink-0">
+        <Folder className="w-4 h-4 text-cyan-400" />
+      </div>
+
+      {/* Info */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <h3 className="font-medium text-foreground text-sm truncate">{deck.name}</h3>
+          {deck.is_public ? (
+            <Globe className="w-3 h-3 text-cyan-400 shrink-0" />
+          ) : (
+            <Lock className="w-3 h-3 text-gray-500 shrink-0" />
+          )}
+        </div>
+        <div className="flex items-center gap-3 text-xs text-gray-500 mt-0.5">
+          <span>{deck.card_count} cards</span>
+          {deck.due_count > 0 && <span className="text-amber-400">{deck.due_count} due</span>}
+          {deck.new_count > 0 && <span className="text-cyan-400">{deck.new_count} new</span>}
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div className="flex items-center gap-1 shrink-0">
+        <button
+          onClick={() => onStudy(deck)}
+          disabled={!hasCards}
+          className={`p-2 rounded-lg transition-all ${
+            hasCards
+              ? hasDueCards
+                ? "bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20"
+                : "text-gray-400 hover:bg-white/5"
+              : "text-gray-600 cursor-not-allowed"
+          }`}
+          title="Study"
+        >
+          <Play className="w-4 h-4" />
+        </button>
+        <button
+          onClick={() => onManageCards(deck)}
+          className="p-2 rounded-lg text-gray-400 hover:bg-white/5 transition-all"
+          title="Manage Cards"
+        >
+          <Settings className="w-4 h-4" />
+        </button>
+        {!isShared && (
+          <div className="relative">
+            <button
+              onClick={() => setShowMenu(!showMenu)}
+              className="p-2 rounded-lg text-gray-400 hover:bg-white/5 transition-all"
+            >
+              <MoreVertical className="w-4 h-4" />
+            </button>
+            <AnimatePresence>
+              {showMenu && (
+                <>
+                  <div className="fixed inset-0 z-10" onClick={() => setShowMenu(false)} />
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    className="absolute right-0 top-10 z-20 w-36 bg-background-secondary border border-white/10 rounded-lg shadow-xl overflow-hidden"
+                  >
+                    <button
+                      onClick={() => { setShowMenu(false); onEdit(deck); }}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-300 hover:bg-white/5"
+                    >
+                      <Edit2 className="w-3.5 h-3.5" />
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => { setShowMenu(false); onShare(deck); }}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-300 hover:bg-white/5"
+                    >
+                      <Share2 className="w-3.5 h-3.5" />
+                      Share
+                    </button>
+                    <button
+                      onClick={() => { setShowMenu(false); onDelete(deck); }}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-red-500/10"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      Delete
+                    </button>
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
+      </div>
+    </motion.div>
+  );
+}
+
+// ============================================
 // Main DeckManager Component
 // ============================================
+
+type ViewMode = "grid" | "list";
 
 interface DeckManagerProps {
   onSelectDeck: (deck: DeckWithStats) => void;
@@ -230,6 +357,7 @@ export default function DeckManager({ onSelectDeck }: DeckManagerProps) {
   const [showShareModal, setShowShareModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [selectedDeck, setSelectedDeck] = useState<DeckWithStats | null>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>("grid");
 
   const handleCreate = useCallback(
     async (data: { name: string; description?: string; is_public?: boolean }) => {
@@ -293,44 +421,75 @@ export default function DeckManager({ onSelectDeck }: DeckManagerProps) {
 
   return (
     <>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-lg font-semibold text-foreground">My Decks</h2>
-            <p className="text-sm text-gray-500">
-              {decks.length} {decks.length === 1 ? "deck" : "decks"}
-            </p>
+      <div className="space-y-4 sm:space-y-6">
+        {/* Header - Mobile Responsive */}
+        <div className="space-y-3">
+          {/* Title Row */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-foreground">My Decks</h2>
+              <p className="text-sm text-gray-500">
+                {decks.length} {decks.length === 1 ? "deck" : "decks"}
+              </p>
+            </div>
+
+            {/* View Toggle */}
+            <div className="flex items-center gap-1 bg-background-secondary/50 rounded-lg p-1 border border-white/5">
+              <button
+                onClick={() => setViewMode("grid")}
+                className={`p-1.5 rounded transition-all ${
+                  viewMode === "grid"
+                    ? "bg-cyan-500/10 text-cyan-400"
+                    : "text-gray-500 hover:text-gray-300"
+                }`}
+                title="Grid view"
+              >
+                <LayoutGrid className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setViewMode("list")}
+                className={`p-1.5 rounded transition-all ${
+                  viewMode === "list"
+                    ? "bg-cyan-500/10 text-cyan-400"
+                    : "text-gray-500 hover:text-gray-300"
+                }`}
+                title="List view"
+              >
+                <List className="w-4 h-4" />
+              </button>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
+
+          {/* Action Buttons - Stacked on mobile */}
+          <div className="flex flex-wrap gap-2">
             <motion.button
               onClick={() => setShowImportModal(true)}
-              className="flex items-center gap-2 px-4 py-2 text-sm text-gray-300 font-medium border border-white/10 rounded-lg hover:bg-white/5 hover:border-white/20 transition-all"
+              className="flex items-center gap-2 px-3 py-2 text-sm text-gray-300 font-medium border border-white/10 rounded-lg hover:bg-white/5 hover:border-white/20 transition-all"
               whileTap={{ scale: 0.98 }}
             >
               <Upload className="w-4 h-4" />
-              Import
+              <span className="hidden xs:inline">Import</span>
             </motion.button>
             <motion.button
               onClick={() => setShowAIModal(true)}
-              className="flex items-center gap-2 px-4 py-2 text-sm text-white font-medium bg-gradient-to-r from-violet-500 to-purple-600 rounded-lg hover:opacity-90 transition-colors"
+              className="flex items-center gap-2 px-3 py-2 text-sm text-white font-medium bg-gradient-to-r from-violet-500 to-purple-600 rounded-lg hover:opacity-90 transition-colors"
               whileTap={{ scale: 0.98 }}
             >
               <Sparkles className="w-4 h-4" />
-              AI Generate
+              <span className="hidden xs:inline">AI Generate</span>
             </motion.button>
             <motion.button
               onClick={() => setShowCreateModal(true)}
-              className="flex items-center gap-2 px-4 py-2 text-sm text-white font-medium bg-gradient-to-r from-cyan-500 to-blue-600 rounded-lg hover:opacity-90 transition-colors"
+              className="flex items-center gap-2 px-3 py-2 text-sm text-white font-medium bg-gradient-to-r from-cyan-500 to-blue-600 rounded-lg hover:opacity-90 transition-colors"
               whileTap={{ scale: 0.98 }}
             >
               <Plus className="w-4 h-4" />
-              New Deck
+              <span className="hidden xs:inline">New Deck</span>
             </motion.button>
           </div>
         </div>
 
-        {/* Decks Grid */}
+        {/* Decks Grid/List */}
         {decks.length === 0 ? (
           <div className="text-center py-12 bg-background-secondary/30 rounded-xl border border-white/5">
             <Folder className="w-12 h-12 text-gray-600 mx-auto mb-3" />
@@ -347,7 +506,7 @@ export default function DeckManager({ onSelectDeck }: DeckManagerProps) {
               Create Deck
             </motion.button>
           </div>
-        ) : (
+        ) : viewMode === "grid" ? (
           <motion.div
             layout
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
@@ -366,33 +525,68 @@ export default function DeckManager({ onSelectDeck }: DeckManagerProps) {
               ))}
             </AnimatePresence>
           </motion.div>
+        ) : (
+          <motion.div layout className="space-y-2">
+            <AnimatePresence mode="popLayout">
+              {decks.map((deck) => (
+                <DeckListItem
+                  key={deck.id}
+                  deck={deck}
+                  onEdit={openEdit}
+                  onDelete={openDelete}
+                  onShare={openShare}
+                  onManageCards={onSelectDeck}
+                  onStudy={handleStudy}
+                />
+              ))}
+            </AnimatePresence>
+          </motion.div>
         )}
 
         {/* Shared Decks */}
         {sharedDecks.length > 0 && (
-          <div className="mt-8">
-            <h2 className="text-lg font-semibold text-foreground mb-4">
+          <div className="mt-6 sm:mt-8">
+            <h2 className="text-lg font-semibold text-foreground mb-3 sm:mb-4">
               Shared with Me
             </h2>
-            <motion.div
-              layout
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
-            >
-              <AnimatePresence mode="popLayout">
-                {sharedDecks.map((deck) => (
-                  <DeckCard
-                    key={deck.id}
-                    deck={deck}
-                    onEdit={() => {}}
-                    onDelete={() => {}}
-                    onShare={() => {}}
-                    onManageCards={onSelectDeck}
-                    onStudy={handleStudy}
-                    isShared
-                  />
-                ))}
-              </AnimatePresence>
-            </motion.div>
+            {viewMode === "grid" ? (
+              <motion.div
+                layout
+                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+              >
+                <AnimatePresence mode="popLayout">
+                  {sharedDecks.map((deck) => (
+                    <DeckCard
+                      key={deck.id}
+                      deck={deck}
+                      onEdit={() => {}}
+                      onDelete={() => {}}
+                      onShare={() => {}}
+                      onManageCards={onSelectDeck}
+                      onStudy={handleStudy}
+                      isShared
+                    />
+                  ))}
+                </AnimatePresence>
+              </motion.div>
+            ) : (
+              <motion.div layout className="space-y-2">
+                <AnimatePresence mode="popLayout">
+                  {sharedDecks.map((deck) => (
+                    <DeckListItem
+                      key={deck.id}
+                      deck={deck}
+                      onEdit={() => {}}
+                      onDelete={() => {}}
+                      onShare={() => {}}
+                      onManageCards={onSelectDeck}
+                      onStudy={handleStudy}
+                      isShared
+                    />
+                  ))}
+                </AnimatePresence>
+              </motion.div>
+            )}
           </div>
         )}
       </div>
