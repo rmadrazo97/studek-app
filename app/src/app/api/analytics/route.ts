@@ -9,6 +9,7 @@ import { getDatabase } from '@/lib/db';
 import {
   getReviewCountByDate,
   getRetentionRate,
+  getDailyStats,
 } from '@/lib/db/services/reviews';
 
 // Default stats when gamification tables don't exist
