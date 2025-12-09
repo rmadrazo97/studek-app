@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Upload, FileArchive, CheckCircle2, AlertCircle } from "lucide-react";
-import { ImportAPKGModal } from "@/components/decks/ImportAPKGModal";
+import ImportAPKGModal from "@/components/decks/ImportAPKGModal";
 
 export default function ImportPage() {
   const [showImportModal, setShowImportModal] = useState(false);
