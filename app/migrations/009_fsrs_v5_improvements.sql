@@ -3,17 +3,45 @@
 -- Created: 2024-01-01
 
 -- ============================================
--- Add learning step tracking to card_fsrs
+-- Add FSRS v5 columns to card_fsrs
+-- Using SQLite table recreation pattern for safety
 -- ============================================
 
--- Add step column for learning/relearning step tracking
-ALTER TABLE card_fsrs ADD COLUMN step INTEGER NOT NULL DEFAULT 0;
+-- Step 1: Cleanup any leftover temp tables
+DROP TABLE IF EXISTS card_fsrs_new;
+DROP TABLE IF EXISTS card_fsrs_backup;
 
--- Add elapsed_days for same-day review handling
-ALTER TABLE card_fsrs ADD COLUMN elapsed_days REAL NOT NULL DEFAULT 0;
+-- Step 2: Create new table with v5 schema
+CREATE TABLE card_fsrs_new (
+    card_id TEXT PRIMARY KEY,
+    stability REAL NOT NULL DEFAULT 0,
+    difficulty REAL NOT NULL DEFAULT 0,
+    due TEXT NOT NULL DEFAULT (datetime('now')),
+    last_review TEXT,
+    reps INTEGER NOT NULL DEFAULT 0,
+    lapses INTEGER NOT NULL DEFAULT 0,
+    state TEXT NOT NULL DEFAULT 'new' CHECK (state IN ('new', 'learning', 'review', 'relearning')),
+    step INTEGER NOT NULL DEFAULT 0,
+    elapsed_days REAL NOT NULL DEFAULT 0,
+    scheduled_days INTEGER NOT NULL DEFAULT 0,
+    FOREIGN KEY (card_id) REFERENCES cards(id) ON DELETE CASCADE
+);
 
--- Add scheduled_days for tracking the assigned interval
-ALTER TABLE card_fsrs ADD COLUMN scheduled_days INTEGER NOT NULL DEFAULT 0;
+-- Step 3: Copy data from old table (handles both old and new schema)
+INSERT INTO card_fsrs_new (card_id, stability, difficulty, due, last_review, reps, lapses, state)
+SELECT card_id, stability, difficulty, due, last_review, reps, lapses, state
+FROM card_fsrs;
+
+-- Step 4: Drop old table
+DROP TABLE card_fsrs;
+
+-- Step 5: Rename new table
+ALTER TABLE card_fsrs_new RENAME TO card_fsrs;
+
+-- Step 6: Recreate indexes
+CREATE INDEX IF NOT EXISTS idx_card_fsrs_due ON card_fsrs(due);
+CREATE INDEX IF NOT EXISTS idx_card_fsrs_state ON card_fsrs(state);
+CREATE INDEX IF NOT EXISTS idx_card_fsrs_step ON card_fsrs(state, step);
 
 -- ============================================
 -- User FSRS Parameters (Personalized Weights)
