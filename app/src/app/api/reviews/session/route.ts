@@ -1,5 +1,6 @@
 /**
  * POST /api/reviews/session - Complete a study session with all reviews
+ * Updated for FSRS v5 with learning steps and personalized parameters
  */
 
 import { NextResponse } from 'next/server';
@@ -14,7 +15,7 @@ import {
   checkAndUnlockAchievements,
 } from '@/lib/db/services/gamification';
 import { calculateSessionXP, getMotivationalMessage, getLevel } from '@/lib/gamification';
-import type { Rating, ReviewLogCreate, StudySession } from '@/lib/db/types';
+import type { Rating, StudySession } from '@/lib/db/types';
 
 interface SessionReview {
   cardId: string;
@@ -25,6 +26,13 @@ interface SessionReview {
   difficultyBefore: number;
   difficultyAfter: number;
   isNewCard: boolean;
+  // FSRS v5 additions
+  stateBefore?: string;
+  stateAfter?: string;
+  stepBefore?: number;
+  stepAfter?: number;
+  scheduledDays?: number;
+  elapsedDays?: number;
 }
 
 interface SessionRequest {
@@ -76,39 +84,61 @@ export const POST = withAuth(async (request: AuthenticatedRequest) => {
           difficulty_after: review.difficultyAfter,
         });
 
-        // Update card FSRS data
+        // Update card FSRS data with v5 fields
         const existingFSRS = db.prepare(`
           SELECT * FROM card_fsrs WHERE card_id = ?
         `).get(review.cardId);
+
+        // Calculate due based on scheduled days (supports learning steps in minutes)
+        const scheduledDays = review.scheduledDays ?? Math.max(1, Math.round(review.stabilityAfter));
+        const newState = review.stateAfter || (review.rating === 1 ? 'relearning' : 'review');
+        const newStep = review.stepAfter ?? 0;
+        const elapsedDays = review.elapsedDays ?? 0;
+
+        // For learning steps, scheduledDays might be a fraction (minutes/1440)
+        // Convert to proper interval
+        let dueInterval: string;
+        if (scheduledDays < 1) {
+          // Learning step - use minutes
+          const minutes = Math.max(1, Math.round(scheduledDays * 24 * 60));
+          dueInterval = `+${minutes} minutes`;
+        } else {
+          dueInterval = `+${Math.round(scheduledDays)} days`;
+        }
 
         if (existingFSRS) {
           db.prepare(`
             UPDATE card_fsrs
             SET stability = ?, difficulty = ?, last_review = ?, reps = reps + 1,
-                lapses = lapses + ?, state = ?,
-                due = datetime('now', '+' || CAST(? AS INTEGER) || ' days')
+                lapses = lapses + ?, state = ?, step = ?,
+                elapsed_days = ?, scheduled_days = ?,
+                due = datetime('now', '${dueInterval}')
             WHERE card_id = ?
           `).run(
             review.stabilityAfter,
             review.difficultyAfter,
             now(),
             review.rating === 1 ? 1 : 0,
-            review.rating === 1 ? 'relearning' : 'review',
-            Math.max(1, Math.round(review.stabilityAfter)),
+            newState,
+            newStep,
+            elapsedDays,
+            Math.round(scheduledDays),
             review.cardId
           );
         } else {
           db.prepare(`
-            INSERT INTO card_fsrs (card_id, stability, difficulty, due, last_review, reps, lapses, state)
-            VALUES (?, ?, ?, datetime('now', '+' || CAST(? AS INTEGER) || ' days'), ?, 1, ?, ?)
+            INSERT INTO card_fsrs (card_id, stability, difficulty, due, last_review, reps, lapses, state, step, elapsed_days, scheduled_days)
+            VALUES (?, ?, ?, datetime('now', '${dueInterval}'), ?, 1, ?, ?, ?, ?, ?)
           `).run(
             review.cardId,
             review.stabilityAfter,
             review.difficultyAfter,
-            Math.max(1, Math.round(review.stabilityAfter)),
             now(),
             review.rating === 1 ? 1 : 0,
-            review.rating === 1 ? 'relearning' : 'review'
+            newState,
+            newStep,
+            elapsedDays,
+            Math.round(scheduledDays)
           );
         }
       }
