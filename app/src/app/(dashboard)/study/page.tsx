@@ -210,23 +210,35 @@ function StudyContent() {
       setIsSubmitting(true);
 
       try {
-        // Build review data with FSRS calculations
+        // Build review data with FSRS v5 calculations
         const reviews = history.map((log) => {
           const fsrsData = cardFSRSRef.current.get(log.cardId);
           const isNewCard = fsrsData?.state === 'new';
 
-          // Calculate new FSRS values using the algorithm
+          // Calculate new FSRS values using the v5 algorithm
           const cardForSchedule = {
-            difficulty: fsrsData?.difficulty || 5,
+            difficulty: fsrsData?.difficulty || 0,
             stability: fsrsData?.stability || 0,
             retrievability: 1,
             due: new Date(),
             reps: fsrsData?.reps || 0,
             lapses: fsrsData?.lapses || 0,
             state: fsrsData?.state || 'new' as const,
+            step: 0, // Current learning step
+            elapsedDays: 0,
+            scheduledDays: 0,
           };
 
           const scheduled = scheduleReview(cardForSchedule, log.rating);
+
+          // Update local FSRS data for subsequent cards in the same session
+          cardFSRSRef.current.set(log.cardId, {
+            stability: scheduled.card.stability,
+            difficulty: scheduled.card.difficulty,
+            state: scheduled.card.state,
+            reps: scheduled.card.reps,
+            lapses: scheduled.card.lapses,
+          });
 
           return {
             cardId: log.cardId,
@@ -234,9 +246,16 @@ function StudyContent() {
             durationMs: log.duration,
             stabilityBefore: fsrsData?.stability || 0,
             stabilityAfter: scheduled.card.stability,
-            difficultyBefore: fsrsData?.difficulty || 5,
+            difficultyBefore: fsrsData?.difficulty || 0,
             difficultyAfter: scheduled.card.difficulty,
             isNewCard,
+            // FSRS v5 additions
+            stateBefore: fsrsData?.state || 'new',
+            stateAfter: scheduled.card.state,
+            stepBefore: 0,
+            stepAfter: scheduled.card.step,
+            scheduledDays: scheduled.card.scheduledDays,
+            elapsedDays: scheduled.card.elapsedDays,
           };
         });
 

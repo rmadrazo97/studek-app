@@ -188,6 +188,10 @@ export interface CardFSRS {
   reps: number;
   lapses: number;
   state: 'new' | 'learning' | 'review' | 'relearning';
+  // FSRS v5 additions
+  step: number; // Current learning/relearning step (0-based)
+  elapsed_days: number; // Days since last review
+  scheduled_days: number; // Scheduled interval in days
 }
 
 export interface CardFSRSUpdate {
@@ -198,6 +202,115 @@ export interface CardFSRSUpdate {
   reps?: number;
   lapses?: number;
   state?: 'new' | 'learning' | 'review' | 'relearning';
+  // FSRS v5 additions
+  step?: number;
+  elapsed_days?: number;
+  scheduled_days?: number;
+}
+
+// ============================================
+// User FSRS Parameters (Personalized Weights)
+// ============================================
+
+export interface UserFSRSParams {
+  user_id: string;
+  weights: string; // JSON array of 19 weights
+  request_retention: number;
+  maximum_interval: number;
+  learning_steps: string; // JSON array of minutes
+  relearning_steps: string; // JSON array of minutes
+  graduating_interval: number;
+  easy_interval: number;
+  enable_fuzz: number; // SQLite boolean
+  fuzz_factor: number;
+  enable_short_term: number; // SQLite boolean
+  last_optimized_at: string | null;
+  optimization_sample_size: number | null;
+  optimization_loss: number | null;
+  optimization_rmse: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UserFSRSParamsUpdate {
+  weights?: string;
+  request_retention?: number;
+  maximum_interval?: number;
+  learning_steps?: string;
+  relearning_steps?: string;
+  graduating_interval?: number;
+  easy_interval?: number;
+  enable_fuzz?: number;
+  fuzz_factor?: number;
+  enable_short_term?: number;
+  last_optimized_at?: string;
+  optimization_sample_size?: number;
+  optimization_loss?: number;
+  optimization_rmse?: number;
+}
+
+// ============================================
+// Deck FSRS Parameters Override
+// ============================================
+
+export interface DeckFSRSParams {
+  deck_id: string;
+  weights: string | null;
+  request_retention: number | null;
+  maximum_interval: number | null;
+  learning_steps: string | null;
+  relearning_steps: string | null;
+  graduating_interval: number | null;
+  easy_interval: number | null;
+  enable_fuzz: number | null;
+  fuzz_factor: number | null;
+  last_optimized_at: string | null;
+  optimization_sample_size: number | null;
+  optimization_loss: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// ============================================
+// FSRS Optimization History
+// ============================================
+
+export interface FSRSOptimizationHistory {
+  id: string;
+  user_id: string;
+  deck_id: string | null;
+  weights_before: string;
+  weights_after: string;
+  loss_before: number;
+  loss_after: number;
+  improvement_percent: number;
+  rmse: number;
+  sample_size: number;
+  iterations: number;
+  created_at: string;
+}
+
+// ============================================
+// Card Statistics
+// ============================================
+
+export interface CardStatistics {
+  card_id: string;
+  review_count: number;
+  correct_count: number;
+  streak: number;
+  best_streak: number;
+  total_time_ms: number;
+  avg_time_ms: number;
+  avg_difficulty: number;
+  difficulty_history: string; // JSON array
+  lapse_count: number;
+  last_lapse_at: string | null;
+  is_leech: number; // SQLite boolean
+  first_review_at: string | null;
+  last_review_at: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 // ============================================
