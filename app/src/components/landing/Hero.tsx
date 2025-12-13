@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { ArrowRight, Download, Zap, Brain, Sparkles, Shield, Clock, Star } from "lucide-react";
 import { Button } from "../ui/Button";
+import Link from "next/link";
 
 export function Hero() {
   return (
@@ -49,14 +50,14 @@ export function Hero() {
               transition={{ duration: 0.6, delay: 0.1 }}
               className="font-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold leading-[1.1] tracking-tight"
             >
-              <span className="text-slate-100">The Power of </span>
-              <span className="text-gradient">Anki</span>
+              <span className="text-slate-100">AI flashcards that </span>
+              <span className="text-gradient">actually stick</span>
               <span className="text-slate-100">.</span>
               <br className="hidden sm:block" />
               <span className="sm:hidden"> </span>
-              <span className="text-slate-100">The Simplicity of </span>
-              <span className="text-gradient">AI</span>
-              <span className="text-slate-100">.</span>
+              <span className="text-slate-100">Powered by </span>
+              <span className="text-gradient">FSRS</span>
+              <span className="text-slate-100">, built for speed.</span>
             </motion.h1>
 
             {/* Subheadline */}
@@ -66,8 +67,8 @@ export function Hero() {
               transition={{ duration: 0.6, delay: 0.2 }}
               className="mt-4 sm:mt-6 text-base sm:text-lg md:text-xl text-slate-400 max-w-xl mx-auto lg:mx-0 leading-relaxed"
             >
-              Turn PDFs, videos, and notes into intelligent flashcards in seconds.
-              Master any subject with the world&apos;s most powerful spaced repetition—zero setup required.
+              Turn PDFs, videos, and notes into high-quality flashcards in seconds.
+              Study smarter with spaced repetition—no setup, no fuss.
             </motion.p>
 
             {/* Trust Signals - New for conversion */}
@@ -98,23 +99,27 @@ export function Hero() {
               transition={{ duration: 0.6, delay: 0.3 }}
               className="mt-6 sm:mt-8 lg:mt-10 flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center lg:justify-start"
             >
-              <Button
-                variant="primary"
-                size="lg"
-                icon={<ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />}
-                iconPosition="right"
-                className="pulse-glow text-sm sm:text-base"
-              >
-                Start Learning Free
-              </Button>
-              <Button
-                variant="secondary"
-                size="lg"
-                icon={<Download className="w-4 h-4 sm:w-5 sm:h-5" />}
-                className="text-sm sm:text-base"
-              >
-                Import from Anki
-              </Button>
+              <Link href="/register" className="contents">
+                <Button
+                  variant="primary"
+                  size="lg"
+                  icon={<ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />}
+                  iconPosition="right"
+                  className="pulse-glow text-sm sm:text-base"
+                >
+                  Start Free
+                </Button>
+              </Link>
+              <a href="#features" className="contents">
+                <Button
+                  variant="secondary"
+                  size="lg"
+                  icon={<Download className="w-4 h-4 sm:w-5 sm:h-5" />}
+                  className="text-sm sm:text-base"
+                >
+                  See how it works
+                </Button>
+              </a>
             </motion.div>
 
             {/* Social Proof */}

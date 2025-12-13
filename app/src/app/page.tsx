@@ -1,16 +1,16 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/stores/auth";
 import { Loader2 } from "lucide-react";
+import { isNativePlatform } from "@/lib/capacitor/native";
 import {
   Navigation,
   Hero,
   SocialProof,
   PainSolution,
   Features,
-  Comparison,
   Pricing,
   FAQ,
   Footer,
@@ -20,32 +20,34 @@ import {
 export default function Home() {
   const router = useRouter();
   const { isAuthenticated, isLoading } = useAuth();
+  const [isNative, setIsNative] = useState(false);
 
   useEffect(() => {
-    if (!isLoading && isAuthenticated) {
-      router.push("/dashboard");
+    // Check if running in native app
+    setIsNative(isNativePlatform());
+  }, []);
+
+  useEffect(() => {
+    if (!isLoading) {
+      if (isAuthenticated) {
+        // Authenticated users go to dashboard
+        router.push("/dashboard");
+      } else if (isNative) {
+        // Native app users go directly to login (skip landing page)
+        router.push("/login");
+      }
     }
-  }, [isLoading, isAuthenticated, router]);
+  }, [isLoading, isAuthenticated, isNative, router]);
 
-  // Show loading while checking auth
-  if (isLoading) {
+  // Show loading while checking auth or redirecting
+  if (isLoading || isAuthenticated || isNative) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#08090a]">
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="w-8 h-8 animate-spin text-cyan-400" />
-          <p className="text-slate-400">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Redirect in progress
-  if (isAuthenticated) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#08090a]">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="w-8 h-8 animate-spin text-cyan-400" />
-          <p className="text-slate-400">Welcome back! Redirecting...</p>
+          <p className="text-slate-400">
+            {isAuthenticated ? "Welcome back! Redirecting..." : "Loading..."}
+          </p>
         </div>
       </div>
     );
@@ -58,7 +60,6 @@ export default function Home() {
       <SocialProof />
       <PainSolution />
       <Features />
-      <Comparison />
       <Pricing />
       <FAQ />
       <Footer />

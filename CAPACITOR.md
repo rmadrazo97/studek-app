@@ -2,10 +2,30 @@
 
 This guide covers how to build native iOS and Android apps from the Studek PWA using Capacitor.
 
+## Quick Start
+
+```bash
+cd app
+
+# 1. Generate all native assets (icons, splash screens)
+npm run generate:native-assets
+
+# 2. Add native platforms
+npx cap add ios
+npx cap add android
+
+# 3. Build and sync
+npm run capacitor:build
+
+# 4. Open in IDE
+npm run ios      # Opens Xcode
+npm run android  # Opens Android Studio
+```
+
 ## Prerequisites
 
 ### General Requirements
-- Node.js 18+
+- Node.js 20+ (required for sharp image processing)
 - npm or yarn
 
 ### iOS Development
@@ -151,57 +171,46 @@ npm run android:run
 
 ## Icon and Splash Screen Setup
 
-### Generate PNG Icons
+### Generate All Native Assets
 
-First, generate PNG icons from the SVG sources:
+Run the comprehensive asset generator to create all required icons and splash screens:
 
 ```bash
-npm run generate:icons
+npm run generate:native-assets
 ```
 
-This requires the `sharp` package:
+This generates:
+- **iOS App Icons**: All 20 required sizes with Contents.json
+- **Android Launcher Icons**: mdpi through xxxhdpi
+- **Android Adaptive Icons**: Foreground and background layers
+- **Splash Screens**: All iOS device sizes + Android universal
+- **PWA Icons**: Updated PNG versions
+
+Generated assets are placed in:
+```
+public/
+├── capacitor/
+│   ├── ios/           # iOS App Icon set with Contents.json
+│   └── android/       # Android mipmap-* folders
+├── splash/            # Splash screens for all devices
+└── icons/             # PWA icons
+```
+
+### Copy Icons to Native Projects
+
+After running `npx cap add ios` and `npx cap add android`:
+
+**iOS:**
 ```bash
-npm install sharp --save-dev
+# Replace the entire AppIcon.appiconset folder
+cp -r public/capacitor/ios/* ios/App/App/Assets.xcassets/AppIcon.appiconset/
 ```
-
-### iOS Icons
-
-Copy generated icons to `ios/App/App/Assets.xcassets/AppIcon.appiconset/`:
-- 20x20 @1x, @2x, @3x
-- 29x29 @1x, @2x, @3x
-- 40x40 @1x, @2x, @3x
-- 60x60 @2x, @3x
-- 76x76 @1x, @2x
-- 83.5x83.5 @2x
-- 1024x1024
-
-### Android Icons
-
-Copy to `android/app/src/main/res/`:
-- `mipmap-mdpi/ic_launcher.png` (48x48)
-- `mipmap-hdpi/ic_launcher.png` (72x72)
-- `mipmap-xhdpi/ic_launcher.png` (96x96)
-- `mipmap-xxhdpi/ic_launcher.png` (144x144)
-- `mipmap-xxxhdpi/ic_launcher.png` (192x192)
-
-Also create adaptive icons in:
-- `mipmap-*/ic_launcher_foreground.png`
-- `mipmap-*/ic_launcher_background.png`
-
-### Splash Screens
-
-Create splash screens in `public/splash/`:
-
-**iOS Sizes:**
-- 2048x2732 (12.9" iPad Pro)
-- 1668x2388 (11" iPad Pro)
-- 1536x2048 (9.7" iPad)
-- 1290x2796 (iPhone 14 Pro Max)
-- 1179x2556 (iPhone 14 Pro)
-- 1170x2532 (iPhone 13/14)
 
 **Android:**
-Configure in `capacitor.config.ts` using the SplashScreen plugin.
+```bash
+# Copy mipmap folders
+cp -r public/capacitor/android/mipmap-* android/app/src/main/res/
+```
 
 ## App Screenshots
 
@@ -345,6 +354,180 @@ const status = await Network.getStatus();
 console.log('Online:', status.connected);
 ```
 
+## Native Behavior (Built-in)
+
+The app includes native optimizations that activate automatically on iOS/Android:
+
+### Automatic Features
+- **Status Bar**: Dark style with app background color
+- **Keyboard Handling**: Proper resize behavior
+- **Splash Screen**: Auto-hide after app loads
+- **Haptic Feedback**: Available via `useCapacitor` hook
+- **Safe Areas**: CSS handles notch/Dynamic Island
+
+### Using Native Features in Code
+
+```typescript
+import { useCapacitor } from '@/hooks/useCapacitor';
+
+function MyComponent() {
+  const { isNative, isIOS, isAndroid, hapticMedium, hapticSuccess } = useCapacitor();
+
+  const handlePress = () => {
+    hapticMedium(); // Triggers haptic feedback on native
+    // ... your logic
+  };
+
+  return (
+    <button onClick={handlePress}>
+      {isNative ? 'Native App' : 'Web App'}
+    </button>
+  );
+}
+```
+
+---
+
+## App Store Submission Checklist
+
+### iOS App Store Checklist
+
+#### Before Submission
+- [ ] Apple Developer Program membership ($99/year)
+- [ ] App Store Connect app record created
+- [ ] Bundle ID registered: `com.studek.app`
+- [ ] App icons generated and copied to Xcode
+- [ ] Splash screens configured
+- [ ] Signing certificate and provisioning profiles set up
+
+#### App Information
+- [ ] App name: Studek
+- [ ] Subtitle (30 chars): "AI-Powered Flashcards"
+- [ ] Category: Education
+- [ ] Age Rating: 4+ (no objectionable content)
+- [ ] Privacy Policy URL: https://studek.com/privacy
+- [ ] Support URL: https://studek.com/help
+
+#### Screenshots Required
+| Device | Size | Count |
+|--------|------|-------|
+| iPhone 6.7" | 1290x2796 | 4-10 |
+| iPhone 6.5" | 1242x2688 | 4-10 |
+| iPhone 5.5" | 1242x2208 | 4-10 |
+| iPad 12.9" | 2048x2732 | 4-10 (if iPad supported) |
+
+**Recommended Screenshots:**
+1. Dashboard/Home view
+2. Study session (flashcard review)
+3. AI deck creation
+4. Analytics/Progress view
+
+#### App Store Description
+```
+Master any subject with zero setup.
+
+Studek combines the world's most powerful spaced repetition algorithm (FSRS) with next-gen AI. Turn PDFs, videos, and notes into intelligent flashcards in seconds.
+
+FEATURES:
+• AI-Powered Deck Creation - Generate flashcards from any topic
+• FSRS Algorithm - Science-backed memory optimization
+• Beautiful Study Experience - Dark mode, haptic feedback
+• Progress Tracking - Detailed analytics and streaks
+• Offline Support - Study anywhere without internet
+
+Perfect for students, medical professionals, language learners, and anyone who wants to learn faster and remember longer.
+```
+
+#### Keywords (100 chars)
+```
+flashcards,spaced repetition,study,anki,learn,memory,quiz,education,AI,FSRS
+```
+
+#### Review Notes
+```
+Test Account:
+Email: reviewer@studek.com
+Password: [create test account]
+
+The app requires sign-in to access study features.
+Core functionality: Create AI flashcards, study with spaced repetition.
+```
+
+---
+
+### Google Play Store Checklist
+
+#### Before Submission
+- [ ] Google Play Developer account ($25 one-time)
+- [ ] App created in Play Console
+- [ ] Keystore created and backed up securely
+- [ ] Release AAB built and signed
+
+#### Store Listing
+- [ ] App name: Studek
+- [ ] Short description (80 chars): "AI-powered flashcards with FSRS spaced repetition"
+- [ ] Full description (4000 chars): See iOS description above
+- [ ] App category: Education
+- [ ] Content rating questionnaire completed
+
+#### Graphics Required
+| Asset | Size | Notes |
+|-------|------|-------|
+| App icon | 512x512 | PNG, 32-bit |
+| Feature graphic | 1024x500 | Shown on store page |
+| Phone screenshots | 320-3840px | Min 2, max 8 |
+| 7" tablet screenshots | Optional | If tablet supported |
+| 10" tablet screenshots | Optional | If tablet supported |
+
+#### Data Safety
+- [ ] Data collection disclosure completed
+- [ ] Privacy policy linked
+- [ ] Account deletion method documented
+
+#### App Content
+- [ ] Target audience: 13+ or general
+- [ ] Ads declaration: No ads
+- [ ] In-app purchases: [if applicable]
+
+---
+
+### Pre-Launch Testing
+
+#### iOS TestFlight
+1. Archive app in Xcode
+2. Upload to App Store Connect
+3. Add internal testers (up to 100)
+4. Get feedback before public release
+
+#### Android Internal Testing
+1. Create internal test track
+2. Upload AAB
+3. Add tester emails
+4. Distribute via Play Store
+
+---
+
+### Common Rejection Reasons & How to Avoid
+
+#### iOS
+| Reason | Solution |
+|--------|----------|
+| Crasher or bugs | Test on multiple devices before submission |
+| Incomplete metadata | Fill all required fields |
+| Placeholder content | Remove Lorem ipsum, test accounts in screenshots |
+| Login wall | Provide demo/test account for reviewers |
+| Privacy concerns | Add clear privacy policy, data collection disclosure |
+
+#### Android
+| Reason | Solution |
+|--------|----------|
+| Policy violations | Review latest Play Store policies |
+| Broken functionality | Test release build thoroughly |
+| Misleading metadata | Ensure screenshots match actual app |
+| Data safety issues | Complete data safety form accurately |
+
+---
+
 ## Resources
 
 - [Capacitor Documentation](https://capacitorjs.com/docs)
@@ -352,3 +535,5 @@ console.log('Online:', status.connected);
 - [Google Play Policies](https://play.google.com/about/developer-content-policy/)
 - [Apple Human Interface Guidelines](https://developer.apple.com/design/human-interface-guidelines/)
 - [Material Design Guidelines](https://material.io/design)
+- [App Store Screenshot Generator](https://screenshots.pro)
+- [TestFlight Documentation](https://developer.apple.com/testflight/)
