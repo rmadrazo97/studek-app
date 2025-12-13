@@ -10,7 +10,6 @@ import {
   SocialProof,
   PainSolution,
   Features,
-  Comparison,
   Pricing,
   FAQ,
   Footer,
@@ -58,7 +57,6 @@ export default function Home() {
       <SocialProof />
       <PainSolution />
       <Features />
-      <Comparison />
       <Pricing />
       <FAQ />
       <Footer />

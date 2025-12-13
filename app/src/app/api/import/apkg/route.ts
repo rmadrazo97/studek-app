@@ -10,6 +10,7 @@ import { writeFileSync, mkdirSync, existsSync } from 'fs';
 import { join } from 'path';
 import { randomUUID } from 'crypto';
 import type { DeckCategory } from '@/lib/db/types';
+import { assertDeckCreationAllowed, PlanLimitError, planLimitToResponse } from '@/lib/billing/limits';
 
 // Max file size: 100MB
 const MAX_FILE_SIZE = 100 * 1024 * 1024;
@@ -107,6 +108,7 @@ export const POST = withAuth(async (request: AuthenticatedRequest) => {
       }
 
       // Create the deck
+      assertDeckCreationAllowed(userId, { isAiGenerated: false });
       const deck = createDeck({
         user_id: userId,
         name: parsedDeck.name || 'Imported Deck',
@@ -163,6 +165,9 @@ export const POST = withAuth(async (request: AuthenticatedRequest) => {
       },
     });
   } catch (error) {
+    if (error instanceof PlanLimitError) {
+      return NextResponse.json(planLimitToResponse(error), { status: error.statusCode });
+    }
     console.error('[API] POST /api/import/apkg error:', error);
     return NextResponse.json(
       { error: 'Failed to import APKG file' },

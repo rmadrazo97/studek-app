@@ -15,7 +15,7 @@ const logos = [
 
 const testimonials = [
   {
-    quote: "Switched from Anki after 3 years. The AI card generation alone saves me 5+ hours a week. Best decision for my MCAT prep.",
+    quote: "I replaced my old flashcards workflow after 3 years. The AI card generation alone saves me 5+ hours a week. Best decision for my MCAT prep.",
     author: "Sarah M.",
     role: "Medical Student",
     rating: 5,

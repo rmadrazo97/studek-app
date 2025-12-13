@@ -11,9 +11,9 @@ interface FAQItem {
 
 const faqData: FAQItem[] = [
   {
-    question: "Can I import my existing Anki decks?",
+    question: "Can I import my existing decks?",
     answer:
-      "Yes! Studek supports full .apkg file imports. All your cards, media, and scheduling data will transfer seamlessly. Your review history and learning progress are preserved, so you can pick up exactly where you left off.",
+      "Yes! Studek supports .apkg imports, including cards and media. You can bring your study library over in minutes and keep moving without starting from scratch.",
   },
   {
     question: "Does it work offline?",
@@ -33,7 +33,7 @@ const faqData: FAQItem[] = [
   {
     question: "What makes FSRS better than SM-2?",
     answer:
-      "FSRS (Free Spaced Repetition Scheduler) is a newer algorithm that adapts to your individual memory patterns. It uses machine learning to optimize review intervals based on your actual performance, resulting in 20-30% better retention with fewer reviews compared to SM-2.",
+      "FSRS (Free Spaced Repetition Scheduler) adapts to your memory patterns and optimizes review intervals based on performance. In practice, it can improve retention while reducing unnecessary reviews compared to older schedulers.",
   },
   {
     question: "Can I study with friends or classmates?",

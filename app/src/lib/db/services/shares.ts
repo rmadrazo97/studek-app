@@ -135,6 +135,7 @@ export function getDecksSharedWithUser(userId: string): Array<{
       parent_id: row.parent_id,
       hierarchy: row.hierarchy,
       is_public: row.is_public,
+      is_ai_generated: (row as Deck & { is_ai_generated?: number }).is_ai_generated === 1,
       created_at: row.created_at,
       updated_at: row.updated_at,
     },

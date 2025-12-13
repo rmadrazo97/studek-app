@@ -4,6 +4,7 @@ import { Providers } from "@/components/Providers";
 import "./globals.css";
 import { VersionFooter } from "@/components/ui/VersionFooter";
 import { ServiceWorkerRegistration } from "@/components/pwa/ServiceWorkerRegistration";
+import Script from "next/script";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,24 +30,33 @@ export const viewport: Viewport = {
   colorScheme: "dark",
 };
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://studek.app";
+
 export const metadata: Metadata = {
-  title: "Studek | The Power of Anki. The Simplicity of AI.",
+  metadataBase: new URL(siteUrl),
+  title: "Studek | AI Flashcards with FSRS Spaced Repetition",
   description:
-    "Master any subject with zero setup. Studek combines the world's most powerful spaced repetition algorithm (FSRS) with next-gen AI. Turn PDFs, videos, and notes into intelligent flashcards in seconds.",
+    "Create high-quality flashcards from PDFs, videos, and notes in seconds. Study smarter with FSRS spaced repetition, offline-first sync, and AI tools—without the setup.",
   keywords: [
+    "Studek",
+    "AI flashcards",
     "spaced repetition",
     "flashcards",
-    "AI study",
+    "flashcard maker",
+    "AI study app",
     "FSRS",
-    "Anki alternative",
     "study app",
     "memory",
     "learning",
     "medical school",
+    "MCAT",
     "USMLE",
     "language learning",
   ],
   authors: [{ name: "Studek" }],
+  alternates: {
+    canonical: "/",
+  },
   // PWA Manifest
   manifest: "/manifest.json",
   // Apple PWA meta tags
@@ -106,18 +116,28 @@ export const metadata: Metadata = {
     shortcut: ["/favicon.svg"],
   },
   openGraph: {
-    title: "Studek | The Power of Anki. The Simplicity of AI.",
+    title: "Studek | AI Flashcards with FSRS Spaced Repetition",
     description:
-      "Master any subject with zero setup. Turn PDFs, videos, and notes into intelligent flashcards in seconds.",
+      "Create flashcards from PDFs, videos, and notes in seconds. Study with FSRS spaced repetition and AI tools—no setup.",
     type: "website",
     locale: "en_US",
     siteName: "Studek",
+    url: siteUrl,
+    images: [
+      {
+        url: "/icons/icon-512x512.png",
+        width: 512,
+        height: 512,
+        alt: "Studek",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Studek | The Power of Anki. The Simplicity of AI.",
+    title: "Studek | AI Flashcards with FSRS Spaced Repetition",
     description:
-      "Master any subject with zero setup. Turn PDFs, videos, and notes into intelligent flashcards in seconds.",
+      "Create flashcards from PDFs, videos, and notes in seconds. Study with FSRS spaced repetition and AI tools—no setup.",
+    images: ["/icons/icon-512x512.png"],
   },
   robots: {
     index: true,
@@ -142,6 +162,36 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <Providers>
+          <Script
+            id="jsonld-studek"
+            type="application/ld+json"
+            strategy="beforeInteractive"
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify([
+                {
+                  "@context": "https://schema.org",
+                  "@type": "WebSite",
+                  name: "Studek",
+                  url: siteUrl,
+                  description:
+                    "Create flashcards from PDFs, videos, and notes in seconds. Study with FSRS spaced repetition and AI tools.",
+                },
+                {
+                  "@context": "https://schema.org",
+                  "@type": "SoftwareApplication",
+                  name: "Studek",
+                  applicationCategory: "EducationalApplication",
+                  operatingSystem: "Web",
+                  url: siteUrl,
+                  offers: {
+                    "@type": "Offer",
+                    price: "0",
+                    priceCurrency: "USD",
+                  },
+                },
+              ]),
+            }}
+          />
           {children}
           <VersionFooter />
           <ServiceWorkerRegistration />
