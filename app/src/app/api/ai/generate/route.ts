@@ -11,8 +11,11 @@ import {
   isOpenAIConfigured,
   generateDeck,
   generateCards,
+  generateDeckFromSource,
+  generateCardsFromSource,
   type CreateDeckToolResult,
   type AddCardsToolResult,
+  type SourceInfo,
 } from '@/lib/ai';
 import {
   createDeck,
@@ -27,9 +30,18 @@ import { assertDeckCreationAllowed, PlanLimitError, planLimitToResponse } from '
 // Types
 // ============================================
 
+interface SourceInput {
+  type: 'youtube' | 'pdf' | 'url';
+  content: string;
+  title?: string;
+  url?: string;
+}
+
 interface GenerateRequest {
-  prompt: string;
+  prompt?: string;
   deck_id?: string | null;
+  source?: SourceInput;
+  focus_prompt?: string;
   options?: {
     save?: boolean;
     is_public?: boolean;
@@ -105,21 +117,28 @@ export const POST = withAuth(async (request: AuthenticatedRequest) => {
     console.log('[AI Route] Request body:', JSON.stringify({
       prompt: body.prompt?.substring(0, 50),
       deck_id: body.deck_id,
+      source: body.source ? { type: body.source.type, hasContent: !!body.source.content } : null,
+      focus_prompt: body.focus_prompt?.substring(0, 50),
       options: body.options,
     }));
 
-    // Validate request
-    if (!body.prompt || typeof body.prompt !== 'string' || body.prompt.trim() === '') {
+    // Validate request - either prompt or source is required
+    const hasPrompt = body.prompt && typeof body.prompt === 'string' && body.prompt.trim() !== '';
+    const hasSource = body.source && body.source.type && body.source.content;
+
+    if (!hasPrompt && !hasSource) {
       return NextResponse.json(
-        { error: 'Prompt is required' },
+        { error: 'Either prompt or source is required' },
         { status: 400 }
       );
     }
 
-    const prompt = body.prompt.trim();
+    const prompt = body.prompt?.trim() || '';
     const deckId = body.deck_id || null;
     const shouldSave = body.options?.save !== false; // Default to true
     const isPublic = body.options?.is_public ?? false;
+    const source = body.source;
+    const focusPrompt = body.focus_prompt?.trim();
 
     let response: GenerateResponse;
 
@@ -144,11 +163,35 @@ export const POST = withAuth(async (request: AuthenticatedRequest) => {
 
       console.log(`[AI] Generating cards for deck: ${existingDeck.name}`);
 
-      const { result, usage } = await generateCards(prompt, {
-        name: existingDeck.name,
-        description: existingDeck.description || undefined,
-        existingCardCount: existingDeck.card_count,
-      });
+      let result: AddCardsToolResult;
+      let usage: { promptTokens: number; completionTokens: number; totalTokens: number };
+
+      if (source) {
+        // Generate from source material
+        const sourceInfo: SourceInfo = {
+          type: source.type,
+          content: source.content,
+          title: source.title,
+          url: source.url,
+        };
+        console.log(`[AI] Using source-based generation from ${source.type}`);
+        const generated = await generateCardsFromSource(sourceInfo, {
+          name: existingDeck.name,
+          description: existingDeck.description || undefined,
+          existingCardCount: existingDeck.card_count,
+        }, focusPrompt);
+        result = generated.result;
+        usage = generated.usage;
+      } else {
+        // Generate from text prompt
+        const generated = await generateCards(prompt, {
+          name: existingDeck.name,
+          description: existingDeck.description || undefined,
+          existingCardCount: existingDeck.card_count,
+        });
+        result = generated.result;
+        usage = generated.usage;
+      }
 
       const savedCards: Array<{ id: string; front: string; back: string; tags?: string[] }> = [];
 
@@ -202,9 +245,29 @@ export const POST = withAuth(async (request: AuthenticatedRequest) => {
 
     } else {
       // Creating a new deck
-      console.log(`[AI] Generating new deck from prompt: ${prompt.substring(0, 50)}...`);
+      console.log(`[AI] Generating new deck from ${source ? source.type + ' source' : 'prompt'}`);
 
-      const { result, usage } = await generateDeck(prompt);
+      let result: CreateDeckToolResult;
+      let usage: { promptTokens: number; completionTokens: number; totalTokens: number };
+
+      if (source) {
+        // Generate from source material
+        const sourceInfo: SourceInfo = {
+          type: source.type,
+          content: source.content,
+          title: source.title,
+          url: source.url,
+        };
+        console.log(`[AI] Using source-based generation from ${source.type}${focusPrompt ? ' with focus prompt' : ''}`);
+        const generated = await generateDeckFromSource(sourceInfo, focusPrompt);
+        result = generated.result;
+        usage = generated.usage;
+      } else {
+        // Generate from text prompt
+        const generated = await generateDeck(prompt);
+        result = generated.result;
+        usage = generated.usage;
+      }
 
       let savedDeck: { id: string; name: string; description: string | null; category: string | null } | null = null;
       const savedCards: Array<{ id: string; front: string; back: string; tags?: string[] }> = [];
