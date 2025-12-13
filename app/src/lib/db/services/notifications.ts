@@ -16,12 +16,16 @@ import type {
   NotificationLogCreate,
   NotificationSchedule,
   NotificationType,
+  NativePushToken,
+  NativePushTokenCreate,
+  NativePlatform,
 } from '../types';
 
 const NOTIFICATION_PREFERENCES_TABLE = 'notification_preferences';
 const PUSH_SUBSCRIPTIONS_TABLE = 'push_subscriptions';
 const NOTIFICATION_LOGS_TABLE = 'notification_logs';
 const NOTIFICATION_SCHEDULE_TABLE = 'notification_schedule';
+const NATIVE_PUSH_TOKENS_TABLE = 'native_push_tokens';
 
 // Track if we've ensured tables exist
 let tablesEnsured = false;
@@ -120,6 +124,26 @@ function ensureTablesExist(): void {
           created_at TEXT NOT NULL DEFAULT (datetime('now')),
           FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
           UNIQUE(user_id, notification_type, scheduled_for)
+        )
+      `);
+
+      // Create native_push_tokens table for APNs/FCM
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS native_push_tokens (
+          id TEXT PRIMARY KEY,
+          user_id TEXT NOT NULL,
+          platform TEXT NOT NULL CHECK(platform IN ('ios', 'android')),
+          token TEXT NOT NULL UNIQUE,
+          device_name TEXT,
+          device_model TEXT,
+          os_version TEXT,
+          app_version TEXT,
+          is_active INTEGER NOT NULL DEFAULT 1,
+          last_used_at TEXT,
+          error_count INTEGER NOT NULL DEFAULT 0,
+          created_at TEXT NOT NULL DEFAULT (datetime('now')),
+          updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+          FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         )
       `);
 
@@ -759,4 +783,182 @@ export function getUsersForWeeklySummary(): Array<{
     total_reviews_this_week: number;
     current_streak: number;
   }>;
+}
+
+// ============================================
+// Native Push Tokens (APNs/FCM)
+// ============================================
+
+/**
+ * Get all native push tokens for a user
+ */
+export function getUserNativePushTokens(userId: string): NativePushToken[] {
+  ensureTablesExist();
+
+  const db = getDatabase();
+  return db.prepare(`
+    SELECT * FROM ${NATIVE_PUSH_TOKENS_TABLE}
+    WHERE user_id = ? AND is_active = 1
+    ORDER BY created_at DESC
+  `).all(userId) as NativePushToken[];
+}
+
+/**
+ * Get native push tokens by platform for a user
+ */
+export function getUserNativePushTokensByPlatform(
+  userId: string,
+  platform: NativePlatform
+): NativePushToken[] {
+  ensureTablesExist();
+
+  const db = getDatabase();
+  return db.prepare(`
+    SELECT * FROM ${NATIVE_PUSH_TOKENS_TABLE}
+    WHERE user_id = ? AND platform = ? AND is_active = 1
+    ORDER BY created_at DESC
+  `).all(userId, platform) as NativePushToken[];
+}
+
+/**
+ * Get a native push token by token string
+ */
+export function getNativePushTokenByToken(token: string): NativePushToken | null {
+  ensureTablesExist();
+
+  const db = getDatabase();
+  const result = db.prepare(
+    `SELECT * FROM ${NATIVE_PUSH_TOKENS_TABLE} WHERE token = ?`
+  ).get(token) as NativePushToken | undefined;
+
+  return result || null;
+}
+
+/**
+ * Create or update a native push token
+ */
+export function upsertNativePushToken(data: NativePushTokenCreate): NativePushToken {
+  ensureTablesExist();
+
+  const db = getDatabase();
+
+  // Check if token already exists
+  const existing = getNativePushTokenByToken(data.token);
+
+  if (existing) {
+    // Update existing token
+    db.prepare(`
+      UPDATE ${NATIVE_PUSH_TOKENS_TABLE}
+      SET user_id = ?, platform = ?, device_name = ?, device_model = ?,
+          os_version = ?, app_version = ?, is_active = 1, error_count = 0, updated_at = ?
+      WHERE token = ?
+    `).run(
+      data.user_id,
+      data.platform,
+      data.device_name || null,
+      data.device_model || null,
+      data.os_version || null,
+      data.app_version || null,
+      now(),
+      data.token
+    );
+
+    return db.prepare(
+      `SELECT * FROM ${NATIVE_PUSH_TOKENS_TABLE} WHERE token = ?`
+    ).get(data.token) as NativePushToken;
+  }
+
+  // Create new token
+  return create<NativePushToken>(NATIVE_PUSH_TOKENS_TABLE, {
+    user_id: data.user_id,
+    platform: data.platform,
+    token: data.token,
+    device_name: data.device_name || null,
+    device_model: data.device_model || null,
+    os_version: data.os_version || null,
+    app_version: data.app_version || null,
+  });
+}
+
+/**
+ * Delete a native push token
+ */
+export function deleteNativePushToken(token: string): boolean {
+  ensureTablesExist();
+
+  const db = getDatabase();
+  const result = db.prepare(
+    `DELETE FROM ${NATIVE_PUSH_TOKENS_TABLE} WHERE token = ?`
+  ).run(token);
+
+  return result.changes > 0;
+}
+
+/**
+ * Deactivate a native push token (soft delete)
+ */
+export function deactivateNativePushToken(tokenId: string): void {
+  ensureTablesExist();
+
+  const db = getDatabase();
+  db.prepare(`
+    UPDATE ${NATIVE_PUSH_TOKENS_TABLE}
+    SET is_active = 0, updated_at = ?
+    WHERE id = ?
+  `).run(now(), tokenId);
+}
+
+/**
+ * Increment error count for a native push token
+ */
+export function incrementNativeTokenErrors(tokenId: string): void {
+  ensureTablesExist();
+
+  const db = getDatabase();
+  db.prepare(`
+    UPDATE ${NATIVE_PUSH_TOKENS_TABLE}
+    SET error_count = error_count + 1, updated_at = ?
+    WHERE id = ?
+  `).run(now(), tokenId);
+
+  // Deactivate if too many errors
+  const token = db.prepare(
+    `SELECT error_count FROM ${NATIVE_PUSH_TOKENS_TABLE} WHERE id = ?`
+  ).get(tokenId) as { error_count: number } | undefined;
+
+  if (token && token.error_count >= 5) {
+    deactivateNativePushToken(tokenId);
+  }
+}
+
+/**
+ * Update last used timestamp for a native push token
+ */
+export function updateNativeTokenLastUsed(tokenId: string): void {
+  ensureTablesExist();
+
+  const db = getDatabase();
+  db.prepare(`
+    UPDATE ${NATIVE_PUSH_TOKENS_TABLE}
+    SET last_used_at = ?, updated_at = ?
+    WHERE id = ?
+  `).run(now(), now(), tokenId);
+}
+
+/**
+ * Get all active native push tokens for users needing notifications
+ */
+export function getActiveNativeTokensForUsers(userIds: string[]): NativePushToken[] {
+  if (userIds.length === 0) return [];
+
+  ensureTablesExist();
+
+  const db = getDatabase();
+  const placeholders = userIds.map(() => '?').join(',');
+
+  return db.prepare(`
+    SELECT * FROM ${NATIVE_PUSH_TOKENS_TABLE}
+    WHERE user_id IN (${placeholders}) AND is_active = 1
+    ORDER BY user_id, created_at DESC
+  `).all(...userIds) as NativePushToken[];
 }

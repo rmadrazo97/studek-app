@@ -305,3 +305,131 @@ export function getVapidPublicKey(): string {
 export function isPushConfigured(): boolean {
   return !!(VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY);
 }
+
+// ============================================
+// Combined Push (Web + Native)
+// ============================================
+
+import { sendAPNsToUser, isAPNsConfigured, type APNsPayload } from './apns-service';
+import { sendFCMToUser, isFCMConfigured, type FCMPayload } from './fcm-service';
+
+export interface AllPushResult {
+  web: { sent: number; failed: number };
+  ios: { sent: number; failed: number };
+  android: { sent: number; failed: number };
+  total: { sent: number; failed: number };
+}
+
+/**
+ * Send push notification to ALL channels (Web Push, APNs, FCM)
+ */
+export async function sendPushToAllChannels(
+  userId: string,
+  payload: PushNotificationPayload,
+  notificationType: NotificationType
+): Promise<AllPushResult> {
+  // Convert payload to platform-specific formats
+  const apnsPayload: APNsPayload = {
+    title: payload.title,
+    body: payload.body,
+    url: payload.url,
+    data: payload.data as Record<string, unknown>,
+  };
+
+  const fcmPayload: FCMPayload = {
+    title: payload.title,
+    body: payload.body,
+    url: payload.url,
+    tag: payload.tag,
+    data: payload.data as Record<string, string>,
+  };
+
+  // Send to all channels in parallel
+  const [webResult, iosResult, androidResult] = await Promise.all([
+    sendPushToUser(userId, payload, notificationType),
+    isAPNsConfigured()
+      ? sendAPNsToUser(userId, apnsPayload, notificationType)
+      : Promise.resolve({ sent: 0, failed: 0, results: [] }),
+    isFCMConfigured()
+      ? sendFCMToUser(userId, fcmPayload, notificationType)
+      : Promise.resolve({ sent: 0, failed: 0, results: [] }),
+  ]);
+
+  return {
+    web: { sent: webResult.sent, failed: webResult.failed },
+    ios: { sent: iosResult.sent, failed: iosResult.failed },
+    android: { sent: androidResult.sent, failed: androidResult.failed },
+    total: {
+      sent: webResult.sent + iosResult.sent + androidResult.sent,
+      failed: webResult.failed + iosResult.failed + androidResult.failed,
+    },
+  };
+}
+
+/**
+ * Send study reminder to all channels
+ */
+export async function sendStudyReminderAllChannels(
+  userId: string,
+  cardsDue: number,
+  streak: number
+): Promise<AllPushResult> {
+  const title = cardsDue > 0 ? `${cardsDue} cards waiting for you!` : 'Time to study!';
+
+  let body = '';
+  if (streak > 0) {
+    body = `Keep your ${streak}-day streak alive!`;
+  } else if (cardsDue > 0) {
+    body = "Don't let your knowledge slip away.";
+  } else {
+    body = 'Review your flashcards to stay sharp.';
+  }
+
+  return sendPushToAllChannels(
+    userId,
+    { title, body, url: '/study', tag: 'study_reminder' },
+    'study_reminder'
+  );
+}
+
+/**
+ * Send streak warning to all channels
+ */
+export async function sendStreakWarningAllChannels(
+  userId: string,
+  streak: number,
+  xpNeeded: number
+): Promise<AllPushResult> {
+  const title = `Your ${streak}-day streak is at risk!`;
+  const body = `Earn ${xpNeeded} more XP before midnight to keep it going!`;
+
+  return sendPushToAllChannels(
+    userId,
+    { title, body, url: '/study', tag: 'streak_warning' },
+    'streak_warning'
+  );
+}
+
+/**
+ * Send cards due notification to all channels
+ */
+export async function sendCardsDueAllChannels(
+  userId: string,
+  cardsDue: number
+): Promise<AllPushResult> {
+  const title = `${cardsDue} cards are due!`;
+  const body = 'Review now for optimal retention.';
+
+  return sendPushToAllChannels(
+    userId,
+    { title, body, url: '/study', tag: 'cards_due' },
+    'cards_due'
+  );
+}
+
+/**
+ * Check if any push channel is configured
+ */
+export function isAnyPushConfigured(): boolean {
+  return isPushConfigured() || isAPNsConfigured() || isFCMConfigured();
+}

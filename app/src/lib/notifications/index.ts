@@ -17,8 +17,8 @@ import {
   sendWeeklySummaryEmail,
 } from './email-service';
 import {
-  sendStudyReminderPush,
-  sendStreakWarningPush,
+  sendStudyReminderAllChannels,
+  sendStreakWarningAllChannels,
 } from './push-service';
 
 export interface NotificationBatchResult {
@@ -80,15 +80,15 @@ export async function processStudyReminders(): Promise<NotificationBatchResult> 
           }
         }
 
-        // Send push if enabled
+        // Send push if enabled (to all channels: Web, iOS, Android)
         if (user.push_enabled) {
-          const pushResult = await sendStudyReminderPush(
+          const pushResult = await sendStudyReminderAllChannels(
             user.user_id,
             user.cards_due,
             user.current_streak
           );
-          result.pushSent += pushResult.sent;
-          result.pushFailed += pushResult.failed;
+          result.pushSent += pushResult.total.sent;
+          result.pushFailed += pushResult.total.failed;
         }
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -150,15 +150,15 @@ export async function processStreakWarnings(): Promise<NotificationBatchResult> 
           }
         }
 
-        // Send push if enabled
+        // Send push if enabled (to all channels: Web, iOS, Android)
         if (user.push_enabled) {
-          const pushResult = await sendStreakWarningPush(
+          const pushResult = await sendStreakWarningAllChannels(
             user.user_id,
             user.current_streak,
             xpNeeded
           );
-          result.pushSent += pushResult.sent;
-          result.pushFailed += pushResult.failed;
+          result.pushSent += pushResult.total.sent;
+          result.pushFailed += pushResult.total.failed;
         }
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -293,12 +293,20 @@ export async function runNotificationJobs(): Promise<{
 export {
   getVapidPublicKey,
   isPushConfigured,
+  isAnyPushConfigured,
+  sendPushToAllChannels,
 } from './push-service';
 export { isEmailConfigured } from './email-service';
+export { isAPNsConfigured } from './apns-service';
+export { isFCMConfigured } from './fcm-service';
 export {
   getNotificationPreferences,
   updateNotificationPreferences,
   getUserPushSubscriptions,
   upsertPushSubscription,
   deletePushSubscription,
+  // Native push token functions
+  getUserNativePushTokens,
+  upsertNativePushToken,
+  deleteNativePushToken,
 } from '@/lib/db/services/notifications';
