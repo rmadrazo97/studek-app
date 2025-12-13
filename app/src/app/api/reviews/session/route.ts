@@ -16,6 +16,7 @@ import {
 } from '@/lib/db/services/gamification';
 import { calculateSessionXP, getMotivationalMessage, getLevel } from '@/lib/gamification';
 import type { Rating, StudySession } from '@/lib/db/types';
+import { assertStudySessionAllowed, PlanLimitError, planLimitToResponse } from '@/lib/billing/limits';
 
 interface SessionReview {
   cardId: string;
@@ -52,6 +53,8 @@ export const POST = withAuth(async (request: AuthenticatedRequest) => {
         { status: 400 }
       );
     }
+
+    assertStudySessionAllowed(userId, deckId);
 
     const db = getDatabase();
 
@@ -225,6 +228,9 @@ export const POST = withAuth(async (request: AuthenticatedRequest) => {
       message,
     });
   } catch (error) {
+    if (error instanceof PlanLimitError) {
+      return NextResponse.json(planLimitToResponse(error), { status: error.statusCode });
+    }
     return handleApiError('POST /api/reviews/session', error, 'Failed to complete study session');
   }
 });

@@ -12,6 +12,7 @@ import {
   getDecksSharedWithUser,
 } from '@/lib/db/services';
 import type { DeckCreate } from '@/lib/db/types';
+import { assertDeckCreationAllowed, PlanLimitError, planLimitToResponse } from '@/lib/billing/limits';
 
 /**
  * GET /api/decks
@@ -67,6 +68,8 @@ export const POST = withAuth(async (request: AuthenticatedRequest) => {
       );
     }
 
+    assertDeckCreationAllowed(userId, { isAiGenerated: false });
+
     // Create the deck - only include defined values, convert undefined to null for SQLite
     const deckData = {
       user_id: userId,
@@ -75,6 +78,7 @@ export const POST = withAuth(async (request: AuthenticatedRequest) => {
       parent_id: body.parent_id ?? null,
       hierarchy: body.hierarchy ?? null,
       is_public: body.is_public ?? false,
+      is_ai_generated: false,
       category: body.category ?? null,
     };
 
@@ -90,6 +94,9 @@ export const POST = withAuth(async (request: AuthenticatedRequest) => {
     console.log('[API] POST /api/decks - Created deck:', JSON.stringify(deck, null, 2));
     return NextResponse.json(deck, { status: 201 });
   } catch (error) {
+    if (error instanceof PlanLimitError) {
+      return NextResponse.json(planLimitToResponse(error), { status: error.statusCode });
+    }
     return handleApiError('POST /api/decks', error, 'Failed to create deck');
   }
 });

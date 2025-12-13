@@ -10,3 +10,4 @@ export * from './cards';
 export * from './reviews';
 export * from './shares';
 export * from './gamification';
+export * from './plans';

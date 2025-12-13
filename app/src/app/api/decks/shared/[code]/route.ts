@@ -14,6 +14,12 @@ import {
   getDeckWithStats,
 } from '@/lib/db/services';
 import type { AuthContext, SafeUser } from '@/lib/auth/types';
+import {
+  assertDeckCreationAllowed,
+  assertPublicDeckAdoptionAllowed,
+  PlanLimitError,
+  planLimitToResponse,
+} from '@/lib/billing/limits';
 
 type RouteContext = { params: Promise<{ code: string }> };
 
@@ -106,6 +112,9 @@ export const POST = withAuth(
         );
       }
 
+      assertDeckCreationAllowed(userId, { isAiGenerated: false });
+      assertPublicDeckAdoptionAllowed(userId);
+
       // Clone the deck
       const { deck: clonedDeck, cardCount } = cloneDeck(
         deck.id,
@@ -120,6 +129,9 @@ export const POST = withAuth(
         message: `Successfully cloned "${deck.name}" with ${cardCount} cards`,
       }, { status: 201 });
     } catch (error) {
+      if (error instanceof PlanLimitError) {
+        return NextResponse.json(planLimitToResponse(error), { status: error.statusCode });
+      }
       return handleApiError('POST /api/decks/shared/[code]', error, 'Failed to clone deck');
     }
   }

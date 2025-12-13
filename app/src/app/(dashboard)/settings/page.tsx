@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/Button";
 import { useAuth, getAccessToken } from "@/stores/auth";
 import { useRouter } from "next/navigation";
 import NotificationSettings from "@/components/settings/NotificationSettings";
+import { BillingSection } from "@/components/settings/BillingSection";
 
 export default function SettingsPage() {
   const { user, logout, refreshUser } = useAuth();
@@ -116,6 +117,9 @@ export default function SettingsPage() {
                 {user?.name || "User"}
               </h3>
               <p className="text-sm text-zinc-400">{user?.email}</p>
+              <p className="text-xs text-cyan-300 mt-1">
+                Plan: {user?.plan?.name || "Free"}
+              </p>
               <p className="text-xs text-zinc-500 mt-1">
                 Member since {user?.created_at ? formatDate(user.created_at) : "N/A"}
               </p>
@@ -184,6 +188,20 @@ export default function SettingsPage() {
             )}
           </div>
         </div>
+      </motion.section>
+
+      {/* Subscription Section */}
+      <motion.section
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.15 }}
+        className="mb-8"
+      >
+        <h2 className="text-lg font-semibold text-zinc-100 mb-4 flex items-center gap-2">
+          <Sparkles className="w-5 h-5 text-cyan-400" />
+          Subscription & Billing
+        </h2>
+        <BillingSection />
       </motion.section>
 
       {/* Security Section */}

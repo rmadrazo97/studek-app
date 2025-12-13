@@ -20,6 +20,7 @@ import {
   isVerificationTokenValid,
   isPasswordResetTokenValid,
 } from '../db/services/users';
+import { getPlanById, getLatestSubscriptionForUser } from '../db/services/plans';
 import { emailService } from '../email';
 import {
   hashPassword,
@@ -305,6 +306,8 @@ export function getSafeUser(userId: string): SafeUser | null {
 
   const roles = getUserRoleNames(userId);
   const permissions = getUserPermissionNames(userId);
+  const plan = user.plan_id ? getPlanById(user.plan_id) : null;
+  const subscription = getLatestSubscriptionForUser(user.id);
 
   return {
     id: user.id,
@@ -314,6 +317,16 @@ export function getSafeUser(userId: string): SafeUser | null {
     email_verified: user.email_verified === 1,
     roles,
     permissions,
+    plan: plan
+      ? {
+          id: plan.id,
+          slug: plan.slug,
+          name: plan.name,
+          price_cents: plan.price_cents,
+          interval: plan.interval,
+        }
+      : null,
+    subscription_status: subscription?.status ?? null,
     created_at: user.created_at,
     updated_at: user.updated_at,
   };

@@ -20,6 +20,8 @@ export interface User {
   verification_token_expires_at: string | null;
   password_reset_token: string | null;
   password_reset_token_expires_at: string | null;
+  plan_id: string;
+  plan_started_at: string;
   created_at: string;
   updated_at: string;
 }
@@ -32,6 +34,8 @@ export interface UserCreate {
   email_verified?: number;
   verification_token?: string;
   verification_token_expires_at?: string;
+  plan_id?: string;
+  plan_started_at?: string;
 }
 
 export interface UserUpdate {
@@ -44,6 +48,52 @@ export interface UserUpdate {
   verification_token_expires_at?: string | null;
   password_reset_token?: string | null;
   password_reset_token_expires_at?: string | null;
+  plan_id?: string;
+  plan_started_at?: string;
+}
+
+// ============================================
+// Plan Types
+// ============================================
+
+export interface Plan {
+  id: string;
+  name: string;
+  slug: string;
+  price_cents: number;
+  currency: string;
+  interval: 'month' | 'year';
+  is_default: number;
+  max_decks: number | null;
+  max_sessions_per_deck: number | null;
+  max_public_decks: number | null;
+  max_ai_decks: number | null;
+  metadata: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PlanSummary {
+  id: string;
+  slug: string;
+  name: string;
+  price_cents: number;
+  interval: 'month' | 'year';
+}
+
+export interface UserSubscription {
+  id: string;
+  user_id: string;
+  plan_id: string;
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
+  stripe_price_id: string | null;
+  status: string;
+  current_period_end: string | null;
+  cancel_at_period_end: number;
+  ended_at: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 // ============================================
@@ -84,6 +134,7 @@ export interface Deck {
   hierarchy: string | null;
   category: DeckCategory | null;
   is_public: boolean;
+  is_ai_generated: boolean;
   last_accessed_at: string | null;
   created_at: string;
   updated_at: string;
@@ -97,6 +148,7 @@ export interface DeckCreate {
   hierarchy?: string;
   category?: DeckCategory;
   is_public?: boolean;
+  is_ai_generated?: boolean;
 }
 
 export interface DeckUpdate {
@@ -106,6 +158,7 @@ export interface DeckUpdate {
   hierarchy?: string;
   category?: DeckCategory;
   is_public?: boolean;
+  is_ai_generated?: boolean;
 }
 
 export interface DeckWithStats extends Deck {
