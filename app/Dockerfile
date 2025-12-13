@@ -55,7 +55,7 @@ COPY --from=builder --chown=nextjs:nodejs /app/migrations ./migrations
 
 # Copy cron worker and its dependencies
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/croner ./node_modules/croner
-COPY --from=builder --chown=nextjs:nodejs /app/src/cron/worker.js ./cron-worker.js
+COPY --from=builder --chown=nextjs:nodejs /app/src/cron/worker.mjs ./cron-worker.mjs
 
 # Copy startup script
 COPY --from=builder --chown=nextjs:nodejs /app/scripts/start-with-cron.sh ./start.sh

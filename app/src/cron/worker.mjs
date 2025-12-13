@@ -7,7 +7,7 @@
  * Uses dynamic imports to load notification services from the built Next.js app.
  */
 
-const { Cron } = require('croner');
+import { Cron } from 'croner';
 
 // Configuration
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';

@@ -7,7 +7,7 @@ echo "======================================"
 
 # Start the cron worker in the background
 echo "[Start] Launching cron worker..."
-node /app/cron-worker.js &
+node /app/cron-worker.mjs &
 CRON_PID=$!
 echo "[Start] Cron worker started with PID: $CRON_PID"
 
