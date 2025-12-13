@@ -127,7 +127,7 @@ function DeckCard({ deck, showStats = true }: DeckCardProps) {
   const colorClass = deck.category ? categoryColors[deck.category] : "from-gray-500 to-slate-500";
 
   return (
-    <Link href={`/study?deck=${deck.id}`}>
+    <Link href={`/study?deckId=${deck.id}`}>
       <motion.div
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
