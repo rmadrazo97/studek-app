@@ -45,7 +45,6 @@ export function Navigation() {
 
   const navLinks = [
     { label: "Features", href: "#features" },
-    { label: "Compare", href: "#compare" },
     { label: "Pricing", href: "#pricing" },
     { label: "FAQ", href: "#faq" },
   ];
