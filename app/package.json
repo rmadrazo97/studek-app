@@ -13,6 +13,7 @@
     "db:create": "npx tsx src/lib/db/migrate.ts create",
     "db:seed": "npx tsx src/lib/auth/seed.ts",
     "generate:icons": "node scripts/generate-icons.js",
+    "generate:native-assets": "node scripts/generate-native-assets.mjs",
     "capacitor:init": "npx cap init Studek com.studek.app --web-dir=out",
     "capacitor:sync": "npx cap sync",
     "capacitor:build": "npm run build:static && npx cap sync",
@@ -23,6 +24,14 @@
     "android:run": "npx cap run android"
   },
   "dependencies": {
+    "@capacitor/android": "^8.0.0",
+    "@capacitor/app": "^8.0.0",
+    "@capacitor/core": "^8.0.0",
+    "@capacitor/haptics": "^8.0.0",
+    "@capacitor/ios": "^8.0.0",
+    "@capacitor/keyboard": "^8.0.0",
+    "@capacitor/splash-screen": "^8.0.0",
+    "@capacitor/status-bar": "^8.0.0",
     "better-sqlite3": "^11.10.0",
     "croner": "9.1.0",
     "framer-motion": "^12.23.25",
@@ -36,6 +45,7 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.0.0",
     "@tailwindcss/postcss": "^4",
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^20",
@@ -43,6 +53,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.0.7",
+    "sharp": "^0.34.5",
     "tailwindcss": "^4",
     "tsx": "^4.19.2",
     "typescript": "^5"
