@@ -50,11 +50,11 @@ CREATE INDEX IF NOT EXISTS idx_user_subscriptions_plan ON user_subscriptions(pla
 CREATE INDEX IF NOT EXISTS idx_user_subscriptions_status ON user_subscriptions(status);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_user_subscriptions_stripe_sub ON user_subscriptions(stripe_subscription_id);
 
--- ============================================
 -- Users: plan tracking
 -- ============================================
 ALTER TABLE users ADD COLUMN plan_id TEXT NOT NULL DEFAULT 'plan_free';
-ALTER TABLE users ADD COLUMN plan_started_at TEXT NOT NULL DEFAULT (datetime('now'));
+-- SQLite cannot add a column with a non-constant default; add then backfill
+ALTER TABLE users ADD COLUMN plan_started_at TEXT;
 
 CREATE INDEX IF NOT EXISTS idx_users_plan_id ON users(plan_id);
 
@@ -76,3 +76,5 @@ INSERT OR IGNORE INTO plans (
 
 -- Ensure existing users are assigned to Free plan
 UPDATE users SET plan_id = 'plan_free' WHERE plan_id IS NULL OR plan_id = '';
+-- Backfill plan_started_at
+UPDATE users SET plan_started_at = datetime('now') WHERE plan_started_at IS NULL OR plan_started_at = '';
