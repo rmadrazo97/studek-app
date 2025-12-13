@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/Button";
 import { apiClient, ApiClientError } from "@/lib/api/client";
 import { SessionSummary } from "@/components/study/SessionSummary";
 import { scheduleReview } from "@/lib/fsrs";
+import { UpgradePrompt } from "@/components/billing/UpgradePrompt";
 
 interface DeckCard {
   id: string;
@@ -116,6 +117,13 @@ function StudyContent() {
   const [originalCards, setOriginalCards] = useState<Card[]>([]);
   const [sessionResult, setSessionResult] = useState<SessionResult | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
+  const [planLimitDetails, setPlanLimitDetails] = useState<{
+    code: string;
+    limit: number;
+    current: number;
+    plan: { id: string; slug: string; name: string };
+  } | null>(null);
 
   // Store FSRS data for each card
   const cardFSRSRef = useRef<Map<string, CardFSRSData>>(new Map());
@@ -266,7 +274,21 @@ function StudyContent() {
         setSessionResult(result);
       } catch (error) {
         console.error('Error submitting session:', error);
-        setSessionResult(createFallbackResult(history));
+
+        // Handle plan limit exceeded (402) error
+        if (error instanceof ApiClientError && error.isPlanLimitExceeded) {
+          setPlanLimitDetails({
+            code: error.code || 'study_session_limit',
+            limit: error.limit || 3,
+            current: error.current || 4,
+            plan: error.plan || { id: 'plan_free', slug: 'free', name: 'Free' },
+          });
+          setShowUpgradePrompt(true);
+          // Still show a fallback result so the user sees their progress
+          setSessionResult(createFallbackResult(history));
+        } else {
+          setSessionResult(createFallbackResult(history));
+        }
       } finally {
         setIsSubmitting(false);
       }
@@ -390,20 +412,32 @@ function StudyContent() {
   // Session complete - show enhanced summary
   if (isComplete && sessionResult) {
     return (
-      <SessionSummary
-        session={sessionResult.session}
-        xp={sessionResult.xp}
-        stats={sessionResult.stats}
-        level={sessionResult.level}
-        achievements={sessionResult.achievements}
-        message={sessionResult.message}
-        deckName={deckInfo?.name}
-        onContinue={() => router.push("/library")}
-        onStudyAgain={() => {
-          setSessionResult(null);
-          setQueue(originalCards);
-        }}
-      />
+      <>
+        <SessionSummary
+          session={sessionResult.session}
+          xp={sessionResult.xp}
+          stats={sessionResult.stats}
+          level={sessionResult.level}
+          achievements={sessionResult.achievements}
+          message={showUpgradePrompt ? "Session limit reached - upgrade to continue studying!" : sessionResult.message}
+          deckName={deckInfo?.name}
+          onContinue={() => router.push("/library")}
+          onStudyAgain={() => {
+            if (showUpgradePrompt) {
+              // If at limit, show upgrade prompt instead of allowing study again
+              setShowUpgradePrompt(true);
+            } else {
+              setSessionResult(null);
+              setQueue(originalCards);
+            }
+          }}
+        />
+        <UpgradePrompt
+          isOpen={showUpgradePrompt}
+          onClose={() => setShowUpgradePrompt(false)}
+          limitDetails={planLimitDetails || undefined}
+        />
+      </>
     );
   }
 
