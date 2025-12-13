@@ -28,6 +28,9 @@ On push to `main`:
 | `BACKEND_SECRETS` | JSON object with env vars (must include `JWT_SECRET`) |
 | `OPENAI_APIKEY` | OpenAI API key for AI deck generation (optional) |
 | `RESEND_API_KEY` | Resend API key for transactional emails |
+| `CRON_SECRET` | Secret token for notification cron job (optional) |
+| `VAPID_PUBLIC_KEY` | VAPID public key for push notifications (optional) |
+| `VAPID_PRIVATE_KEY` | VAPID private key for push notifications (optional) |
 
 **Important:** `BACKEND_SECRETS` must be a JSON object containing at minimum:
 ```json
@@ -199,3 +202,83 @@ npm run android  # Opens Android Studio
 | `npm run capacitor:build` | Build + sync |
 | `npm run ios` | Open iOS project in Xcode |
 | `npm run android` | Open Android project in Android Studio |
+
+## Notifications System
+
+The app includes a Duolingo-style notification system for study reminders.
+
+### Features
+- **Email Notifications:** Daily study reminders, streak warnings, weekly summaries
+- **Push Notifications:** Real-time alerts via web push (VAPID)
+- **Customizable:** Users can set preferred reminder times, quiet hours, and notification types
+- **Smart Scheduling:** Notifications only sent when cards are due or streak is at risk
+
+### Notification Types
+| Type | Email | Push | Description |
+|------|-------|------|-------------|
+| Study Reminder | Yes | Yes | Daily reminder to study flashcards |
+| Streak Warning | Yes | Yes | Alert when streak is about to expire |
+| Weekly Summary | Yes | No | Weekly progress report (Sundays) |
+| Cards Due | No | Yes | Notification when cards are ready for review |
+| Achievement | Yes | No | When user unlocks an achievement |
+
+### Setup Push Notifications
+
+1. Generate VAPID keys:
+   ```bash
+   npx web-push generate-vapid-keys
+   ```
+
+2. Add to GitHub Secrets:
+   - `VAPID_PUBLIC_KEY` - Also add as `NEXT_PUBLIC_VAPID_PUBLIC_KEY`
+   - `VAPID_PRIVATE_KEY`
+   - `VAPID_SUBJECT` (optional, defaults to `mailto:hello@studek.com`)
+
+3. Add to `BACKEND_SECRETS` JSON:
+   ```json
+   {
+     "JWT_SECRET": "...",
+     "VAPID_PRIVATE_KEY": "your-vapid-private-key",
+     "NEXT_PUBLIC_VAPID_PUBLIC_KEY": "your-vapid-public-key"
+   }
+   ```
+
+### Notification Cron Job
+
+The `notifications.yml` workflow runs every hour to send pending notifications.
+
+**Required:** Add `CRON_SECRET` to GitHub Secrets - a random string used to authenticate cron requests.
+
+**Manual trigger:**
+```bash
+# Via GitHub Actions UI - go to Actions → Send Notifications → Run workflow
+
+# Or via API (from server):
+curl -X POST \
+  -H "Authorization: Bearer YOUR_CRON_SECRET" \
+  "https://studek.com/api/notifications/trigger?job=all"
+```
+
+**Job types:**
+- `all` - Run all notification jobs
+- `study_reminders` - Only study reminders
+- `streak_warnings` - Only streak warnings
+- `weekly_summary` - Only weekly summary
+
+### API Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/notifications/preferences` | GET | Get user notification preferences |
+| `/api/notifications/preferences` | PUT | Update notification preferences |
+| `/api/notifications/subscribe` | POST | Subscribe to push notifications |
+| `/api/notifications/subscribe` | DELETE | Unsubscribe from push |
+| `/api/notifications/subscribe` | GET | List user's push subscriptions |
+| `/api/notifications/vapid-key` | GET | Get VAPID public key (no auth) |
+| `/api/notifications/trigger` | POST | Trigger notification job (cron only) |
+
+### Database Tables
+- `notification_preferences` - User notification settings
+- `push_subscriptions` - Web push subscription data
+- `notification_logs` - Sent notification history
+- `notification_schedule` - Scheduled notifications queue
