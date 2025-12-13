@@ -134,8 +134,8 @@ function StudyContent() {
         const deckData = await apiClient.get<DeckApiResponse>(`/api/decks/${deckId}`);
         setDeckInfo({ id: deckData.id, name: deckData.name });
 
-        // Fetch cards
-        const cardsData = await apiClient.get<CardsApiResponse>(`/api/decks/${deckId}/cards`);
+        // Fetch cards that are due for review (respects FSRS scheduling)
+        const cardsData = await apiClient.get<CardsApiResponse>(`/api/decks/${deckId}/cards?filter=due&limit=100`);
 
         // Transform cards to study format and store FSRS data
         const fsrsMap = new Map<string, CardFSRSData>();
@@ -181,7 +181,7 @@ function StudyContent() {
         cardFSRSRef.current = fsrsMap;
 
         if (studyCards.length === 0) {
-          setLoadError("This deck has no cards yet");
+          setLoadError("No cards due for review right now. Check back later or add new cards to this deck.");
           setIsLoading(false);
           return;
         }
