@@ -11,7 +11,7 @@ import {
   extractURLContent,
   truncateURLContent,
   isValidURL,
-} from '@/lib/ai';
+} from '@/lib/ai/extractors/url';
 
 interface ExtractRequest {
   url: string;

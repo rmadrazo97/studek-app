@@ -11,7 +11,7 @@ import {
   extractYouTubeTranscript,
   extractYouTubeVideoId,
   truncateTranscript,
-} from '@/lib/ai';
+} from '@/lib/ai/extractors/youtube';
 
 interface ExtractRequest {
   url: string;

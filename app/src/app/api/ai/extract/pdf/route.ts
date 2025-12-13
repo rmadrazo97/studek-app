@@ -10,7 +10,7 @@ import { handleApiError } from '@/lib/api/errors';
 import {
   extractPDFContent,
   truncatePDFText,
-} from '@/lib/ai';
+} from '@/lib/ai/extractors/pdf';
 
 // Max file size: 10MB
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
