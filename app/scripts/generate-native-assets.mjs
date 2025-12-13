@@ -70,7 +70,6 @@ const IOS_SPLASH_SCREENS = [
 
 // App colors
 const BACKGROUND_COLOR = '#0a0a0a';
-const ACCENT_COLOR = '#22d3ee';
 
 async function generateNativeAssets() {
   let sharp;

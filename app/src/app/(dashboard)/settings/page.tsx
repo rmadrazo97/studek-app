@@ -13,6 +13,7 @@ import {
   AlertCircle,
   Loader2,
   Send,
+  Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useAuth, getAccessToken } from "@/stores/auth";
