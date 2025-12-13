@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Mail, Lock, Sparkles, ArrowRight, Loader2 } from "lucide-react";
 import Link from "next/link";
@@ -9,10 +9,16 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { useAuth } from "@/stores/auth";
 import { AuthRedirect } from "@/components/auth";
+import { isNativePlatform } from "@/lib/capacitor/native";
 
 export default function LoginPage() {
   const router = useRouter();
   const { login, isLoading: authLoading } = useAuth();
+  const [isNative, setIsNative] = useState(false);
+
+  useEffect(() => {
+    setIsNative(isNativePlatform());
+  }, []);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -45,7 +51,7 @@ export default function LoginPage() {
 
   return (
     <AuthRedirect>
-      <div className="min-h-screen flex items-center justify-center relative overflow-hidden px-4 py-12">
+      <div className="min-h-screen flex items-center justify-center relative overflow-hidden px-4 py-12 pt-[calc(env(safe-area-inset-top,0px)+3rem)]">
       {/* Background effects */}
       <div className="absolute inset-0 bg-[var(--gradient-hero)]" />
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-[radial-gradient(ellipse_at_center,rgba(34,211,238,0.15),transparent_70%)]" />
@@ -58,18 +64,29 @@ export default function LoginPage() {
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
         className="relative z-10 w-full max-w-md"
       >
-        {/* Logo */}
-        <Link href="/" className="flex items-center justify-center gap-2 mb-8 group">
-          <motion.div
-            whileHover={{ scale: 1.05 }}
-            className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center shadow-[0_0_30px_rgba(34,211,238,0.4)]"
-          >
-            <Sparkles className="w-6 h-6 text-[#08090a]" />
-          </motion.div>
-          <span className="font-display text-2xl font-bold text-slate-100">
-            Studek
-          </span>
-        </Link>
+        {/* Logo - not clickable on native */}
+        {isNative ? (
+          <div className="flex items-center justify-center gap-2 mb-8">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center shadow-[0_0_30px_rgba(34,211,238,0.4)]">
+              <Sparkles className="w-6 h-6 text-[#08090a]" />
+            </div>
+            <span className="font-display text-2xl font-bold text-slate-100">
+              Studek
+            </span>
+          </div>
+        ) : (
+          <Link href="/" className="flex items-center justify-center gap-2 mb-8 group">
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center shadow-[0_0_30px_rgba(34,211,238,0.4)]"
+            >
+              <Sparkles className="w-6 h-6 text-[#08090a]" />
+            </motion.div>
+            <span className="font-display text-2xl font-bold text-slate-100">
+              Studek
+            </span>
+          </Link>
+        )}
 
         {/* Card */}
         <div className="glass rounded-2xl p-8">
@@ -200,17 +217,19 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {/* Footer */}
-        <p className="mt-8 text-center text-sm text-slate-500">
-          By signing in, you agree to our{" "}
-          <Link href="/terms" className="text-slate-400 hover:text-cyan-400 transition-colors">
-            Terms
-          </Link>{" "}
-          and{" "}
-          <Link href="/privacy" className="text-slate-400 hover:text-cyan-400 transition-colors">
-            Privacy Policy
-          </Link>
-        </p>
+        {/* Footer - hide verbose version on native */}
+        {!isNative && (
+          <p className="mt-8 text-center text-sm text-slate-500">
+            By signing in, you agree to our{" "}
+            <Link href="/terms" className="text-slate-400 hover:text-cyan-400 transition-colors">
+              Terms
+            </Link>{" "}
+            and{" "}
+            <Link href="/privacy" className="text-slate-400 hover:text-cyan-400 transition-colors">
+              Privacy Policy
+            </Link>
+          </p>
+        )}
       </motion.div>
       </div>
     </AuthRedirect>
