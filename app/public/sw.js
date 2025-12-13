@@ -410,27 +410,48 @@ async function refreshDecksCache() {
   console.log("[SW] Refreshing decks cache...");
 }
 
-// Push notifications (ready for future implementation)
+// Push notifications
 self.addEventListener("push", (event) => {
   if (!event.data) return;
 
-  const data = event.data.json();
+  let data;
+  try {
+    data = event.data.json();
+  } catch (e) {
+    console.error("[SW] Failed to parse push data:", e);
+    return;
+  }
 
+  console.log("[SW] Received push notification:", data.title);
+
+  // Build notification options based on type
   const options = {
     body: data.body || "Time to review your flashcards!",
-    icon: "/icons/icon-192x192.png",
-    badge: "/icons/icon-96x96.png",
+    icon: data.icon || "/icons/icon-192x192.png",
+    badge: data.badge || "/icons/icon-96x96.png",
     vibrate: [100, 50, 100],
+    tag: data.tag || "studek-notification",
+    renotify: true,
+    requireInteraction: data.tag === "streak_warning", // Keep streak warnings visible
     data: {
       url: data.url || "/study",
+      type: data.tag || "general",
+      timestamp: Date.now(),
     },
-    actions: [
-      { action: "study", title: "Study Now" },
-      { action: "later", title: "Later" },
+    actions: data.actions || [
+      { action: "study", title: "Study Now", icon: "/icons/study-action.png" },
+      { action: "later", title: "Later", icon: "/icons/later-action.png" },
     ],
   };
 
-  event.waitUntil(self.registration.showNotification(data.title || "Studek", options));
+  // Add image for weekly summary
+  if (data.tag === "weekly_summary" && data.image) {
+    options.image = data.image;
+  }
+
+  event.waitUntil(
+    self.registration.showNotification(data.title || "Studek", options)
+  );
 });
 
 // Handle notification clicks
@@ -438,10 +459,40 @@ self.addEventListener("notificationclick", (event) => {
   event.notification.close();
 
   const url = event.notification.data?.url || "/study";
+  const action = event.action;
 
-  if (event.action === "study" || !event.action) {
-    event.waitUntil(clients.openWindow(url));
+  console.log("[SW] Notification clicked:", { action, url });
+
+  // Handle different actions
+  if (action === "later") {
+    // User chose "Later" - just close the notification
+    // Optionally, we could schedule a reminder here
+    return;
   }
+
+  // For "study" action or click on the notification body
+  event.waitUntil(
+    clients.matchAll({ type: "window", includeUncontrolled: true })
+      .then((clientList) => {
+        // Check if there's already a window open
+        for (const client of clientList) {
+          if (client.url.includes(self.registration.scope) && "focus" in client) {
+            // Navigate existing window to the URL
+            client.navigate(url);
+            return client.focus();
+          }
+        }
+        // No window open, open a new one
+        if (clients.openWindow) {
+          return clients.openWindow(url);
+        }
+      })
+  );
+});
+
+// Handle notification close (user dismissed without clicking)
+self.addEventListener("notificationclose", (event) => {
+  console.log("[SW] Notification dismissed:", event.notification.tag);
 });
 
 console.log("[SW] Service worker loaded");

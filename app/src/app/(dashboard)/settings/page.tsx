@@ -17,6 +17,7 @@ import {
 import { Button } from "@/components/ui/Button";
 import { useAuth, getAccessToken } from "@/stores/auth";
 import { useRouter } from "next/navigation";
+import NotificationSettings from "@/components/settings/NotificationSettings";
 
 export default function SettingsPage() {
   const { user, logout, refreshUser } = useAuth();
@@ -246,9 +247,7 @@ export default function SettingsPage() {
           Notifications
         </h2>
         <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6">
-          <p className="text-sm text-zinc-500 text-center py-4">
-            Notification preferences coming soon
-          </p>
+          <NotificationSettings />
         </div>
       </motion.section>
 

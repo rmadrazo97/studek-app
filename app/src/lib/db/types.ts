@@ -658,3 +658,129 @@ export interface LeagueCohort {
   league_tier: number;
   created_at: string;
 }
+
+// ============================================
+// Notification Types
+// ============================================
+
+export type NotificationType =
+  | 'study_reminder'
+  | 'streak_warning'
+  | 'weekly_summary'
+  | 'achievement'
+  | 'cards_due';
+
+export type NotificationChannel = 'email' | 'push';
+
+export type NotificationStatus =
+  | 'pending'
+  | 'sent'
+  | 'delivered'
+  | 'failed'
+  | 'clicked';
+
+export interface NotificationPreferences {
+  user_id: string;
+
+  // Email Notifications
+  email_enabled: number;
+  email_study_reminders: number;
+  email_streak_warnings: number;
+  email_weekly_summary: number;
+  email_achievement_unlocks: number;
+
+  // Push Notifications
+  push_enabled: number;
+  push_study_reminders: number;
+  push_streak_warnings: number;
+  push_cards_due: number;
+
+  // Timing
+  reminder_time: string;
+  timezone: string;
+
+  // Quiet Hours
+  quiet_hours_enabled: number;
+  quiet_hours_start: string;
+  quiet_hours_end: string;
+
+  created_at: string;
+  updated_at: string;
+}
+
+export interface NotificationPreferencesUpdate {
+  email_enabled?: number;
+  email_study_reminders?: number;
+  email_streak_warnings?: number;
+  email_weekly_summary?: number;
+  email_achievement_unlocks?: number;
+  push_enabled?: number;
+  push_study_reminders?: number;
+  push_streak_warnings?: number;
+  push_cards_due?: number;
+  reminder_time?: string;
+  timezone?: string;
+  quiet_hours_enabled?: number;
+  quiet_hours_start?: string;
+  quiet_hours_end?: string;
+}
+
+export interface PushSubscription {
+  id: string;
+  user_id: string;
+  endpoint: string;
+  p256dh_key: string;
+  auth_key: string;
+  device_name: string | null;
+  user_agent: string | null;
+  is_active: number;
+  last_used_at: string | null;
+  error_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PushSubscriptionCreate {
+  user_id: string;
+  endpoint: string;
+  p256dh_key: string;
+  auth_key: string;
+  device_name?: string;
+  user_agent?: string;
+}
+
+export interface NotificationLog {
+  id: string;
+  user_id: string;
+  type: NotificationType;
+  channel: NotificationChannel;
+  title: string;
+  body: string | null;
+  status: NotificationStatus;
+  error_message: string | null;
+  sent_at: string | null;
+  delivered_at: string | null;
+  clicked_at: string | null;
+  subscription_id: string | null;
+  email_message_id: string | null;
+  created_at: string;
+}
+
+export interface NotificationLogCreate {
+  user_id: string;
+  type: NotificationType;
+  channel: NotificationChannel;
+  title: string;
+  body?: string;
+  subscription_id?: string;
+}
+
+export interface NotificationSchedule {
+  id: string;
+  user_id: string;
+  notification_type: NotificationType;
+  scheduled_for: string;
+  status: 'pending' | 'sent' | 'cancelled';
+  processed_at: string | null;
+  created_at: string;
+}
