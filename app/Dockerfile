@@ -53,6 +53,14 @@ COPY --from=builder --chown=nextjs:nodejs /app/node_modules/bindings ./node_modu
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/file-uri-to-path ./node_modules/file-uri-to-path
 COPY --from=builder --chown=nextjs:nodejs /app/migrations ./migrations
 
+# Copy cron worker and its dependencies
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/croner ./node_modules/croner
+COPY --from=builder --chown=nextjs:nodejs /app/src/cron/worker.js ./cron-worker.js
+
+# Copy startup script
+COPY --from=builder --chown=nextjs:nodejs /app/scripts/start-with-cron.sh ./start.sh
+RUN chmod +x ./start.sh
+
 # Copy source files needed for migrations (instrumentation runs from .next but needs these)
 COPY --from=builder --chown=nextjs:nodejs /app/src/lib/db ./src/lib/db
 COPY --from=builder --chown=nextjs:nodejs /app/src/lib/auth ./src/lib/auth
@@ -67,5 +75,5 @@ ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 ENV DATABASE_PATH=/app/data/studek.db
 
-# Start the application
-CMD ["node", "server.js"]
+# Start the application with cron worker
+CMD ["sh", "./start.sh"]

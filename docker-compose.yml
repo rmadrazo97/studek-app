@@ -46,6 +46,10 @@ services:
       - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL:-https://studek.com}
       - RESEND_API_KEY=${RESEND_API_KEY:-}
       - EMAIL_FROM=${EMAIL_FROM:-Studek <noreply@studek.com>}
+      # Notification cron worker settings
+      - CRON_SECRET=${CRON_SECRET:-}
+      - VAPID_PRIVATE_KEY=${VAPID_PRIVATE_KEY:-}
+      - NEXT_PUBLIC_VAPID_PUBLIC_KEY=${NEXT_PUBLIC_VAPID_PUBLIC_KEY:-}
     volumes:
       # Persist SQLite database
       - sqlite_data:/app/data

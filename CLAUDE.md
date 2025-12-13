@@ -243,17 +243,27 @@ The app includes a Duolingo-style notification system for study reminders.
    }
    ```
 
-### Notification Cron Job
+### Internal Cron Worker
 
-The `notifications.yml` workflow runs every hour to send pending notifications.
+The notification system uses an **internal cron worker** that runs alongside the Next.js app inside the Docker container. No external GitHub Actions required.
 
-**Required:** Add `CRON_SECRET` to GitHub Secrets - a random string used to authenticate cron requests.
+**Schedule:**
+- **Hourly notifications** (`0 * * * *`): Study reminders, streak warnings (14:00-22:00 UTC)
+- **Weekly summary** (`0 18 * * 0`): Sunday at 18:00 UTC
 
-**Manual trigger:**
+**How it works:**
+1. The cron worker starts automatically with the app
+2. It calls the `/api/notifications/trigger` endpoint internally
+3. Logs are visible in Docker container logs
+
+**View cron logs:**
 ```bash
-# Via GitHub Actions UI - go to Actions → Send Notifications → Run workflow
+docker compose logs -f app | grep -E "\[Cron\]|\[Notifications\]"
+```
 
-# Or via API (from server):
+**Manual trigger (for testing):**
+```bash
+# From server:
 curl -X POST \
   -H "Authorization: Bearer YOUR_CRON_SECRET" \
   "https://studek.com/api/notifications/trigger?job=all"
