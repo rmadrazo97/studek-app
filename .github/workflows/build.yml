@@ -102,12 +102,19 @@ jobs:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
           VAPID_PUBLIC_KEY: ${{ secrets.VAPID_PUBLIC_KEY }}
           VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+          # APNs (iOS) secrets
+          APNS_KEY_ID: ${{ secrets.APNS_KEY_ID }}
+          APNS_TEAM_ID: ${{ secrets.APNS_TEAM_ID }}
+          APNS_KEY: ${{ secrets.APNS_KEY }}
+          APNS_BUNDLE_ID: ${{ secrets.APNS_BUNDLE_ID }}
+          # FCM (Android) secrets
+          FCM_SERVICE_ACCOUNT: ${{ secrets.FCM_SERVICE_ACCOUNT }}
           VPS_HOST: ${{ secrets.VPS_HOST }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USERNAME }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          envs: GHCR_PAT,GITHUB_ACTOR,BACKEND_SECRETS,OPENAI_APIKEY,RESEND_API_KEY,CRON_SECRET,VAPID_PUBLIC_KEY,VAPID_PRIVATE_KEY,VPS_HOST
+          envs: GHCR_PAT,GITHUB_ACTOR,BACKEND_SECRETS,OPENAI_APIKEY,RESEND_API_KEY,CRON_SECRET,VAPID_PUBLIC_KEY,VAPID_PRIVATE_KEY,APNS_KEY_ID,APNS_TEAM_ID,APNS_KEY,APNS_BUNDLE_ID,FCM_SERVICE_ACCOUNT,VPS_HOST
           script: |
             cd ~/studek-app
 
@@ -148,6 +155,33 @@ jobs:
             if [ -n "$VAPID_PRIVATE_KEY" ]; then
               echo "VAPID_PRIVATE_KEY=$VAPID_PRIVATE_KEY" >> .env
               echo "VAPID_PRIVATE_KEY added to .env"
+            fi
+
+            # Add APNs (iOS) secrets if provided
+            if [ -n "$APNS_KEY_ID" ]; then
+              echo "APNS_KEY_ID=$APNS_KEY_ID" >> .env
+              echo "APNS_KEY_ID added to .env"
+            fi
+
+            if [ -n "$APNS_TEAM_ID" ]; then
+              echo "APNS_TEAM_ID=$APNS_TEAM_ID" >> .env
+              echo "APNS_TEAM_ID added to .env"
+            fi
+
+            if [ -n "$APNS_KEY" ]; then
+              echo "APNS_KEY=$APNS_KEY" >> .env
+              echo "APNS_KEY added to .env"
+            fi
+
+            if [ -n "$APNS_BUNDLE_ID" ]; then
+              echo "APNS_BUNDLE_ID=$APNS_BUNDLE_ID" >> .env
+              echo "APNS_BUNDLE_ID added to .env"
+            fi
+
+            # Add FCM (Android) secrets if provided
+            if [ -n "$FCM_SERVICE_ACCOUNT" ]; then
+              echo "FCM_SERVICE_ACCOUNT=$FCM_SERVICE_ACCOUNT" >> .env
+              echo "FCM_SERVICE_ACCOUNT added to .env"
             fi
 
             # Login to GitHub Container Registry
