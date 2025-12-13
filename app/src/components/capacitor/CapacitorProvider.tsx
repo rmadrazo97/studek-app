@@ -50,14 +50,20 @@ export function CapacitorProvider({ children }: CapacitorProviderProps) {
     }
   }, []);
 
-  // Add platform-specific classes to body for CSS targeting
+  // Add platform-specific classes to html and body for CSS targeting
   useEffect(() => {
     if (isNative) {
+      // Add to both html and body for comprehensive CSS targeting
+      document.documentElement.classList.add('capacitor-native');
+      document.documentElement.classList.add(`capacitor-${platform}`);
       document.body.classList.add('capacitor-native');
       document.body.classList.add(`capacitor-${platform}`);
     }
 
     return () => {
+      document.documentElement.classList.remove('capacitor-native');
+      document.documentElement.classList.remove('capacitor-ios');
+      document.documentElement.classList.remove('capacitor-android');
       document.body.classList.remove('capacitor-native');
       document.body.classList.remove('capacitor-ios');
       document.body.classList.remove('capacitor-android');
