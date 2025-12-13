@@ -99,12 +99,15 @@ jobs:
           BACKEND_SECRETS: ${{ secrets.BACKEND_SECRETS }}
           OPENAI_APIKEY: ${{ secrets.OPENAI_APIKEY }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          VAPID_PUBLIC_KEY: ${{ secrets.VAPID_PUBLIC_KEY }}
+          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
           VPS_HOST: ${{ secrets.VPS_HOST }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USERNAME }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          envs: GHCR_PAT,GITHUB_ACTOR,BACKEND_SECRETS,OPENAI_APIKEY,RESEND_API_KEY,VPS_HOST
+          envs: GHCR_PAT,GITHUB_ACTOR,BACKEND_SECRETS,OPENAI_APIKEY,RESEND_API_KEY,CRON_SECRET,VAPID_PUBLIC_KEY,VAPID_PRIVATE_KEY,VPS_HOST
           script: |
             cd ~/studek-app
 
@@ -129,6 +132,22 @@ jobs:
             if [ -n "$RESEND_API_KEY" ]; then
               echo "RESEND_API_KEY=$RESEND_API_KEY" >> .env
               echo "RESEND_API_KEY added to .env"
+            fi
+
+            # Add notification secrets if provided
+            if [ -n "$CRON_SECRET" ]; then
+              echo "CRON_SECRET=$CRON_SECRET" >> .env
+              echo "CRON_SECRET added to .env"
+            fi
+
+            if [ -n "$VAPID_PUBLIC_KEY" ]; then
+              echo "NEXT_PUBLIC_VAPID_PUBLIC_KEY=$VAPID_PUBLIC_KEY" >> .env
+              echo "VAPID_PUBLIC_KEY added to .env"
+            fi
+
+            if [ -n "$VAPID_PRIVATE_KEY" ]; then
+              echo "VAPID_PRIVATE_KEY=$VAPID_PRIVATE_KEY" >> .env
+              echo "VAPID_PRIVATE_KEY added to .env"
             fi
 
             # Login to GitHub Container Registry
