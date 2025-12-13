@@ -28,6 +28,7 @@ import {
 import Link from "next/link";
 import { useAuth } from "@/stores/auth";
 import { Button } from "@/components/ui/Button";
+import { api } from "@/lib/api/client";
 
 // Types
 interface StatsData {
@@ -146,18 +147,16 @@ export default function ProfilePage() {
       setError(null);
 
       try {
-        const [statsRes, sessionsRes] = await Promise.all([
-          fetch('/api/stats'),
-          fetch('/api/sessions?limit=5'),
+        const [statsData, sessionsData] = await Promise.all([
+          api<StatsData>('/api/stats').catch(() => null),
+          api<SessionsData>('/api/sessions?limit=5').catch(() => null),
         ]);
 
-        if (statsRes.ok) {
-          const statsData = await statsRes.json();
+        if (statsData) {
           setStats(statsData);
         }
 
-        if (sessionsRes.ok) {
-          const sessionsData = await sessionsRes.json();
+        if (sessionsData) {
           setSessions(sessionsData);
         }
       } catch (err) {
