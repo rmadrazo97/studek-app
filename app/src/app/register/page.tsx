@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Mail, Lock, User, Sparkles, ArrowRight, GraduationCap, Loader2 } from "lucide-react";
 import Link from "next/link";
@@ -9,10 +9,16 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { useAuth } from "@/stores/auth";
 import { AuthRedirect } from "@/components/auth";
+import { isNativePlatform } from "@/lib/capacitor/native";
 
 export default function RegisterPage() {
   const router = useRouter();
   const { register, isLoading: authLoading } = useAuth();
+  const [isNative, setIsNative] = useState(false);
+
+  useEffect(() => {
+    setIsNative(isNativePlatform());
+  }, []);
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -63,7 +69,7 @@ export default function RegisterPage() {
 
   return (
     <AuthRedirect>
-      <div className="min-h-screen flex items-center justify-center relative overflow-hidden px-4 py-12">
+      <div className="min-h-screen flex items-center justify-center relative overflow-hidden px-4 py-12 pt-[calc(env(safe-area-inset-top,0px)+3rem)]">
         {/* Background effects */}
         <div className="absolute inset-0 bg-[var(--gradient-hero)]" />
       <div className="absolute top-0 right-1/4 w-[800px] h-[600px] bg-[radial-gradient(ellipse_at_center,rgba(167,139,250,0.15),transparent_70%)]" />
@@ -76,18 +82,29 @@ export default function RegisterPage() {
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
         className="relative z-10 w-full max-w-md"
       >
-        {/* Logo */}
-        <Link href="/" className="flex items-center justify-center gap-2 mb-8 group">
-          <motion.div
-            whileHover={{ scale: 1.05 }}
-            className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center shadow-[0_0_30px_rgba(34,211,238,0.4)]"
-          >
-            <Sparkles className="w-6 h-6 text-[#08090a]" />
-          </motion.div>
-          <span className="font-display text-2xl font-bold text-slate-100">
-            Studek
-          </span>
-        </Link>
+        {/* Logo - not clickable on native */}
+        {isNative ? (
+          <div className="flex items-center justify-center gap-2 mb-8">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center shadow-[0_0_30px_rgba(34,211,238,0.4)]">
+              <Sparkles className="w-6 h-6 text-[#08090a]" />
+            </div>
+            <span className="font-display text-2xl font-bold text-slate-100">
+              Studek
+            </span>
+          </div>
+        ) : (
+          <Link href="/" className="flex items-center justify-center gap-2 mb-8 group">
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center shadow-[0_0_30px_rgba(34,211,238,0.4)]"
+            >
+              <Sparkles className="w-6 h-6 text-[#08090a]" />
+            </motion.div>
+            <span className="font-display text-2xl font-bold text-slate-100">
+              Studek
+            </span>
+          </Link>
+        )}
 
         {/* Card */}
         <div className="glass rounded-2xl p-8">

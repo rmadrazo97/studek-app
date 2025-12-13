@@ -4,6 +4,7 @@ import { ReactNode } from "react";
 import { AuthProvider } from "@/stores/auth";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";
 import { DebugConsole } from "@/components/debug";
+import { CapacitorProvider } from "@/components/capacitor/CapacitorProvider";
 
 interface ProvidersProps {
   children: ReactNode;
@@ -11,10 +12,12 @@ interface ProvidersProps {
 
 export function Providers({ children }: ProvidersProps) {
   return (
-    <AuthProvider>
-      {children}
-      <InstallPrompt />
-      <DebugConsole />
-    </AuthProvider>
+    <CapacitorProvider>
+      <AuthProvider>
+        {children}
+        <InstallPrompt />
+        <DebugConsole />
+      </AuthProvider>
+    </CapacitorProvider>
   );
 }
