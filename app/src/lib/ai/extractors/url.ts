@@ -4,7 +4,7 @@
  * Extracts text content from web pages for AI deck generation.
  */
 
-import * as cheerio from 'cheerio';
+import { load as cheerioLoad } from 'cheerio';
 
 export interface URLExtractionResult {
   success: boolean;
@@ -83,7 +83,7 @@ export async function extractURLContent(url: string): Promise<URLExtractionResul
     }
 
     const html = await response.text();
-    const $ = cheerio.load(html);
+    const $ = cheerioLoad(html);
 
     // Remove unwanted elements
     $('script, style, noscript, iframe, nav, header, footer, aside, [role="banner"], [role="navigation"], [role="complementary"], .sidebar, .advertisement, .ad, .ads, .comments, .social-share').remove();
