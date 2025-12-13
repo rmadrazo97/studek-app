@@ -18,7 +18,8 @@
       "Bash(git restore:*)",
       "Bash(git commit -m \"$(cat <<''EOF''\nConfigure Docker Compose deployment via GitHub Actions\n\n- Update workflow to use docker compose instead of PM2\n- Use GHCR_PAT secret for container registry authentication\n- Update docker-compose.yml to use pre-built ghcr.io image\n- Add docker-compose.dev.yml for local development builds\n- Update CLAUDE.md with new deployment workflow and secrets\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
       "Bash(git commit:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(git pull:*)"
     ],
     "deny": [],
     "ask": []

@@ -837,3 +837,35 @@ export interface NotificationSchedule {
   processed_at: string | null;
   created_at: string;
 }
+
+// ============================================
+// Native Push Token Types (APNs/FCM)
+// ============================================
+
+export type NativePlatform = 'ios' | 'android';
+
+export interface NativePushToken {
+  id: string;
+  user_id: string;
+  platform: NativePlatform;
+  token: string;
+  device_name: string | null;
+  device_model: string | null;
+  os_version: string | null;
+  app_version: string | null;
+  is_active: number;
+  last_used_at: string | null;
+  error_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface NativePushTokenCreate {
+  user_id: string;
+  platform: NativePlatform;
+  token: string;
+  device_name?: string;
+  device_model?: string;
+  os_version?: string;
+  app_version?: string;
+}
