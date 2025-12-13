@@ -5,6 +5,32 @@
  * Exports client, prompts, MCP tools, and generation utilities.
  */
 
+// Content Extractors
+export {
+  // YouTube
+  extractYouTubeTranscript,
+  extractYouTubeVideoId,
+  truncateTranscript,
+  type YouTubeTranscriptSegment,
+  type YouTubeExtractionResult,
+  // PDF
+  extractPDFContent,
+  truncatePDFText,
+  extractPDFSections,
+  type PDFExtractionResult,
+  // URL
+  extractURLContent,
+  extractMultipleURLs,
+  truncateURLContent,
+  isValidURL,
+  type URLExtractionResult,
+  // Common
+  type SourceType,
+  type ExtractionSource,
+  MAX_CONTENT_LENGTHS,
+  truncateForSourceType,
+} from './extractors';
+
 // OpenAI Client
 export {
   getOpenAIClient,
@@ -59,9 +85,15 @@ export {
   SPACED_REPETITION_CONTEXT,
   CARD_CREATION_GUIDELINES,
   DECK_GENERATION_SYSTEM_PROMPT,
+  SOURCE_EXTRACTION_CONTEXT,
   buildSystemPrompt,
+  buildSourceBasedSystemPrompt,
   buildCreateDeckPrompt,
   buildAddCardsPrompt,
+  buildSourceBasedCreateDeckPrompt,
+  buildSourceBasedAddCardsPrompt,
+  type SourceType as PromptSourceType,
+  type SourceInfo,
   // Templates
   type PromptTemplate,
   allTemplates,
@@ -76,7 +108,15 @@ export {
 
 import { generateWithTools, type ChatMessage } from './openai';
 import { createDeckTools, addCardsTools, type CreateDeckToolResult, type AddCardsToolResult } from './mcp';
-import { buildSystemPrompt, buildCreateDeckPrompt, buildAddCardsPrompt } from './prompts';
+import {
+  buildSystemPrompt,
+  buildSourceBasedSystemPrompt,
+  buildCreateDeckPrompt,
+  buildAddCardsPrompt,
+  buildSourceBasedCreateDeckPrompt,
+  buildSourceBasedAddCardsPrompt,
+  type SourceInfo,
+} from './prompts';
 
 /**
  * Generate a new deck with cards from a user prompt
@@ -102,6 +142,37 @@ export async function generateCards(
   const messages: ChatMessage[] = [
     { role: 'system', content: buildSystemPrompt() },
     { role: 'user', content: buildAddCardsPrompt(userPrompt, deckContext) },
+  ];
+
+  return generateWithTools<AddCardsToolResult>(messages, addCardsTools);
+}
+
+/**
+ * Generate a new deck from source material (YouTube, PDF, URL)
+ */
+export async function generateDeckFromSource(
+  source: SourceInfo,
+  focusPrompt?: string
+): Promise<{ result: CreateDeckToolResult; usage: { promptTokens: number; completionTokens: number; totalTokens: number } }> {
+  const messages: ChatMessage[] = [
+    { role: 'system', content: buildSourceBasedSystemPrompt() },
+    { role: 'user', content: buildSourceBasedCreateDeckPrompt(source, focusPrompt) },
+  ];
+
+  return generateWithTools<CreateDeckToolResult>(messages, createDeckTools);
+}
+
+/**
+ * Generate cards to add to an existing deck from source material
+ */
+export async function generateCardsFromSource(
+  source: SourceInfo,
+  deckContext: { name: string; description?: string; existingCardCount: number; existingTopicGroups?: string[] },
+  focusPrompt?: string
+): Promise<{ result: AddCardsToolResult; usage: { promptTokens: number; completionTokens: number; totalTokens: number } }> {
+  const messages: ChatMessage[] = [
+    { role: 'system', content: buildSourceBasedSystemPrompt() },
+    { role: 'user', content: buildSourceBasedAddCardsPrompt(source, deckContext, focusPrompt) },
   ];
 
   return generateWithTools<AddCardsToolResult>(messages, addCardsTools);
