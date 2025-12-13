@@ -106,6 +106,8 @@ function ensureTablesExist(): void {
           user_id TEXT NOT NULL,
           achievement_id TEXT NOT NULL,
           unlocked_at TEXT NOT NULL DEFAULT (datetime('now')),
+          created_at TEXT NOT NULL DEFAULT (datetime('now')),
+          updated_at TEXT NOT NULL DEFAULT (datetime('now')),
           FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
           FOREIGN KEY (achievement_id) REFERENCES achievements(id) ON DELETE CASCADE,
           UNIQUE(user_id, achievement_id)
