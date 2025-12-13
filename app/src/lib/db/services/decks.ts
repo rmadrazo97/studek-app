@@ -39,6 +39,7 @@ export function createDeck(data: DeckCreate): Deck {
   const preparedData = {
     ...data,
     is_public: data.is_public ?? false,
+    is_ai_generated: data.is_ai_generated ?? false,
   };
 
   console.log('[DeckService] createDeck - Prepared data for CRUD:', JSON.stringify(preparedData, null, 2));

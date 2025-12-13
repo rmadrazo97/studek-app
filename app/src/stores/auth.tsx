@@ -21,6 +21,14 @@ interface User {
   email_verified: boolean;
   roles: string[];
   permissions: string[];
+  plan: {
+    id: string;
+    slug: string;
+    name: string;
+    price_cents: number;
+    interval: "month" | "year";
+  } | null;
+  subscription_status?: string | null;
   created_at: string;
   updated_at: string;
 }

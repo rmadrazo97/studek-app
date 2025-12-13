@@ -21,6 +21,7 @@ import {
 } from '@/lib/db/services/decks';
 import { createCard } from '@/lib/db/services/cards';
 import type { DeckCategory } from '@/lib/db/types';
+import { assertDeckCreationAllowed, PlanLimitError, planLimitToResponse } from '@/lib/billing/limits';
 
 // ============================================
 // Types
@@ -209,6 +210,8 @@ export const POST = withAuth(async (request: AuthenticatedRequest) => {
       const savedCards: Array<{ id: string; front: string; back: string; tags?: string[] }> = [];
 
       if (shouldSave) {
+        assertDeckCreationAllowed(userId, { isAiGenerated: true });
+
         // Create the deck
         const deck = createDeck({
           user_id: userId,
@@ -216,6 +219,7 @@ export const POST = withAuth(async (request: AuthenticatedRequest) => {
           description: result.deck.description || null,
           category: (result.deck.category as DeckCategory) || null,
           is_public: isPublic,
+          is_ai_generated: true,
         });
 
         savedDeck = {
@@ -275,6 +279,9 @@ export const POST = withAuth(async (request: AuthenticatedRequest) => {
     return NextResponse.json(response, { status: 201 });
 
   } catch (error) {
+    if (error instanceof PlanLimitError) {
+      return NextResponse.json(planLimitToResponse(error), { status: error.statusCode });
+    }
     return handleApiError('POST /api/ai/generate', error, 'Failed to generate content');
   }
 });
