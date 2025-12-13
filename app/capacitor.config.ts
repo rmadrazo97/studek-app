@@ -4,12 +4,10 @@ const config: CapacitorConfig = {
   appId: "com.studek.app",
   appName: "Studek",
   webDir: "out",
-  // Server configuration for development
+  // Server configuration - load from production server
+  // This allows API routes to work while still having native features
   server: {
-    // For development, point to your local server
-    // url: "http://localhost:3000",
-    // cleartext: true,
-    // For production, the app will use the bundled web assets
+    url: "https://studek.com",
     androidScheme: "https",
     iosScheme: "https",
   },
