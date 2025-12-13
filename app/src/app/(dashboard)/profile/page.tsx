@@ -3,16 +3,13 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
-  User,
   Trophy,
   Flame,
   Zap,
   Target,
-  Clock,
   Calendar,
   TrendingUp,
   Award,
-  ChevronRight,
   Sparkles,
   Crown,
   Shield,
@@ -20,15 +17,16 @@ import {
   BookOpen,
   Brain,
   Timer,
-  Percent,
   Settings,
-  BarChart3,
   Play,
+  RefreshCw,
+  Activity,
 } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/stores/auth";
 import { Button } from "@/components/ui/Button";
-import { api } from "@/lib/api/client";
+import { api, apiClient } from "@/lib/api/client";
+import { ContributionHeatmap } from "@/components/analytics";
 
 // Types
 interface StatsData {
@@ -117,6 +115,49 @@ interface SessionData {
   } | null;
 }
 
+interface AnalyticsData {
+  heatmap: Array<{ date: string; count: number; level: 0 | 1 | 2 | 3 | 4 }>;
+  streak: {
+    current: number;
+    longest: number;
+    freezesAvailable: number;
+    freezesUsed: number;
+    lastActiveDate: string | null;
+  };
+  retention: {
+    trueRetention: number;
+    desiredRetention: number;
+    avgRetrievability: number;
+    avgStability: number;
+    avgDifficulty: number;
+    trend: number;
+    historyData: number[];
+  };
+  cardStats: {
+    total: number;
+    new: number;
+    learning: number;
+    review: number;
+    relearning: number;
+    mature: number;
+    young: number;
+    suspended: number;
+    leeches: number;
+  };
+  weekStats: {
+    totalReviews: number;
+    avgRetention: number;
+    avgTimePerDay: number;
+    activeDays: number;
+    studyTime: number;
+  };
+  xp: {
+    today: number;
+    total: number;
+    weekly: number;
+  };
+}
+
 // Tier icons and colors
 const TIER_CONFIG: Record<string, { icon: typeof Crown; color: string; bgColor: string }> = {
   Bronze: { icon: Shield, color: "text-amber-600", bgColor: "bg-amber-600/20" },
@@ -138,35 +179,38 @@ export default function ProfilePage() {
   const { user } = useAuth();
   const [stats, setStats] = useState<StatsData | null>(null);
   const [sessions, setSessions] = useState<SessionData | null>(null);
+  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+
+  const loadData = async () => {
+    setIsLoading(true);
+
+    try {
+      const [statsData, sessionsData, analyticsData] = await Promise.all([
+        api<StatsData>('/api/stats').catch(() => null),
+        api<SessionData>('/api/sessions?limit=5').catch(() => null),
+        apiClient.get<AnalyticsData>('/api/analytics').catch(() => null),
+      ]);
+
+      if (statsData) {
+        setStats(statsData);
+      }
+
+      if (sessionsData) {
+        setSessions(sessionsData);
+      }
+
+      if (analyticsData) {
+        setAnalytics(analyticsData);
+      }
+    } catch (err) {
+      console.error('Error loading profile data:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    async function loadData() {
-      setIsLoading(true);
-      setError(null);
-
-      try {
-        const [statsData, sessionsData] = await Promise.all([
-          api<StatsData>('/api/stats').catch(() => null),
-          api<SessionsData>('/api/sessions?limit=5').catch(() => null),
-        ]);
-
-        if (statsData) {
-          setStats(statsData);
-        }
-
-        if (sessionsData) {
-          setSessions(sessionsData);
-        }
-      } catch (err) {
-        console.error('Error loading profile data:', err);
-        setError('Failed to load profile data');
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
     loadData();
   }, []);
 
@@ -192,7 +236,7 @@ export default function ProfilePage() {
 
   if (isLoading) {
     return (
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-5xl mx-auto">
         <div className="animate-pulse space-y-6">
           <div className="h-48 bg-zinc-800/50 rounded-2xl" />
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -200,6 +244,7 @@ export default function ProfilePage() {
               <div key={i} className="h-24 bg-zinc-800/50 rounded-xl" />
             ))}
           </div>
+          <div className="h-48 bg-zinc-800/50 rounded-2xl" />
           <div className="h-64 bg-zinc-800/50 rounded-2xl" />
         </div>
       </div>
@@ -211,8 +256,12 @@ export default function ProfilePage() {
     : TIER_CONFIG.Bronze;
   const TierIcon = tierConfig.icon;
 
+  // Calculate retention trend indicator
+  const retentionTrend = analytics?.retention?.trend || 0;
+  const retentionTrendColor = retentionTrend > 0 ? 'text-emerald-400' : retentionTrend < 0 ? 'text-red-400' : 'text-zinc-500';
+
   return (
-    <div className="max-w-4xl mx-auto pb-8">
+    <div className="max-w-5xl mx-auto pb-8">
       {/* Profile Header */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -259,11 +308,13 @@ export default function ProfilePage() {
 
           {/* Quick Actions */}
           <div className="flex gap-2">
-            <Link href="/analytics">
-              <Button variant="secondary" size="sm" icon={<BarChart3 className="w-4 h-4" />}>
-                Analytics
-              </Button>
-            </Link>
+            <button
+              onClick={loadData}
+              className="flex items-center gap-2 px-3 py-2 text-sm text-zinc-400 hover:text-zinc-100 bg-zinc-800 hover:bg-zinc-700 rounded-lg transition-colors"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Refresh
+            </button>
             <Link href="/settings">
               <Button variant="ghost" size="sm" icon={<Settings className="w-4 h-4" />}>
                 Settings
@@ -305,11 +356,11 @@ export default function ProfilePage() {
             <span className="text-xs text-zinc-500">Streak</span>
           </div>
           <div className="text-2xl font-bold text-zinc-100">
-            {stats?.streak?.current || 0}
+            {stats?.streak?.current || analytics?.streak?.current || 0}
             <span className="text-sm font-normal text-zinc-500 ml-1">days</span>
           </div>
           <div className="text-xs text-zinc-600 mt-1">
-            Best: {stats?.streak?.longest || 0} days
+            Best: {stats?.streak?.longest || analytics?.streak?.longest || 0} days
           </div>
         </div>
 
@@ -320,10 +371,10 @@ export default function ProfilePage() {
             <span className="text-xs text-zinc-500">Total XP</span>
           </div>
           <div className="text-2xl font-bold text-zinc-100">
-            {(stats?.xp?.total || 0).toLocaleString()}
+            {(stats?.xp?.total || analytics?.xp?.total || 0).toLocaleString()}
           </div>
           <div className="text-xs text-emerald-400 mt-1">
-            +{stats?.xp?.daily || 0} today
+            +{stats?.xp?.daily || analytics?.xp?.today || 0} today
           </div>
         </div>
 
@@ -341,26 +392,45 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Study Time */}
+        {/* Retention */}
         <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-4 hover:border-zinc-700 transition-colors">
           <div className="flex items-center gap-2 mb-2">
-            <Clock className="w-5 h-5 text-emerald-400" />
-            <span className="text-xs text-zinc-500">Study Time</span>
+            <Target className="w-5 h-5 text-emerald-400" />
+            <span className="text-xs text-zinc-500">Retention</span>
           </div>
           <div className="text-2xl font-bold text-zinc-100">
-            {formatDuration(stats?.totals?.studyTimeMs || 0)}
+            {(analytics?.retention?.trueRetention || 0).toFixed(1)}%
           </div>
-          <div className="text-xs text-zinc-600 mt-1">
-            {sessions?.stats?.totalSessions || 0} sessions
+          <div className={`text-xs mt-1 flex items-center gap-1 ${retentionTrendColor}`}>
+            <TrendingUp className={`w-3 h-3 ${retentionTrend < 0 ? 'rotate-180' : ''}`} />
+            {retentionTrend > 0 ? '+' : ''}{retentionTrend.toFixed(1)}% this week
           </div>
         </div>
       </motion.div>
+
+      {/* Contribution Heatmap */}
+      {analytics?.heatmap && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+          className="bg-zinc-900/50 border border-zinc-800 rounded-2xl overflow-hidden mb-6 hover:border-zinc-700 transition-colors"
+        >
+          <ContributionHeatmap
+            data={analytics.heatmap}
+            currentStreak={stats?.streak?.current || analytics.streak?.current || 0}
+            longestStreak={stats?.streak?.longest || analytics.streak?.longest || 0}
+            freezesAvailable={analytics.streak?.freezesAvailable || stats?.streak?.freezesAvailable || 0}
+            freezesUsed={analytics.streak?.freezesUsed || 0}
+          />
+        </motion.div>
+      )}
 
       {/* Daily Progress */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.15 }}
+        transition={{ delay: 0.2 }}
         className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5 mb-6"
       >
         <div className="flex items-center justify-between mb-4">
@@ -406,7 +476,7 @@ export default function ProfilePage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
+          transition={{ delay: 0.25 }}
           className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5"
         >
           <div className="flex items-center justify-between mb-4">
@@ -473,16 +543,16 @@ export default function ProfilePage() {
           )}
         </motion.div>
 
-        {/* Performance Insights */}
+        {/* Performance & FSRS Insights */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.25 }}
+          transition={{ delay: 0.3 }}
           className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5"
         >
           <h2 className="text-lg font-semibold text-zinc-100 flex items-center gap-2 mb-4">
-            <TrendingUp className="w-5 h-5 text-emerald-400" />
-            Performance
+            <Activity className="w-5 h-5 text-emerald-400" />
+            Performance & Insights
           </h2>
 
           <div className="space-y-4">
@@ -519,15 +589,27 @@ export default function ProfilePage() {
               </span>
             </div>
 
-            {/* Overall Accuracy */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Percent className="w-4 h-4 text-emerald-400" />
-                <span className="text-sm text-zinc-400">Overall Accuracy</span>
+            {/* FSRS Metrics */}
+            <div className="pt-3 border-t border-zinc-800">
+              <p className="text-xs text-zinc-500 mb-3 font-medium">FSRS Memory Metrics</p>
+
+              <div className="grid grid-cols-2 gap-3">
+                {/* Stability */}
+                <div className="bg-zinc-800/50 rounded-lg p-3">
+                  <p className="text-[10px] text-zinc-500 mb-1">Avg Stability</p>
+                  <p className="text-sm font-semibold text-violet-400">
+                    {(analytics?.retention?.avgStability || 0).toFixed(1)} days
+                  </p>
+                </div>
+
+                {/* Difficulty */}
+                <div className="bg-zinc-800/50 rounded-lg p-3">
+                  <p className="text-[10px] text-zinc-500 mb-1">Avg Difficulty</p>
+                  <p className="text-sm font-semibold text-orange-400">
+                    {(analytics?.retention?.avgDifficulty || 5).toFixed(1)}/10
+                  </p>
+                </div>
               </div>
-              <span className="text-sm font-semibold text-zinc-100">
-                {sessions?.stats?.overallAccuracy || 0}%
-              </span>
             </div>
 
             {/* Best Deck */}
@@ -548,11 +630,81 @@ export default function ProfilePage() {
         </motion.div>
       </div>
 
+      {/* Card Statistics (from analytics) */}
+      {analytics?.cardStats && analytics.cardStats.total > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.35 }}
+          className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5 mb-6"
+        >
+          <h2 className="text-lg font-semibold text-zinc-100 flex items-center gap-2 mb-4">
+            <BookOpen className="w-5 h-5 text-cyan-400" />
+            Card Collection
+          </h2>
+
+          <div className="grid grid-cols-3 md:grid-cols-6 gap-3 mb-4">
+            {[
+              { label: "Total", value: analytics.cardStats.total, color: "bg-zinc-600" },
+              { label: "New", value: analytics.cardStats.new, color: "bg-blue-500" },
+              { label: "Learning", value: analytics.cardStats.learning, color: "bg-orange-500" },
+              { label: "Review", value: analytics.cardStats.review, color: "bg-emerald-500" },
+              { label: "Mature", value: analytics.cardStats.mature, color: "bg-violet-500" },
+              { label: "Leeches", value: analytics.cardStats.leeches, color: "bg-red-500" },
+            ].map((stat) => (
+              <div key={stat.label} className="text-center">
+                <div className="flex items-center justify-center gap-1.5 mb-1">
+                  <div className={`w-2 h-2 rounded-sm ${stat.color}`} />
+                  <span className="text-[10px] text-zinc-500">{stat.label}</span>
+                </div>
+                <p className="text-lg font-semibold text-zinc-100">{stat.value}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Maturity Progress */}
+          <div className="pt-3 border-t border-zinc-800">
+            <div className="flex items-center justify-between text-xs mb-2">
+              <span className="text-zinc-500">Maturity Progress</span>
+              <span className="text-zinc-400">
+                {((analytics.cardStats.mature / analytics.cardStats.total) * 100).toFixed(1)}% mature
+              </span>
+            </div>
+            <div className="h-2.5 bg-zinc-800 rounded-full overflow-hidden flex">
+              <div
+                className="bg-violet-500 h-full"
+                style={{
+                  width: `${(analytics.cardStats.mature / analytics.cardStats.total) * 100}%`,
+                }}
+              />
+              <div
+                className="bg-emerald-500 h-full"
+                style={{
+                  width: `${(Math.max(0, analytics.cardStats.review - analytics.cardStats.mature) / analytics.cardStats.total) * 100}%`,
+                }}
+              />
+              <div
+                className="bg-orange-500 h-full"
+                style={{
+                  width: `${(analytics.cardStats.learning / analytics.cardStats.total) * 100}%`,
+                }}
+              />
+              <div
+                className="bg-blue-500 h-full"
+                style={{
+                  width: `${(analytics.cardStats.new / analytics.cardStats.total) * 100}%`,
+                }}
+              />
+            </div>
+          </div>
+        </motion.div>
+      )}
+
       {/* Recent Sessions */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
+        transition={{ delay: 0.4 }}
         className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5"
       >
         <div className="flex items-center justify-between mb-4">
@@ -560,12 +712,9 @@ export default function ProfilePage() {
             <Calendar className="w-5 h-5 text-cyan-400" />
             Recent Sessions
           </h2>
-          <Link
-            href="/analytics"
-            className="text-xs text-cyan-400 hover:text-cyan-300 flex items-center gap-1"
-          >
-            View all <ChevronRight className="w-3 h-3" />
-          </Link>
+          <span className="text-xs text-zinc-500">
+            {sessions?.stats?.totalSessions || 0} total sessions
+          </span>
         </div>
 
         {sessions?.sessions && sessions.sessions.length > 0 ? (
@@ -622,7 +771,7 @@ export default function ProfilePage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.35 }}
+          transition={{ delay: 0.45 }}
           className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5 mt-6"
         >
           <h2 className="text-lg font-semibold text-zinc-100 flex items-center gap-2 mb-4">
