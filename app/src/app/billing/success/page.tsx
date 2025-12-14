@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { CheckCircle, Sparkles, ArrowRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/stores/auth";
 
-export default function BillingSuccessPage() {
+function BillingSuccessContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { refreshUser, user } = useAuth();
@@ -148,5 +148,30 @@ export default function BillingSuccessPage() {
         </div>
       </motion.div>
     </div>
+  );
+}
+
+function LoadingFallback() {
+  return (
+    <div className="min-h-screen bg-[#08090a] flex items-center justify-center p-4">
+      <div className="max-w-md w-full">
+        <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-8 text-center">
+          <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-cyan-500/10 flex items-center justify-center">
+            <Loader2 className="w-10 h-10 text-cyan-400 animate-spin" />
+          </div>
+          <h1 className="text-2xl font-bold text-zinc-100 mb-2">
+            Loading...
+          </h1>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function BillingSuccessPage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <BillingSuccessContent />
+    </Suspense>
   );
 }
