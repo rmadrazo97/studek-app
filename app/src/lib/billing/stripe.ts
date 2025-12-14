@@ -4,9 +4,15 @@ const STRIPE_API_VERSION = '2024-06-20' as const;
 
 let stripeClient: Stripe | null = null;
 
+function readEnv(name: string): string | null {
+  const raw = process.env[name];
+  const trimmed = typeof raw === 'string' ? raw.trim() : '';
+  return trimmed.length > 0 ? trimmed : null;
+}
+
 export function getStripeClient(): Stripe {
   if (!stripeClient) {
-    const secret = process.env.STRIPE_SECRET_KEY;
+    const secret = readEnv('STRIPE_SECRET_KEY');
     if (!secret) {
       throw new Error('STRIPE_SECRET_KEY is not configured');
     }
@@ -16,9 +22,9 @@ export function getStripeClient(): Stripe {
 }
 
 export function getPriceIdForPlan(slug: string): string | null {
-  const map: Record<string, string | undefined> = {
-    premium: process.env.STRIPE_PRICE_PREMIUM,
-    pro: process.env.STRIPE_PRICE_PRO,
+  const map: Record<string, string | null> = {
+    premium: readEnv('STRIPE_PRICE_PREMIUM'),
+    pro: readEnv('STRIPE_PRICE_PRO'),
   };
   return map[slug] ?? null;
 }
@@ -26,8 +32,8 @@ export function getPriceIdForPlan(slug: string): string | null {
 export function getPlanSlugForPrice(priceId: string | null | undefined): string | null {
   if (!priceId) return null;
   const entries: Array<[string | undefined, string]> = [
-    [process.env.STRIPE_PRICE_PREMIUM, 'premium'],
-    [process.env.STRIPE_PRICE_PRO, 'pro'],
+    [readEnv('STRIPE_PRICE_PREMIUM') ?? undefined, 'premium'],
+    [readEnv('STRIPE_PRICE_PRO') ?? undefined, 'pro'],
   ];
 
   for (const [envPrice, slug] of entries) {
@@ -39,7 +45,7 @@ export function getPlanSlugForPrice(priceId: string | null | undefined): string 
 }
 
 export function getWebhookSecret(): string | null {
-  return process.env.STRIPE_WEBHOOK_SECRET || null;
+  return readEnv('STRIPE_WEBHOOK_SECRET');
 }
 
 export function getDefaultSuccessUrl(): string {
