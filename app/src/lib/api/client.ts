@@ -10,6 +10,14 @@ export interface ApiError {
   error: string;
   code?: string;
   details?: string;
+  // Plan limit error fields
+  limit?: number;
+  current?: number;
+  plan?: {
+    id: string;
+    slug: string;
+    name: string;
+  };
 }
 
 export interface ApiRequestOptions extends Omit<RequestInit, 'credentials'> {
@@ -153,7 +161,13 @@ export async function api<T = unknown>(
         errorData.error || 'Request failed',
         retryResponse.status,
         errorData.code,
-        errorData.details
+        errorData.details,
+        // Pass plan limit data for 402 errors
+        retryResponse.status === 402 ? {
+          limit: errorData.limit,
+          current: errorData.current,
+          plan: errorData.plan,
+        } : undefined
       );
     }
   }
@@ -171,7 +185,13 @@ export async function api<T = unknown>(
       errorData.error || 'Request failed',
       response.status,
       errorData.code,
-      errorData.details
+      errorData.details,
+      // Pass plan limit data for 402 errors
+      response.status === 402 ? {
+        limit: errorData.limit,
+        current: errorData.current,
+        plan: errorData.plan,
+      } : undefined
     );
     throw error;
   }
@@ -189,14 +209,24 @@ export async function api<T = unknown>(
  * Custom error class for API errors
  */
 export class ApiClientError extends Error {
+  public limit?: number;
+  public current?: number;
+  public plan?: { id: string; slug: string; name: string };
+
   constructor(
     message: string,
     public status: number,
     public code?: string,
-    public details?: string
+    public details?: string,
+    planLimitData?: { limit?: number; current?: number; plan?: { id: string; slug: string; name: string } }
   ) {
     super(message);
     this.name = 'ApiClientError';
+    if (planLimitData) {
+      this.limit = planLimitData.limit;
+      this.current = planLimitData.current;
+      this.plan = planLimitData.plan;
+    }
   }
 
   get isUnauthorized(): boolean {
@@ -209,6 +239,10 @@ export class ApiClientError extends Error {
 
   get isNotFound(): boolean {
     return this.status === 404;
+  }
+
+  get isPlanLimitExceeded(): boolean {
+    return this.status === 402;
   }
 }
 

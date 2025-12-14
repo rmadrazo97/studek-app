@@ -23,8 +23,14 @@ export const POST = withAuth(async (request: AuthenticatedRequest) => {
 
     const priceId = getPriceIdForPlan(plan.slug);
     if (!priceId) {
+      const missingEnv =
+        plan.slug === 'premium'
+          ? 'STRIPE_PRICE_PREMIUM'
+          : plan.slug === 'pro'
+            ? 'STRIPE_PRICE_PRO'
+            : 'STRIPE_PRICE_<PLAN>';
       return NextResponse.json(
-        { error: `Stripe price is not configured for plan ${plan.slug}` },
+        { error: `Stripe price is not configured for plan ${plan.slug} (missing/empty ${missingEnv})` },
         { status: 500 }
       );
     }

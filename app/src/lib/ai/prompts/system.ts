@@ -213,6 +213,39 @@ When the user asks you to create a deck or add cards:
 `;
 
 // ============================================
+// Source-Based Generation Context
+// ============================================
+
+export const SOURCE_EXTRACTION_CONTEXT = `
+### Generating Flashcards from Source Material
+
+When creating flashcards from provided source material (YouTube transcripts, PDF documents, web pages):
+
+1. **Focus on the User's Interest**: If the user specifies what they want to learn, prioritize that topic
+   - Extract only relevant information from the source
+   - Ignore unrelated content (ads, tangents, metadata)
+
+2. **Transform Content into Effective Questions**:
+   - Don't just copy text - transform it into meaningful Q&A pairs
+   - Ensure answers are self-contained and don't require the source to understand
+   - Break complex explanations into multiple atomic cards
+
+3. **Maintain Factual Accuracy**:
+   - Only create cards for information clearly stated in the source
+   - If something is ambiguous, skip it rather than guess
+   - Preserve technical accuracy for specialized content
+
+4. **Handle Different Source Types**:
+   - **YouTube**: Focus on key concepts, examples, and explanations from the transcript
+   - **PDF**: Extract main ideas, definitions, and important facts
+   - **Web pages**: Focus on the main content, ignore navigation and ads
+
+5. **Source Attribution**:
+   - If the source has a clear title, use it to inform the deck name
+   - Create topic groups based on sections/chapters from the source when applicable
+`;
+
+// ============================================
 // Prompt Builders
 // ============================================
 
@@ -221,6 +254,13 @@ When the user asks you to create a deck or add cards:
  */
 export function buildSystemPrompt(): string {
   return DECK_GENERATION_SYSTEM_PROMPT;
+}
+
+/**
+ * Build the system prompt for source-based generation (YouTube, PDF, URL)
+ */
+export function buildSourceBasedSystemPrompt(): string {
+  return DECK_GENERATION_SYSTEM_PROMPT + '\n' + SOURCE_EXTRACTION_CONTEXT;
 }
 
 /**
@@ -271,5 +311,111 @@ CRITICAL: Use the Topic Rotation Algorithm:
 4. Each topic_group should have 5-15 related cards
 
 Create new cards that complement the existing deck content.
+Use the add_cards tool to structure your response.`;
+}
+
+// ============================================
+// Source-Based Prompt Builders
+// ============================================
+
+export type SourceType = 'youtube' | 'pdf' | 'url';
+
+export interface SourceInfo {
+  type: SourceType;
+  content: string;
+  title?: string;
+  url?: string;
+  metadata?: Record<string, unknown>;
+}
+
+/**
+ * Build a user prompt for creating a deck from source material
+ */
+export function buildSourceBasedCreateDeckPrompt(
+  source: SourceInfo,
+  focusPrompt?: string
+): string {
+  const sourceTypeLabels: Record<SourceType, string> = {
+    youtube: 'YouTube video transcript',
+    pdf: 'PDF document',
+    url: 'web page content',
+  };
+
+  const sourceLabel = sourceTypeLabels[source.type];
+  const titleInfo = source.title ? `\nSource title: "${source.title}"` : '';
+  const urlInfo = source.url ? `\nSource URL: ${source.url}` : '';
+
+  const focusSection = focusPrompt && focusPrompt.trim()
+    ? `\n\n**USER'S FOCUS AREA:**
+"${focusPrompt.trim()}"
+
+IMPORTANT: Focus primarily on creating flashcards about the topics the user specified above.
+Extract and prioritize information from the source that relates to their area of interest.
+If the source contains relevant information about their focus area, create comprehensive cards about it.
+If the source doesn't cover their focus area well, still create cards from the most educational content available.`
+    : '';
+
+  return `Create a flashcard deck from the following ${sourceLabel}:
+${titleInfo}${urlInfo}
+
+=== BEGIN SOURCE CONTENT ===
+${source.content}
+=== END SOURCE CONTENT ===${focusSection}
+
+CRITICAL: Use the Topic Rotation Algorithm:
+1. Divide the content into 3-8 distinct topic_groups based on the source's structure or themes
+2. Each topic_group should have 5-15 related cards
+3. EVERY card must have a topic_group field (lowercase with hyphens)
+4. Transform the source content into effective question-answer pairs
+5. Create a descriptive deck name based on the source${source.title ? ` (consider using or adapting: "${source.title}")` : ''}
+
+Extract the most important and educational information from this source.
+Use the create_deck tool to structure your response.`;
+}
+
+/**
+ * Build a user prompt for adding cards to an existing deck from source material
+ */
+export function buildSourceBasedAddCardsPrompt(
+  source: SourceInfo,
+  deckContext: { name: string; description?: string; existingCardCount: number; existingTopicGroups?: string[] },
+  focusPrompt?: string
+): string {
+  const sourceTypeLabels: Record<SourceType, string> = {
+    youtube: 'YouTube video transcript',
+    pdf: 'PDF document',
+    url: 'web page content',
+  };
+
+  const sourceLabel = sourceTypeLabels[source.type];
+  const topicGroupsInfo = deckContext.existingTopicGroups?.length
+    ? `Existing topic groups: ${deckContext.existingTopicGroups.join(', ')}`
+    : 'No existing topic groups defined';
+
+  const focusSection = focusPrompt && focusPrompt.trim()
+    ? `\n\n**USER'S FOCUS AREA:**
+"${focusPrompt.trim()}"
+
+IMPORTANT: Focus primarily on extracting information about the topics the user specified above.`
+    : '';
+
+  return `Add new flashcards to the existing deck from the following ${sourceLabel}:
+
+Deck: "${deckContext.name}"
+${deckContext.description ? `Description: "${deckContext.description}"` : ''}
+Current card count: ${deckContext.existingCardCount}
+${topicGroupsInfo}
+
+=== BEGIN SOURCE CONTENT ===
+${source.content}
+=== END SOURCE CONTENT ===${focusSection}
+
+CRITICAL: Use the Topic Rotation Algorithm:
+1. EVERY card must have a topic_group field
+2. You can use existing topic_groups or create new ones that fit the source content
+3. If creating new topic_groups, include them in new_topic_groups
+4. Transform the source content into effective question-answer pairs
+
+Create new cards from this source that complement the existing deck content.
 Use the add_cards tool to structure your response.`;
 }

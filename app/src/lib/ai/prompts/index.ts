@@ -9,9 +9,15 @@ export {
   SPACED_REPETITION_CONTEXT,
   CARD_CREATION_GUIDELINES,
   DECK_GENERATION_SYSTEM_PROMPT,
+  SOURCE_EXTRACTION_CONTEXT,
   buildSystemPrompt,
+  buildSourceBasedSystemPrompt,
   buildCreateDeckPrompt,
   buildAddCardsPrompt,
+  buildSourceBasedCreateDeckPrompt,
+  buildSourceBasedAddCardsPrompt,
+  type SourceType,
+  type SourceInfo,
 } from './system';
 
 // Templates

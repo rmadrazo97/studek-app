@@ -29,8 +29,13 @@ On push to `main`:
 | `OPENAI_APIKEY` | OpenAI API key for AI deck generation (optional) |
 | `RESEND_API_KEY` | Resend API key for transactional emails |
 | `CRON_SECRET` | Secret token for notification cron job (optional) |
-| `VAPID_PUBLIC_KEY` | VAPID public key for push notifications (optional) |
-| `VAPID_PRIVATE_KEY` | VAPID private key for push notifications (optional) |
+| `VAPID_PUBLIC_KEY` | VAPID public key for web push notifications (optional) |
+| `VAPID_PRIVATE_KEY` | VAPID private key for web push notifications (optional) |
+| `APNS_KEY_ID` | APNs Key ID for iOS push notifications (optional) |
+| `APNS_TEAM_ID` | Apple Team ID for iOS push notifications (optional) |
+| `APNS_KEY` | APNs .p8 key contents for iOS push (optional) |
+| `APNS_BUNDLE_ID` | iOS app bundle ID (default: com.studek.app) |
+| `FCM_SERVICE_ACCOUNT` | Firebase service account JSON for Android push (optional) |
 | `GOOGLE_CLIENT_ID` | Google OAuth Client ID (optional, for Google login) |
 | `GOOGLE_CLIENT_SECRET` | Google OAuth Client Secret (optional, for Google login) |
 | `GH_CLIENT_ID` | GitHub OAuth Client ID (optional, for GitHub login) |
@@ -213,7 +218,8 @@ The app includes a Duolingo-style notification system for study reminders.
 
 ### Features
 - **Email Notifications:** Daily study reminders, streak warnings, weekly summaries
-- **Push Notifications:** Real-time alerts via web push (VAPID)
+- **Web Push Notifications:** Real-time alerts via VAPID for browsers and PWA
+- **Native Push Notifications:** APNs for iOS, FCM for Android native apps
 - **Customizable:** Users can set preferred reminder times, quiet hours, and notification types
 - **Smart Scheduling:** Notifications only sent when cards are due or streak is at risk
 
@@ -246,6 +252,41 @@ The app includes a Duolingo-style notification system for study reminders.
      "NEXT_PUBLIC_VAPID_PUBLIC_KEY": "your-vapid-public-key"
    }
    ```
+
+### Setup Native Push Notifications (iOS/Android)
+
+For native app push notifications, you need to configure APNs (iOS) and FCM (Android).
+
+#### iOS (APNs)
+
+1. In Apple Developer Portal:
+   - Go to Certificates, Identifiers & Profiles
+   - Create a Key for APNs (under Keys section)
+   - Download the .p8 file
+   - Note the Key ID and Team ID
+
+2. Add to GitHub Secrets:
+   - `APNS_KEY_ID` - The Key ID from Apple
+   - `APNS_TEAM_ID` - Your Apple Team ID
+   - `APNS_KEY` - Contents of the .p8 file (entire file contents)
+   - `APNS_BUNDLE_ID` - Your app's bundle ID (default: com.studek.app)
+
+3. In Xcode, enable Push Notifications capability:
+   - Open project → Signing & Capabilities → + Capability → Push Notifications
+
+#### Android (FCM)
+
+1. In Firebase Console:
+   - Create a project (or use existing)
+   - Go to Project Settings → Service Accounts
+   - Generate new private key (downloads JSON file)
+
+2. Add to GitHub Secrets:
+   - `FCM_SERVICE_ACCOUNT` - Entire contents of the JSON file
+
+3. Add `google-services.json` to Android project:
+   - Download from Firebase Console → Project Settings → Your apps → Android
+   - Place in `android/app/google-services.json`
 
 ### Internal Cron Worker
 
@@ -285,15 +326,19 @@ curl -X POST \
 |----------|--------|-------------|
 | `/api/notifications/preferences` | GET | Get user notification preferences |
 | `/api/notifications/preferences` | PUT | Update notification preferences |
-| `/api/notifications/subscribe` | POST | Subscribe to push notifications |
-| `/api/notifications/subscribe` | DELETE | Unsubscribe from push |
-| `/api/notifications/subscribe` | GET | List user's push subscriptions |
+| `/api/notifications/subscribe` | POST | Subscribe to web push notifications |
+| `/api/notifications/subscribe` | DELETE | Unsubscribe from web push |
+| `/api/notifications/subscribe` | GET | List user's web push subscriptions |
+| `/api/notifications/native-token` | POST | Register native push token (APNs/FCM) |
+| `/api/notifications/native-token` | DELETE | Unregister native push token |
+| `/api/notifications/native-token` | GET | List user's native push tokens |
 | `/api/notifications/vapid-key` | GET | Get VAPID public key (no auth) |
 | `/api/notifications/trigger` | POST | Trigger notification job (cron only) |
 
 ### Database Tables
 - `notification_preferences` - User notification settings
-- `push_subscriptions` - Web push subscription data
+- `push_subscriptions` - Web push subscription data (VAPID)
+- `native_push_tokens` - Native push tokens (APNs/FCM)
 - `notification_logs` - Sent notification history
 - `notification_schedule` - Scheduled notifications queue
 

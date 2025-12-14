@@ -91,6 +91,67 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     steps:
+      - name: Deployment secrets/env sanity check (safe)
+        env:
+          BACKEND_SECRETS: ${{ secrets.BACKEND_SECRETS }}
+          OPENAI_APIKEY: ${{ secrets.OPENAI_APIKEY }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          VAPID_PUBLIC_KEY: ${{ secrets.VAPID_PUBLIC_KEY }}
+          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+          APNS_KEY_ID: ${{ secrets.APNS_KEY_ID }}
+          APNS_TEAM_ID: ${{ secrets.APNS_TEAM_ID }}
+          APNS_KEY: ${{ secrets.APNS_KEY }}
+          APNS_BUNDLE_ID: ${{ secrets.APNS_BUNDLE_ID }}
+          FCM_SERVICE_ACCOUNT: ${{ secrets.FCM_SERVICE_ACCOUNT }}
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+          STRIPE_PRICE_PREMIUM: ${{ secrets.STRIPE_PRICE_PREMIUM }}
+          STRIPE_PRICE_PRO: ${{ secrets.STRIPE_PRICE_PRO }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          GH_CLIENT_ID: ${{ secrets.GH_CLIENT_ID }}
+          GH_CLIENT_SECRET: ${{ secrets.GH_CLIENT_SECRET }}
+        run: |
+          {
+            echo "## Deployment secrets/env check"
+            echo ""
+            check() {
+              local name="$1"
+              local value="$2"
+              if [ -n "$value" ]; then
+                echo "- **$name**: ✅ set"
+              else
+                echo "- **$name**: ❌ missing"
+              fi
+            }
+            check "BACKEND_SECRETS" "$BACKEND_SECRETS"
+            if [ -n "$BACKEND_SECRETS" ]; then
+              keys="$(python3 -c 'import json,sys; data=json.loads(sys.stdin.read() or "{}"); print(", ".join(sorted(data.keys())))' <<<"$BACKEND_SECRETS" 2>/dev/null || echo "Invalid JSON")"
+              echo "- **BACKEND_SECRETS keys**: \`$keys\`"
+            fi
+            echo ""
+            echo "### Direct secrets"
+            check "OPENAI_APIKEY" "$OPENAI_APIKEY"
+            check "RESEND_API_KEY" "$RESEND_API_KEY"
+            check "CRON_SECRET" "$CRON_SECRET"
+            check "VAPID_PUBLIC_KEY" "$VAPID_PUBLIC_KEY"
+            check "VAPID_PRIVATE_KEY" "$VAPID_PRIVATE_KEY"
+            check "APNS_KEY_ID" "$APNS_KEY_ID"
+            check "APNS_TEAM_ID" "$APNS_TEAM_ID"
+            check "APNS_KEY" "$APNS_KEY"
+            check "APNS_BUNDLE_ID" "$APNS_BUNDLE_ID"
+            check "FCM_SERVICE_ACCOUNT" "$FCM_SERVICE_ACCOUNT"
+            check "STRIPE_SECRET_KEY" "$STRIPE_SECRET_KEY"
+            check "STRIPE_WEBHOOK_SECRET" "$STRIPE_WEBHOOK_SECRET"
+            check "STRIPE_PRICE_PREMIUM" "$STRIPE_PRICE_PREMIUM"
+            check "STRIPE_PRICE_PRO" "$STRIPE_PRICE_PRO"
+            check "GOOGLE_CLIENT_ID" "$GOOGLE_CLIENT_ID"
+            check "GOOGLE_CLIENT_SECRET" "$GOOGLE_CLIENT_SECRET"
+            check "GH_CLIENT_ID" "$GH_CLIENT_ID"
+            check "GH_CLIENT_SECRET" "$GH_CLIENT_SECRET"
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Deploy to server via SSH
         uses: appleboy/ssh-action@v1.0.3
         env:
@@ -102,16 +163,29 @@ jobs:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
           VAPID_PUBLIC_KEY: ${{ secrets.VAPID_PUBLIC_KEY }}
           VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+          # OAuth secrets
           GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
           GH_CLIENT_ID: ${{ secrets.GH_CLIENT_ID }}
           GH_CLIENT_SECRET: ${{ secrets.GH_CLIENT_SECRET }}
+          # Stripe billing
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+          STRIPE_PRICE_PREMIUM: ${{ secrets.STRIPE_PRICE_PREMIUM }}
+          STRIPE_PRICE_PRO: ${{ secrets.STRIPE_PRICE_PRO }}
+          # APNs (iOS) secrets
+          APNS_KEY_ID: ${{ secrets.APNS_KEY_ID }}
+          APNS_TEAM_ID: ${{ secrets.APNS_TEAM_ID }}
+          APNS_KEY: ${{ secrets.APNS_KEY }}
+          APNS_BUNDLE_ID: ${{ secrets.APNS_BUNDLE_ID }}
+          # FCM (Android) secrets
+          FCM_SERVICE_ACCOUNT: ${{ secrets.FCM_SERVICE_ACCOUNT }}
           VPS_HOST: ${{ secrets.VPS_HOST }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USERNAME }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          envs: GHCR_PAT,GITHUB_ACTOR,BACKEND_SECRETS,OPENAI_APIKEY,RESEND_API_KEY,CRON_SECRET,VAPID_PUBLIC_KEY,VAPID_PRIVATE_KEY,GOOGLE_CLIENT_ID,GOOGLE_CLIENT_SECRET,GH_CLIENT_ID,GH_CLIENT_SECRET,VPS_HOST
+          envs: GHCR_PAT,GITHUB_ACTOR,BACKEND_SECRETS,OPENAI_APIKEY,RESEND_API_KEY,CRON_SECRET,VAPID_PUBLIC_KEY,VAPID_PRIVATE_KEY,GOOGLE_CLIENT_ID,GOOGLE_CLIENT_SECRET,GH_CLIENT_ID,GH_CLIENT_SECRET,STRIPE_SECRET_KEY,STRIPE_WEBHOOK_SECRET,STRIPE_PRICE_PREMIUM,STRIPE_PRICE_PRO,APNS_KEY_ID,APNS_TEAM_ID,APNS_KEY,APNS_BUNDLE_ID,FCM_SERVICE_ACCOUNT,VPS_HOST
           script: |
             cd ~/studek-app
 
@@ -173,6 +247,54 @@ jobs:
             if [ -n "$GH_CLIENT_SECRET" ]; then
               echo "GH_CLIENT_SECRET=$GH_CLIENT_SECRET" >> .env
               echo "GH_CLIENT_SECRET added to .env"
+            fi
+
+            # Add Stripe billing secrets if provided
+            if [ -n "$STRIPE_SECRET_KEY" ]; then
+              echo "STRIPE_SECRET_KEY=$STRIPE_SECRET_KEY" >> .env
+              echo "STRIPE_SECRET_KEY added to .env"
+            fi
+
+            if [ -n "$STRIPE_WEBHOOK_SECRET" ]; then
+              echo "STRIPE_WEBHOOK_SECRET=$STRIPE_WEBHOOK_SECRET" >> .env
+              echo "STRIPE_WEBHOOK_SECRET added to .env"
+            fi
+
+            if [ -n "$STRIPE_PRICE_PREMIUM" ]; then
+              echo "STRIPE_PRICE_PREMIUM=$STRIPE_PRICE_PREMIUM" >> .env
+              echo "STRIPE_PRICE_PREMIUM added to .env"
+            fi
+
+            if [ -n "$STRIPE_PRICE_PRO" ]; then
+              echo "STRIPE_PRICE_PRO=$STRIPE_PRICE_PRO" >> .env
+              echo "STRIPE_PRICE_PRO added to .env"
+            fi
+
+            # Add APNs (iOS) secrets if provided
+            if [ -n "$APNS_KEY_ID" ]; then
+              echo "APNS_KEY_ID=$APNS_KEY_ID" >> .env
+              echo "APNS_KEY_ID added to .env"
+            fi
+
+            if [ -n "$APNS_TEAM_ID" ]; then
+              echo "APNS_TEAM_ID=$APNS_TEAM_ID" >> .env
+              echo "APNS_TEAM_ID added to .env"
+            fi
+
+            if [ -n "$APNS_KEY" ]; then
+              echo "APNS_KEY=$APNS_KEY" >> .env
+              echo "APNS_KEY added to .env"
+            fi
+
+            if [ -n "$APNS_BUNDLE_ID" ]; then
+              echo "APNS_BUNDLE_ID=$APNS_BUNDLE_ID" >> .env
+              echo "APNS_BUNDLE_ID added to .env"
+            fi
+
+            # Add FCM (Android) secrets if provided
+            if [ -n "$FCM_SERVICE_ACCOUNT" ]; then
+              echo "FCM_SERVICE_ACCOUNT=$FCM_SERVICE_ACCOUNT" >> .env
+              echo "FCM_SERVICE_ACCOUNT added to .env"
             fi
 
             # Login to GitHub Container Registry

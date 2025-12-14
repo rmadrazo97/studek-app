@@ -52,12 +52,12 @@ export function PainSolution() {
                 <span className="text-base sm:text-lg font-semibold text-slate-300">The Old Way</span>
               </div>
 
-              {/* Mock Anki UI - Simplified on mobile */}
+              {/* Mock legacy UI - Simplified on mobile */}
               <div className="rounded-lg sm:rounded-xl bg-[#2d2d2d] border border-slate-700/50 overflow-hidden mb-4 sm:mb-6">
                 {/* Title bar */}
                 <div className="bg-[#3d3d3d] px-2 sm:px-3 py-1.5 sm:py-2 border-b border-slate-700/50">
                   <div className="flex items-center gap-2 text-[10px] sm:text-xs text-slate-400 truncate">
-                    <span>Anki - Browse (1 of 2847 cards selected)</span>
+                    <span>Flashcards - Browse (1 of 2847 cards selected)</span>
                   </div>
                 </div>
                 {/* Menu bar - hidden on very small screens */}
@@ -86,10 +86,10 @@ export function PainSolution() {
               <ul className="space-y-2.5 sm:space-y-3 lg:space-y-4">
                 {[
                   "Manual card creation takes hours",
-                  "CSS hacks for readable formatting",
-                  "Plugin conflicts break your workflow",
-                  "Steep learning curve intimidates beginners",
-                  "Mobile app costs $25 on iOS",
+                  "Formatting fights you instead of helping you",
+                  "Settings and add-ons break your workflow",
+                  "Steep learning curve slows you down",
+                  "Hard to stay consistent day after day",
                 ].map((pain, i) => (
                   <li key={i} className="flex items-start gap-2 sm:gap-3">
                     <AlertTriangle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-red-400 flex-shrink-0 mt-0.5" />
