@@ -193,10 +193,11 @@ export default function SettingsPage() {
 
       {/* Subscription Section */}
       <motion.section
+        id="billing"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.15 }}
-        className="mb-8"
+        className="mb-8 scroll-mt-6"
       >
         <h2 className="text-lg font-semibold text-zinc-100 mb-4 flex items-center gap-2">
           <Sparkles className="w-5 h-5 text-cyan-400" />
