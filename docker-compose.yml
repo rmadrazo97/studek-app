@@ -55,6 +55,11 @@ services:
       - CRON_SECRET=${CRON_SECRET:-}
       - VAPID_PRIVATE_KEY=${VAPID_PRIVATE_KEY:-}
       - NEXT_PUBLIC_VAPID_PUBLIC_KEY=${NEXT_PUBLIC_VAPID_PUBLIC_KEY:-}
+      # OAuth (Google & GitHub)
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
+      - GH_CLIENT_ID=${GH_CLIENT_ID:-}
+      - GH_CLIENT_SECRET=${GH_CLIENT_SECRET:-}
     volumes:
       # Persist SQLite database
       - sqlite_data:/app/data
