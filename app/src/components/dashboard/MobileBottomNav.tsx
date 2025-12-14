@@ -13,12 +13,14 @@ import {
 } from "lucide-react";
 import { AddDeckSheet } from "@/components/AddDeckSheet";
 import AIGenerateModal from "@/components/decks/AIGenerateModal";
+import { useCapacitor } from "@/hooks/useCapacitor";
 
 export function MobileBottomNav() {
   const pathname = usePathname();
   const router = useRouter();
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [isAIModalOpen, setIsAIModalOpen] = useState(false);
+  const { hapticLight, hapticMedium, hapticSelection } = useCapacitor();
 
   const navItems = [
     { icon: Home, label: "Home", href: "/dashboard" },
@@ -28,22 +30,34 @@ export function MobileBottomNav() {
     { icon: User, label: "Profile", href: "/profile" },
   ];
 
+  const handleOpenSheet = useCallback(() => {
+    hapticMedium();
+    setIsSheetOpen(true);
+  }, [hapticMedium]);
+
   const handleCreateWithAI = useCallback(() => {
+    hapticLight();
     setIsAIModalOpen(true);
-  }, []);
+  }, [hapticLight]);
 
   const handleCreateManual = useCallback(() => {
+    hapticLight();
     router.push("/library");
-  }, [router]);
+  }, [hapticLight, router]);
 
   const handleImportAnki = useCallback(() => {
+    hapticLight();
     router.push("/library");
-  }, [router]);
+  }, [hapticLight, router]);
 
   const handleAISuccess = useCallback(() => {
     // Optionally navigate to library after successful creation
     router.push("/library");
   }, [router]);
+
+  const handleNavClick = useCallback(() => {
+    hapticSelection();
+  }, [hapticSelection]);
 
   return (
     <>
@@ -58,11 +72,10 @@ export function MobileBottomNav() {
               return (
                 <button
                   key={item.href}
-                  onClick={() => setIsSheetOpen(true)}
-                  className="relative -mt-6"
+                  onClick={handleOpenSheet}
+                  className="relative -mt-6 active:scale-95 transition-transform"
                 >
-                  <motion.div
-                    whileTap={{ scale: 0.95 }}
+                  <div
                     className={`
                       w-14 h-14 rounded-2xl flex items-center justify-center
                       bg-gradient-to-br from-cyan-400 to-blue-500
@@ -71,7 +84,7 @@ export function MobileBottomNav() {
                     `}
                   >
                     <Icon className="w-6 h-6 text-[#09090b]" />
-                  </motion.div>
+                  </div>
                   <span className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[10px] font-medium text-cyan-400 whitespace-nowrap">
                     {item.label}
                   </span>
@@ -83,18 +96,18 @@ export function MobileBottomNav() {
               <Link
                 key={item.href}
                 href={item.href}
-                className="flex flex-col items-center gap-1 py-2 px-3 min-w-[60px]"
+                onClick={handleNavClick}
+                className="flex flex-col items-center gap-1 py-2 px-3 min-w-[60px] active:scale-95 transition-transform"
               >
-                <motion.div
-                  whileTap={{ scale: 0.95 }}
+                <div
                   className={`
-                    relative p-2 rounded-xl transition-colors duration-200
+                    relative p-2 rounded-xl transition-colors duration-150
                     ${isActive ? "bg-zinc-800" : ""}
                   `}
                 >
                   <Icon
                     className={`
-                      w-5 h-5 transition-colors duration-200
+                      w-5 h-5 transition-colors duration-150
                       ${isActive ? "text-cyan-400" : "text-zinc-500"}
                     `}
                   />
@@ -105,10 +118,10 @@ export function MobileBottomNav() {
                       transition={{ type: "spring", duration: 0.3 }}
                     />
                   )}
-                </motion.div>
+                </div>
                 <span
                   className={`
-                    text-[10px] font-medium transition-colors duration-200
+                    text-[10px] font-medium transition-colors duration-150
                     ${isActive ? "text-cyan-400" : "text-zinc-500"}
                   `}
                 >

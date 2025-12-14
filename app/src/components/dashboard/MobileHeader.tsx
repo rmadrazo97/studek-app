@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -21,6 +21,7 @@ import {
   Check,
   Loader2,
 } from "lucide-react";
+import { useCapacitor } from "@/hooks/useCapacitor";
 
 interface MobileHeaderProps {
   syncStatus?: "synced" | "syncing" | "offline";
@@ -29,6 +30,7 @@ interface MobileHeaderProps {
 export function MobileHeader({ syncStatus = "synced" }: MobileHeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const pathname = usePathname();
+  const { isNative, hapticLight, hapticMedium, hapticSelection } = useCapacitor();
 
   const navItems = [
     { icon: Home, label: "Home", href: "/dashboard" },
@@ -61,27 +63,47 @@ export function MobileHeader({ syncStatus = "synced" }: MobileHeaderProps) {
     }
   };
 
-  const closeMenu = () => setIsMenuOpen(false);
+  const openMenu = useCallback(() => {
+    hapticMedium();
+    setIsMenuOpen(true);
+  }, [hapticMedium]);
+
+  const closeMenu = useCallback(() => {
+    hapticLight();
+    setIsMenuOpen(false);
+  }, [hapticLight]);
+
+  const handleNavClick = useCallback(() => {
+    hapticSelection();
+    closeMenu();
+  }, [hapticSelection, closeMenu]);
 
   return (
     <>
       {/* Mobile Header Bar - with safe area for iOS Dynamic Island/notch */}
       <header className="fixed top-0 left-0 right-0 bg-[#09090b]/95 backdrop-blur-lg border-b border-zinc-800 z-50 md:hidden pt-[env(safe-area-inset-top,0px)]">
         <div className="h-14 flex items-center justify-between px-4">
-        {/* Logo - links to landing page */}
-        <Link href="/" className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center shadow-[0_0_20px_rgba(34,211,238,0.3)]">
-            <Sparkles className="w-4 h-4 text-[#09090b]" />
-          </div>
-          <span className="font-display text-lg font-bold text-zinc-100">
-            Studek
-          </span>
-        </Link>
+          {/* Logo - links to dashboard on native, landing on web */}
+          <Link
+            href={isNative ? "/dashboard" : "/"}
+            className="flex items-center gap-2 active:opacity-70 transition-opacity"
+            onClick={hapticLight}
+          >
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center shadow-[0_0_20px_rgba(34,211,238,0.3)]">
+              <Sparkles className="w-4 h-4 text-[#09090b]" />
+            </div>
+            <span className="font-display text-lg font-bold text-zinc-100">
+              Studek
+            </span>
+          </Link>
 
           {/* Burger Menu Button */}
           <button
-            onClick={() => setIsMenuOpen(true)}
-            className="p-2 rounded-lg text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/50 transition-colors"
+            onClick={openMenu}
+            className={`
+              p-2 rounded-lg text-zinc-400 transition-colors
+              ${isNative ? "active:bg-zinc-800/50 active:text-zinc-100" : "hover:text-zinc-100 hover:bg-zinc-800/50"}
+            `}
             aria-label="Open menu"
           >
             <Menu className="w-6 h-6" />
@@ -118,7 +140,10 @@ export function MobileHeader({ syncStatus = "synced" }: MobileHeaderProps) {
                 </span>
                 <button
                   onClick={closeMenu}
-                  className="p-2 rounded-lg text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/50 transition-colors"
+                  className={`
+                    p-2 rounded-lg text-zinc-400 transition-colors
+                    ${isNative ? "active:text-zinc-100 active:bg-zinc-800/50" : "hover:text-zinc-100 hover:bg-zinc-800/50"}
+                  `}
                   aria-label="Close menu"
                 >
                   <X className="w-5 h-5" />
@@ -134,15 +159,12 @@ export function MobileHeader({ syncStatus = "synced" }: MobileHeaderProps) {
                       <Link
                         key={item.href}
                         href={item.href}
-                        onClick={closeMenu}
+                        onClick={handleNavClick}
                         className={`
                           flex items-center gap-3 px-3 py-3 rounded-xl
                           transition-all duration-200
-                          ${
-                            isActive
-                              ? "bg-zinc-800 text-cyan-400"
-                              : "text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/50"
-                          }
+                          ${isActive ? "bg-zinc-800 text-cyan-400" : "text-zinc-400"}
+                          ${!isActive && (isNative ? "active:text-zinc-100 active:bg-zinc-800/50" : "hover:text-zinc-100 hover:bg-zinc-800/50")}
                         `}
                       >
                         <item.icon className="w-5 h-5 flex-shrink-0" />
@@ -159,15 +181,17 @@ export function MobileHeader({ syncStatus = "synced" }: MobileHeaderProps) {
                   </p>
                   <Link
                     href="/import"
-                    onClick={closeMenu}
-                    className="
+                    onClick={handleNavClick}
+                    className={`
                       flex items-center gap-3 px-3 py-3 rounded-xl
                       bg-gradient-to-r from-cyan-500/10 to-violet-500/10
                       border border-cyan-500/20
-                      text-cyan-400 hover:text-cyan-300
-                      hover:border-cyan-500/40 hover:from-cyan-500/20 hover:to-violet-500/20
-                      transition-all duration-200
-                    "
+                      text-cyan-400 transition-all duration-200
+                      ${isNative
+                        ? "active:text-cyan-300 active:border-cyan-500/40 active:from-cyan-500/20 active:to-violet-500/20"
+                        : "hover:text-cyan-300 hover:border-cyan-500/40 hover:from-cyan-500/20 hover:to-violet-500/20"
+                      }
+                    `}
                   >
                     <FileUp className="w-5 h-5 flex-shrink-0" />
                     <span className="font-medium">Magic Import</span>
@@ -181,24 +205,24 @@ export function MobileHeader({ syncStatus = "synced" }: MobileHeaderProps) {
                 <div className="flex items-center gap-1">
                   <Link
                     href="/settings"
-                    onClick={closeMenu}
-                    className="
+                    onClick={handleNavClick}
+                    className={`
                       flex items-center gap-2 px-3 py-2 rounded-lg
-                      text-zinc-500 hover:text-zinc-100 hover:bg-zinc-800/50
-                      transition-colors flex-1
-                    "
+                      text-zinc-500 transition-colors flex-1
+                      ${isNative ? "active:text-zinc-100 active:bg-zinc-800/50" : "hover:text-zinc-100 hover:bg-zinc-800/50"}
+                    `}
                   >
                     <Settings className="w-4 h-4" />
                     <span className="text-sm">Settings</span>
                   </Link>
                   <Link
                     href="/help"
-                    onClick={closeMenu}
-                    className="
+                    onClick={handleNavClick}
+                    className={`
                       flex items-center gap-2 px-3 py-2 rounded-lg
-                      text-zinc-500 hover:text-zinc-100 hover:bg-zinc-800/50
-                      transition-colors
-                    "
+                      text-zinc-500 transition-colors
+                      ${isNative ? "active:text-zinc-100 active:bg-zinc-800/50" : "hover:text-zinc-100 hover:bg-zinc-800/50"}
+                    `}
                   >
                     <HelpCircle className="w-4 h-4" />
                   </Link>
