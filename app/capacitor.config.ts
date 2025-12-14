@@ -16,15 +16,15 @@ const config: CapacitorConfig = {
     contentInset: "automatic",
     preferredContentMode: "mobile",
     limitsNavigationsToAppBoundDomains: true,
-    // Enable edge-to-edge design
-    backgroundColor: "#0a0a0a",
+    // Enable edge-to-edge design - matches login page background
+    backgroundColor: "#08090a",
   },
   // Android specific configuration
   android: {
     allowMixedContent: false,
     captureInput: true,
     webContentsDebuggingEnabled: false,
-    backgroundColor: "#0a0a0a",
+    backgroundColor: "#08090a",
     // Build variant (debug/release)
     buildOptions: {
       signingType: "apksigner",
@@ -37,7 +37,7 @@ const config: CapacitorConfig = {
       launchShowDuration: 2000,
       launchAutoHide: true,
       launchFadeOutDuration: 500,
-      backgroundColor: "#0a0a0a",
+      backgroundColor: "#08090a",
       androidSplashResourceName: "splash",
       androidScaleType: "CENTER_CROP",
       showSpinner: false,
@@ -47,7 +47,7 @@ const config: CapacitorConfig = {
     // Status Bar configuration
     StatusBar: {
       style: "Dark",
-      backgroundColor: "#0a0a0a",
+      backgroundColor: "#08090a",
     },
     // Keyboard configuration
     Keyboard: {
