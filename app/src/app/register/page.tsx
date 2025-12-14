@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { motion } from "framer-motion";
 import { Mail, Lock, User, Sparkles, ArrowRight, GraduationCap, Loader2 } from "lucide-react";
 import Link from "next/link";
@@ -11,7 +11,7 @@ import { useAuth } from "@/stores/auth";
 import { AuthRedirect } from "@/components/auth";
 import { isNativePlatform } from "@/lib/capacitor/native";
 
-export default function RegisterPage() {
+function RegisterContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { register, isLoading: authLoading } = useAuth();
@@ -327,5 +327,17 @@ export default function RegisterPage() {
       </motion.div>
       </div>
     </AuthRedirect>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-[var(--gradient-hero)]">
+        <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />
+      </div>
+    }>
+      <RegisterContent />
+    </Suspense>
   );
 }
