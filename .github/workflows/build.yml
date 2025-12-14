@@ -146,6 +146,8 @@ jobs:
             check "STRIPE_WEBHOOK_SECRET" "$STRIPE_WEBHOOK_SECRET"
             check "STRIPE_PRICE_PREMIUM" "$STRIPE_PRICE_PREMIUM"
             check "STRIPE_PRICE_PRO" "$STRIPE_PRICE_PRO"
+            echo ""
+            echo "### OAuth secrets"
             check "GOOGLE_CLIENT_ID" "$GOOGLE_CLIENT_ID"
             check "GOOGLE_CLIENT_SECRET" "$GOOGLE_CLIENT_SECRET"
             check "GH_CLIENT_ID" "$GH_CLIENT_ID"
