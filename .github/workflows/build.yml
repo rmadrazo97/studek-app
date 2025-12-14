@@ -102,12 +102,16 @@ jobs:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
           VAPID_PUBLIC_KEY: ${{ secrets.VAPID_PUBLIC_KEY }}
           VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          GH_CLIENT_ID: ${{ secrets.GH_CLIENT_ID }}
+          GH_CLIENT_SECRET: ${{ secrets.GH_CLIENT_SECRET }}
           VPS_HOST: ${{ secrets.VPS_HOST }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USERNAME }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          envs: GHCR_PAT,GITHUB_ACTOR,BACKEND_SECRETS,OPENAI_APIKEY,RESEND_API_KEY,CRON_SECRET,VAPID_PUBLIC_KEY,VAPID_PRIVATE_KEY,VPS_HOST
+          envs: GHCR_PAT,GITHUB_ACTOR,BACKEND_SECRETS,OPENAI_APIKEY,RESEND_API_KEY,CRON_SECRET,VAPID_PUBLIC_KEY,VAPID_PRIVATE_KEY,GOOGLE_CLIENT_ID,GOOGLE_CLIENT_SECRET,GH_CLIENT_ID,GH_CLIENT_SECRET,VPS_HOST
           script: |
             cd ~/studek-app
 
@@ -148,6 +152,27 @@ jobs:
             if [ -n "$VAPID_PRIVATE_KEY" ]; then
               echo "VAPID_PRIVATE_KEY=$VAPID_PRIVATE_KEY" >> .env
               echo "VAPID_PRIVATE_KEY added to .env"
+            fi
+
+            # Add OAuth secrets if provided
+            if [ -n "$GOOGLE_CLIENT_ID" ]; then
+              echo "GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID" >> .env
+              echo "GOOGLE_CLIENT_ID added to .env"
+            fi
+
+            if [ -n "$GOOGLE_CLIENT_SECRET" ]; then
+              echo "GOOGLE_CLIENT_SECRET=$GOOGLE_CLIENT_SECRET" >> .env
+              echo "GOOGLE_CLIENT_SECRET added to .env"
+            fi
+
+            if [ -n "$GH_CLIENT_ID" ]; then
+              echo "GH_CLIENT_ID=$GH_CLIENT_ID" >> .env
+              echo "GH_CLIENT_ID added to .env"
+            fi
+
+            if [ -n "$GH_CLIENT_SECRET" ]; then
+              echo "GH_CLIENT_SECRET=$GH_CLIENT_SECRET" >> .env
+              echo "GH_CLIENT_SECRET added to .env"
             fi
 
             # Login to GitHub Container Registry

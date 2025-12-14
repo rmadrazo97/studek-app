@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
     const clientId =
       provider === 'google'
         ? process.env.GOOGLE_CLIENT_ID
-        : process.env.GITHUB_CLIENT_ID;
+        : process.env.GH_CLIENT_ID;
 
     if (!clientId) {
       return NextResponse.json(

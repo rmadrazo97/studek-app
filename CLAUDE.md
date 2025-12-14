@@ -33,8 +33,8 @@ On push to `main`:
 | `VAPID_PRIVATE_KEY` | VAPID private key for push notifications (optional) |
 | `GOOGLE_CLIENT_ID` | Google OAuth Client ID (optional, for Google login) |
 | `GOOGLE_CLIENT_SECRET` | Google OAuth Client Secret (optional, for Google login) |
-| `GITHUB_CLIENT_ID` | GitHub OAuth Client ID (optional, for GitHub login) |
-| `GITHUB_CLIENT_SECRET` | GitHub OAuth Client Secret (optional, for GitHub login) |
+| `GH_CLIENT_ID` | GitHub OAuth Client ID (optional, for GitHub login) |
+| `GH_CLIENT_SECRET` | GitHub OAuth Client Secret (optional, for GitHub login) |
 
 **Important:** `BACKEND_SECRETS` must be a JSON object containing at minimum:
 ```json
@@ -316,8 +316,10 @@ Add these secrets to your GitHub repository:
 |--------|-------------|
 | `GOOGLE_CLIENT_ID` | Google OAuth Client ID |
 | `GOOGLE_CLIENT_SECRET` | Google OAuth Client Secret |
-| `GITHUB_CLIENT_ID` | GitHub OAuth App Client ID |
-| `GITHUB_CLIENT_SECRET` | GitHub OAuth App Client Secret |
+| `GH_CLIENT_ID` | GitHub OAuth App Client ID (named `GH_` due to GitHub restrictions) |
+| `GH_CLIENT_SECRET` | GitHub OAuth App Client Secret (named `GH_` due to GitHub restrictions) |
+
+**Note:** GitHub doesn't allow secrets starting with `GITHUB_`, so we use `GH_` prefix instead.
 
 ### Google Cloud Console Setup
 
@@ -352,19 +354,18 @@ Add these secrets to your GitHub repository:
 5. Copy the **Client ID**
 6. Generate a new **Client Secret** and copy it
 
-### Add to BACKEND_SECRETS
+### GitHub Secrets Setup
 
-Update your `BACKEND_SECRETS` GitHub secret to include OAuth credentials:
+OAuth credentials are stored as **independent GitHub secrets** (not inside `BACKEND_SECRETS`):
 
-```json
-{
-  "JWT_SECRET": "your-jwt-secret",
-  "GOOGLE_CLIENT_ID": "your-google-client-id.apps.googleusercontent.com",
-  "GOOGLE_CLIENT_SECRET": "your-google-client-secret",
-  "GITHUB_CLIENT_ID": "your-github-client-id",
-  "GITHUB_CLIENT_SECRET": "your-github-client-secret"
-}
-```
+| Secret | Value |
+|--------|-------|
+| `GOOGLE_CLIENT_ID` | Your Google OAuth Client ID |
+| `GOOGLE_CLIENT_SECRET` | Your Google OAuth Client Secret |
+| `GH_CLIENT_ID` | Your GitHub OAuth Client ID |
+| `GH_CLIENT_SECRET` | Your GitHub OAuth Client Secret |
+
+These are passed to the container as environment variables in the GitHub Actions workflow.
 
 ### Environment Variables
 
@@ -372,8 +373,8 @@ Update your `BACKEND_SECRETS` GitHub secret to include OAuth credentials:
 |----------|----------|-------------|
 | `GOOGLE_CLIENT_ID` | Yes (for Google) | Google OAuth Client ID |
 | `GOOGLE_CLIENT_SECRET` | Yes (for Google) | Google OAuth Client Secret |
-| `GITHUB_CLIENT_ID` | Yes (for GitHub) | GitHub OAuth App Client ID |
-| `GITHUB_CLIENT_SECRET` | Yes (for GitHub) | GitHub OAuth App Client Secret |
+| `GH_CLIENT_ID` | Yes (for GitHub) | GitHub OAuth App Client ID |
+| `GH_CLIENT_SECRET` | Yes (for GitHub) | GitHub OAuth App Client Secret |
 | `NEXT_PUBLIC_APP_URL` | Yes | Base URL for OAuth callbacks (e.g., `https://studek.com`) |
 
 ### OAuth API Endpoints
@@ -408,8 +409,8 @@ For local development, create a `.env.local` file:
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 GOOGLE_CLIENT_ID=your-dev-client-id
 GOOGLE_CLIENT_SECRET=your-dev-client-secret
-GITHUB_CLIENT_ID=your-dev-client-id
-GITHUB_CLIENT_SECRET=your-dev-client-secret
+GH_CLIENT_ID=your-dev-client-id
+GH_CLIENT_SECRET=your-dev-client-secret
 ```
 
 Note: You'll need separate OAuth apps for development with `localhost:3000` callbacks.

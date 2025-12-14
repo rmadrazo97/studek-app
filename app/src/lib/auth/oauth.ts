@@ -68,8 +68,8 @@ function getOAuthConfig(provider: OAuthProvider) {
       };
     case 'github':
       return {
-        clientId: process.env.GITHUB_CLIENT_ID || '',
-        clientSecret: process.env.GITHUB_CLIENT_SECRET || '',
+        clientId: process.env.GH_CLIENT_ID || '',
+        clientSecret: process.env.GH_CLIENT_SECRET || '',
         authorizationUrl: 'https://github.com/login/oauth/authorize',
         tokenUrl: 'https://github.com/login/oauth/access_token',
         userInfoUrl: 'https://api.github.com/user',
