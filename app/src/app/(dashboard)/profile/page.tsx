@@ -21,6 +21,7 @@ import {
   Play,
   RefreshCw,
   Activity,
+  Gem,
 } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/stores/auth";
@@ -288,7 +289,32 @@ export default function ProfilePage() {
                 {user?.name || "Learner"}
               </h1>
               <p className="text-sm text-zinc-500">{user?.email}</p>
-              <div className="flex items-center gap-3 mt-2">
+              <div className="flex items-center gap-3 mt-2 flex-wrap">
+                {/* Plan Badge */}
+                <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full ${
+                  user?.plan?.slug === 'pro'
+                    ? 'bg-violet-500/20'
+                    : user?.plan?.slug === 'premium'
+                      ? 'bg-cyan-500/20'
+                      : 'bg-zinc-700/50'
+                }`}>
+                  <Gem className={`w-4 h-4 ${
+                    user?.plan?.slug === 'pro'
+                      ? 'text-violet-400'
+                      : user?.plan?.slug === 'premium'
+                        ? 'text-cyan-400'
+                        : 'text-zinc-400'
+                  }`} />
+                  <span className={`text-xs font-semibold ${
+                    user?.plan?.slug === 'pro'
+                      ? 'text-violet-400'
+                      : user?.plan?.slug === 'premium'
+                        ? 'text-cyan-400'
+                        : 'text-zinc-400'
+                  }`}>
+                    {user?.plan?.name || "Free"}
+                  </span>
+                </div>
                 {/* League Badge */}
                 <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full ${tierConfig.bgColor}`}>
                   <TierIcon className={`w-4 h-4 ${tierConfig.color}`} />
@@ -307,7 +333,20 @@ export default function ProfilePage() {
           </div>
 
           {/* Quick Actions */}
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
+            {/* Upgrade Button - show if on free plan */}
+            {(!user?.plan || user?.plan?.slug === 'free') && (
+              <Link href="/settings#billing">
+                <Button
+                  variant="primary"
+                  size="sm"
+                  icon={<Sparkles className="w-4 h-4" />}
+                  className="bg-gradient-to-r from-violet-500 to-cyan-500 hover:from-violet-600 hover:to-cyan-600 border-0"
+                >
+                  Upgrade
+                </Button>
+              </Link>
+            )}
             <button
               onClick={loadData}
               className="flex items-center gap-2 px-3 py-2 text-sm text-zinc-400 hover:text-zinc-100 bg-zinc-800 hover:bg-zinc-700 rounded-lg transition-colors"
