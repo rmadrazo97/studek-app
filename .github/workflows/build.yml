@@ -123,15 +123,7 @@ jobs:
             }
             check "BACKEND_SECRETS" "$BACKEND_SECRETS"
             if [ -n "$BACKEND_SECRETS" ]; then
-              keys="$(python3 - <<'PY'
-import json, sys
-try:
-  data = json.loads(sys.stdin.read() or "{}")
-  print(", ".join(sorted(list(data.keys()))))
-except Exception:
-  print("Invalid JSON")
-PY
-              <<<"$BACKEND_SECRETS")"
+              keys="$(python3 -c 'import json,sys; data=json.loads(sys.stdin.read() or \"{}\"); print(\", \".join(sorted(data.keys())))' <<<"$BACKEND_SECRETS" 2>/dev/null || echo "Invalid JSON")"
               echo "- **BACKEND_SECRETS keys**: \`$keys\`"
             fi
             echo ""
