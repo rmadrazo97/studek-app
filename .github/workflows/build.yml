@@ -108,6 +108,10 @@ jobs:
           STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
           STRIPE_PRICE_PREMIUM: ${{ secrets.STRIPE_PRICE_PREMIUM }}
           STRIPE_PRICE_PRO: ${{ secrets.STRIPE_PRICE_PRO }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          GH_CLIENT_ID: ${{ secrets.GH_CLIENT_ID }}
+          GH_CLIENT_SECRET: ${{ secrets.GH_CLIENT_SECRET }}
         run: |
           {
             echo "## Deployment secrets/env check"
@@ -123,7 +127,7 @@ jobs:
             }
             check "BACKEND_SECRETS" "$BACKEND_SECRETS"
             if [ -n "$BACKEND_SECRETS" ]; then
-              keys="$(python3 -c 'import json,sys; data=json.loads(sys.stdin.read() or \"{}\"); print(\", \".join(sorted(data.keys())))' <<<"$BACKEND_SECRETS" 2>/dev/null || echo "Invalid JSON")"
+              keys="$(python3 -c 'import json,sys; data=json.loads(sys.stdin.read() or "{}"); print(", ".join(sorted(data.keys())))' <<<"$BACKEND_SECRETS" 2>/dev/null || echo "Invalid JSON")"
               echo "- **BACKEND_SECRETS keys**: \`$keys\`"
             fi
             echo ""
@@ -142,6 +146,10 @@ jobs:
             check "STRIPE_WEBHOOK_SECRET" "$STRIPE_WEBHOOK_SECRET"
             check "STRIPE_PRICE_PREMIUM" "$STRIPE_PRICE_PREMIUM"
             check "STRIPE_PRICE_PRO" "$STRIPE_PRICE_PRO"
+            check "GOOGLE_CLIENT_ID" "$GOOGLE_CLIENT_ID"
+            check "GOOGLE_CLIENT_SECRET" "$GOOGLE_CLIENT_SECRET"
+            check "GH_CLIENT_ID" "$GH_CLIENT_ID"
+            check "GH_CLIENT_SECRET" "$GH_CLIENT_SECRET"
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Deploy to server via SSH
@@ -155,6 +163,11 @@ jobs:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
           VAPID_PUBLIC_KEY: ${{ secrets.VAPID_PUBLIC_KEY }}
           VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+          # OAuth secrets
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          GH_CLIENT_ID: ${{ secrets.GH_CLIENT_ID }}
+          GH_CLIENT_SECRET: ${{ secrets.GH_CLIENT_SECRET }}
           # Stripe billing
           STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
           STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
@@ -172,7 +185,7 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USERNAME }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          envs: GHCR_PAT,GITHUB_ACTOR,BACKEND_SECRETS,OPENAI_APIKEY,RESEND_API_KEY,CRON_SECRET,VAPID_PUBLIC_KEY,VAPID_PRIVATE_KEY,STRIPE_SECRET_KEY,STRIPE_WEBHOOK_SECRET,STRIPE_PRICE_PREMIUM,STRIPE_PRICE_PRO,APNS_KEY_ID,APNS_TEAM_ID,APNS_KEY,APNS_BUNDLE_ID,FCM_SERVICE_ACCOUNT,VPS_HOST
+          envs: GHCR_PAT,GITHUB_ACTOR,BACKEND_SECRETS,OPENAI_APIKEY,RESEND_API_KEY,CRON_SECRET,VAPID_PUBLIC_KEY,VAPID_PRIVATE_KEY,GOOGLE_CLIENT_ID,GOOGLE_CLIENT_SECRET,GH_CLIENT_ID,GH_CLIENT_SECRET,STRIPE_SECRET_KEY,STRIPE_WEBHOOK_SECRET,STRIPE_PRICE_PREMIUM,STRIPE_PRICE_PRO,APNS_KEY_ID,APNS_TEAM_ID,APNS_KEY,APNS_BUNDLE_ID,FCM_SERVICE_ACCOUNT,VPS_HOST
           script: |
             cd ~/studek-app
 
@@ -213,6 +226,27 @@ jobs:
             if [ -n "$VAPID_PRIVATE_KEY" ]; then
               echo "VAPID_PRIVATE_KEY=$VAPID_PRIVATE_KEY" >> .env
               echo "VAPID_PRIVATE_KEY added to .env"
+            fi
+
+            # Add OAuth secrets if provided
+            if [ -n "$GOOGLE_CLIENT_ID" ]; then
+              echo "GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID" >> .env
+              echo "GOOGLE_CLIENT_ID added to .env"
+            fi
+
+            if [ -n "$GOOGLE_CLIENT_SECRET" ]; then
+              echo "GOOGLE_CLIENT_SECRET=$GOOGLE_CLIENT_SECRET" >> .env
+              echo "GOOGLE_CLIENT_SECRET added to .env"
+            fi
+
+            if [ -n "$GH_CLIENT_ID" ]; then
+              echo "GH_CLIENT_ID=$GH_CLIENT_ID" >> .env
+              echo "GH_CLIENT_ID added to .env"
+            fi
+
+            if [ -n "$GH_CLIENT_SECRET" ]; then
+              echo "GH_CLIENT_SECRET=$GH_CLIENT_SECRET" >> .env
+              echo "GH_CLIENT_SECRET added to .env"
             fi
 
             # Add Stripe billing secrets if provided

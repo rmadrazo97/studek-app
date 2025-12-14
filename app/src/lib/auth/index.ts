@@ -97,3 +97,15 @@ export {
 } from './middleware';
 
 export type { AuthenticatedRequest, RouteHandler, AuthenticatedHandler } from './middleware';
+
+// OAuth
+export {
+  getOAuthAuthorizationUrl,
+  handleOAuthCallback,
+  verifyOAuthState,
+  findOAuthAccount,
+  findOAuthAccountsByUserId,
+  userHasPassword,
+} from './oauth';
+
+export type { OAuthProvider, OAuthAccount, OAuthUserInfo } from './oauth';

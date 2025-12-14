@@ -36,6 +36,10 @@ On push to `main`:
 | `APNS_KEY` | APNs .p8 key contents for iOS push (optional) |
 | `APNS_BUNDLE_ID` | iOS app bundle ID (default: com.studek.app) |
 | `FCM_SERVICE_ACCOUNT` | Firebase service account JSON for Android push (optional) |
+| `GOOGLE_CLIENT_ID` | Google OAuth Client ID (optional, for Google login) |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth Client Secret (optional, for Google login) |
+| `GH_CLIENT_ID` | GitHub OAuth Client ID (optional, for GitHub login) |
+| `GH_CLIENT_SECRET` | GitHub OAuth Client Secret (optional, for GitHub login) |
 
 **Important:** `BACKEND_SECRETS` must be a JSON object containing at minimum:
 ```json
@@ -337,3 +341,121 @@ curl -X POST \
 - `native_push_tokens` - Native push tokens (APNs/FCM)
 - `notification_logs` - Sent notification history
 - `notification_schedule` - Scheduled notifications queue
+
+## OAuth Authentication (Google & GitHub)
+
+The app supports OAuth login/signup with Google and GitHub.
+
+### Features
+- **Google OAuth:** Login with Google account
+- **GitHub OAuth:** Login with GitHub account
+- **Account Linking:** Existing users can link OAuth accounts
+- **Automatic Signup:** New users are created automatically on first OAuth login
+- **Email Verification:** OAuth users are automatically verified (trust provider)
+
+### Required GitHub Secrets for OAuth
+
+Add these secrets to your GitHub repository:
+
+| Secret | Description |
+|--------|-------------|
+| `GOOGLE_CLIENT_ID` | Google OAuth Client ID |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth Client Secret |
+| `GH_CLIENT_ID` | GitHub OAuth App Client ID (named `GH_` due to GitHub restrictions) |
+| `GH_CLIENT_SECRET` | GitHub OAuth App Client Secret (named `GH_` due to GitHub restrictions) |
+
+**Note:** GitHub doesn't allow secrets starting with `GITHUB_`, so we use `GH_` prefix instead.
+
+### Google Cloud Console Setup
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a new project or select existing one
+3. Navigate to **APIs & Services** → **Credentials**
+4. Click **Create Credentials** → **OAuth 2.0 Client IDs**
+5. Configure the consent screen:
+   - **App name:** Studek
+   - **User support email:** Your email
+   - **Authorized domains:** `studek.com`
+6. Create OAuth Client ID:
+   - **Application type:** Web application
+   - **Name:** Studek Web App
+   - **Authorized JavaScript origins:**
+     - `https://studek.com`
+     - `http://localhost:3000` (for local dev)
+   - **Authorized redirect URIs:**
+     - `https://studek.com/api/auth/callback/google`
+     - `http://localhost:3000/api/auth/callback/google` (for local dev)
+7. Copy the **Client ID** and **Client Secret**
+
+### GitHub OAuth App Setup
+
+1. Go to [GitHub Developer Settings](https://github.com/settings/developers)
+2. Click **OAuth Apps** → **New OAuth App**
+3. Fill in the application details:
+   - **Application name:** Studek
+   - **Homepage URL:** `https://studek.com`
+   - **Authorization callback URL:** `https://studek.com/api/auth/callback/github`
+4. Click **Register application**
+5. Copy the **Client ID**
+6. Generate a new **Client Secret** and copy it
+
+### GitHub Secrets Setup
+
+OAuth credentials are stored as **independent GitHub secrets** (not inside `BACKEND_SECRETS`):
+
+| Secret | Value |
+|--------|-------|
+| `GOOGLE_CLIENT_ID` | Your Google OAuth Client ID |
+| `GOOGLE_CLIENT_SECRET` | Your Google OAuth Client Secret |
+| `GH_CLIENT_ID` | Your GitHub OAuth Client ID |
+| `GH_CLIENT_SECRET` | Your GitHub OAuth Client Secret |
+
+These are passed to the container as environment variables in the GitHub Actions workflow.
+
+### Environment Variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `GOOGLE_CLIENT_ID` | Yes (for Google) | Google OAuth Client ID |
+| `GOOGLE_CLIENT_SECRET` | Yes (for Google) | Google OAuth Client Secret |
+| `GH_CLIENT_ID` | Yes (for GitHub) | GitHub OAuth App Client ID |
+| `GH_CLIENT_SECRET` | Yes (for GitHub) | GitHub OAuth App Client Secret |
+| `NEXT_PUBLIC_APP_URL` | Yes | Base URL for OAuth callbacks (e.g., `https://studek.com`) |
+
+### OAuth API Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/auth/oauth?provider=google` | GET | Redirect to Google OAuth |
+| `/api/auth/oauth?provider=github` | GET | Redirect to GitHub OAuth |
+| `/api/auth/callback/google` | GET | Google OAuth callback handler |
+| `/api/auth/callback/github` | GET | GitHub OAuth callback handler |
+
+### Database Tables
+- `oauth_accounts` - Stores OAuth account links (provider, provider_account_id, tokens)
+
+### How OAuth Flow Works
+
+1. User clicks Google/GitHub button on login/register page
+2. Browser redirects to `/api/auth/oauth?provider=google|github`
+3. Server redirects to provider's OAuth authorization page
+4. User authorizes the app
+5. Provider redirects back to `/api/auth/callback/google|github` with auth code
+6. Server exchanges code for tokens and fetches user info
+7. Server creates/links user account and generates JWT tokens
+8. Browser redirects to `/auth/callback` with tokens in URL fragment
+9. Client stores tokens and redirects to dashboard
+
+### Local Development
+
+For local development, create a `.env.local` file:
+
+```bash
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+GOOGLE_CLIENT_ID=your-dev-client-id
+GOOGLE_CLIENT_SECRET=your-dev-client-secret
+GH_CLIENT_ID=your-dev-client-id
+GH_CLIENT_SECRET=your-dev-client-secret
+```
+
+Note: You'll need separate OAuth apps for development with `localhost:3000` callbacks.
