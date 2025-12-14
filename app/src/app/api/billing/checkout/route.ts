@@ -45,12 +45,18 @@ export const POST = withAuth(async (request: AuthenticatedRequest) => {
       client_reference_id: userId,
       customer: customerId || undefined,
       customer_email: customerId ? undefined : userEmail || undefined,
+      // Enable all payment methods including Apple Pay, Google Pay, and Link
+      // When not specified, Stripe automatically enables compatible payment methods
+      // For explicit control, we can specify payment_method_types
+      payment_method_types: ['card', 'link'],
       line_items: [
         {
           price: priceId,
           quantity: 1,
         },
       ],
+      // Enable automatic tax calculation if configured in Stripe
+      // automatic_tax: { enabled: true },
       subscription_data: {
         metadata: {
           userId,
