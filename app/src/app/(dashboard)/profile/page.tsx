@@ -177,7 +177,7 @@ const RARITY_COLORS: Record<string, string> = {
 };
 
 export default function ProfilePage() {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const [stats, setStats] = useState<StatsData | null>(null);
   const [sessions, setSessions] = useState<SessionData | null>(null);
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
@@ -187,6 +187,9 @@ export default function ProfilePage() {
     setIsLoading(true);
 
     try {
+      // Refresh user data to get latest plan info
+      await refreshUser();
+
       const [statsData, sessionsData, analyticsData] = await Promise.all([
         api<StatsData>('/api/stats').catch(() => null),
         api<SessionData>('/api/sessions?limit=5').catch(() => null),
