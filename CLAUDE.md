@@ -1,11 +1,109 @@
 # Studek App
 
+A flashcard learning application with AI-powered deck creation and FSRS spaced repetition algorithm.
+
 ## Live Site
 https://studek.com
 
 ## Server
 - **IP:** 155.138.237.103
 - **Domain:** studek.com
+
+## Codebase Structure
+
+```
+studek-app/
+├── app/                          # Next.js application
+│   ├── src/
+│   │   ├── app/                  # App Router pages
+│   │   │   ├── (dashboard)/      # Protected dashboard routes
+│   │   │   │   ├── analytics/    # Learning analytics
+│   │   │   │   ├── browser/      # Deck browser
+│   │   │   │   ├── create/       # Deck creation studio
+│   │   │   │   ├── dashboard/    # Main dashboard
+│   │   │   │   ├── explore/      # Explore public decks
+│   │   │   │   ├── help/         # Help center
+│   │   │   │   ├── import/       # Import decks (APKG)
+│   │   │   │   ├── library/      # User deck library
+│   │   │   │   ├── profile/      # User profile
+│   │   │   │   ├── settings/     # Settings & notifications
+│   │   │   │   └── study/        # Study session
+│   │   │   ├── api/              # API routes
+│   │   │   │   ├── ai/           # AI generation endpoints
+│   │   │   │   ├── analytics/    # Analytics data
+│   │   │   │   ├── auth/         # Authentication (login, OAuth)
+│   │   │   │   ├── billing/      # Stripe billing
+│   │   │   │   ├── cards/        # Card CRUD
+│   │   │   │   ├── decks/        # Deck CRUD + sharing
+│   │   │   │   ├── notifications/# Push & email notifications
+│   │   │   │   ├── reviews/      # Review session endpoints
+│   │   │   │   └── ...
+│   │   │   ├── login/            # Auth pages
+│   │   │   ├── register/
+│   │   │   └── shared/[code]/    # Shared deck view
+│   │   ├── components/           # React components
+│   │   │   ├── AddDeckSheet/     # Add deck modal
+│   │   │   ├── analytics/        # Charts & heatmaps
+│   │   │   ├── auth/             # Auth guards
+│   │   │   ├── billing/          # Upgrade prompts
+│   │   │   ├── capacitor/        # Native app provider
+│   │   │   ├── creation-studio/  # Block editor for deck creation
+│   │   │   ├── dashboard/        # Sidebar, nav, widgets
+│   │   │   ├── data-grid/        # Virtualized data table
+│   │   │   ├── decks/            # Deck management modals
+│   │   │   ├── landing/          # Landing page sections
+│   │   │   ├── pwa/              # PWA install prompt
+│   │   │   ├── settings/         # Settings sections
+│   │   │   ├── study/            # Review card, controls
+│   │   │   └── ui/               # Base UI components
+│   │   ├── hooks/                # Custom React hooks
+│   │   │   ├── useAI.ts          # AI deck generation
+│   │   │   ├── useCapacitor.ts   # Native platform detection
+│   │   │   ├── useDecks.ts       # Deck data fetching
+│   │   │   └── useNativePush.ts  # Native push notifications
+│   │   └── lib/                  # Core libraries
+│   │       ├── ai/               # OpenAI integration
+│   │       │   ├── extractors/   # URL, PDF, YouTube extractors
+│   │       │   ├── mcp/          # Tool schemas for OpenAI
+│   │       │   └── prompts/      # System & template prompts
+│   │       ├── analytics/        # Analytics calculations
+│   │       ├── api/              # API client & error handling
+│   │       ├── apkg/             # Anki import parser
+│   │       ├── auth/             # JWT auth, OAuth, RBAC
+│   │       ├── billing/          # Stripe, plan limits
+│   │       ├── db/               # SQLite database
+│   │       │   └── services/     # Data access layer
+│   │       ├── email/            # Resend email templates
+│   │       ├── fsrs/             # FSRS v5 spaced repetition
+│   │       ├── gamification/     # XP, achievements, streaks
+│   │       └── notifications/    # Push (VAPID, APNs, FCM)
+│   ├── migrations/               # SQLite migrations
+│   └── public/                   # Static assets, icons, SW
+├── nginx/                        # Nginx + SSL config
+├── docker-compose.yml            # Production Docker config
+├── docker-compose.dev.yml        # Development overrides
+└── .github/workflows/build.yml   # CI/CD pipeline
+```
+
+## Tech Stack
+
+| Category | Technology |
+|----------|------------|
+| Framework | Next.js 16 (App Router, Turbopack) |
+| Language | TypeScript 5 |
+| Database | SQLite with better-sqlite3 |
+| Styling | Tailwind CSS v4 |
+| Animations | Framer Motion |
+| Icons | Lucide React |
+| Auth | JWT tokens (access + refresh) |
+| OAuth | Google, GitHub |
+| Payments | Stripe (subscriptions) |
+| Email | Resend |
+| Push | Web Push (VAPID), APNs (iOS), FCM (Android) |
+| AI | OpenAI GPT-4o-mini |
+| Algorithm | FSRS v5 (spaced repetition) |
+| PWA | Custom service worker |
+| Mobile | Capacitor 8 (iOS/Android) |
 
 ## Workflow
 - Develop locally on `main` branch
@@ -40,6 +138,10 @@ On push to `main`:
 | `GOOGLE_CLIENT_SECRET` | Google OAuth Client Secret (optional, for Google login) |
 | `GH_CLIENT_ID` | GitHub OAuth Client ID (optional, for GitHub login) |
 | `GH_CLIENT_SECRET` | GitHub OAuth Client Secret (optional, for GitHub login) |
+| `STRIPE_SECRET_KEY` | Stripe secret key for billing |
+| `STRIPE_WEBHOOK_SECRET` | Stripe webhook signing secret |
+| `STRIPE_PRICE_PREMIUM` | Stripe Price ID for Premium plan |
+| `STRIPE_PRICE_PRO` | Stripe Price ID for Pro plan |
 
 **Important:** `BACKEND_SECRETS` must be a JSON object containing at minimum:
 ```json
@@ -48,6 +150,37 @@ On push to `main`:
 }
 ```
 Without a consistent `JWT_SECRET`, tokens will be invalidated on each deployment.
+
+## Database Schema
+
+### Core Tables
+- `users` - User accounts with plan assignments
+- `decks` - Flashcard decks (supports hierarchy, sharing, AI-generated flag)
+- `cards` - Flashcards (basic, cloze, image-occlusion types)
+- `card_fsrs` - FSRS spaced repetition state per card
+- `review_logs` - Review history for analytics
+- `study_sessions` - Study session tracking
+
+### Gamification Tables
+- `user_stats` - XP, level, streaks
+- `xp_transactions` - XP earning history
+- `achievements` - Achievement definitions
+- `user_achievements` - Unlocked achievements
+
+### Monetization Tables
+- `plans` - Subscription plans (Free, Premium, Pro)
+- `user_subscriptions` - Stripe subscription records
+
+### Notification Tables
+- `notification_preferences` - User notification settings
+- `push_subscriptions` - Web push subscriptions (VAPID)
+- `native_push_tokens` - APNs/FCM tokens
+- `notification_logs` - Sent notification history
+
+### Auth Tables
+- `oauth_accounts` - OAuth provider accounts (Google, GitHub)
+- `password_reset_tokens` - Password reset tokens
+- `email_verification_tokens` - Email verification tokens
 
 ## Domain Configuration (studek.com)
 
@@ -104,6 +237,9 @@ docker compose up -d --build
 
 # Check status
 docker compose ps
+
+# View log viewer UI
+# http://155.138.237.103:8080 (Dozzle)
 ```
 
 ## Local Development
@@ -114,6 +250,29 @@ cd app && npm run dev
 Or with Docker:
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+```
+
+### Database Commands
+```bash
+cd app
+
+# Run migrations
+npm run db:migrate
+
+# Rollback last migration
+npm run db:rollback
+
+# Check migration status
+npm run db:status
+
+# Create new migration
+npm run db:create migration_name
+
+# Seed admin user
+npm run db:seed
+
+# Seed subscription plans
+npm run db:seed:plans
 ```
 
 ## Development Guidelines
@@ -131,15 +290,44 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
   - `react/display-name` - anonymous components
 - Run `npm run lint` before committing - **0 errors required** for CI to pass
 
-### Tech Stack
-- **Framework:** Next.js 16 (App Router, Turbopack)
-- **Database:** SQLite with better-sqlite3
-- **Styling:** Tailwind CSS v4
-- **Animations:** Framer Motion
-- **Icons:** Lucide React
-- **Algorithm:** FSRS (spaced repetition)
-- **PWA:** Custom service worker with offline support
-- **Mobile:** Capacitor for iOS/Android builds
+### Code Conventions
+- Use TypeScript strict mode
+- Prefer functional components with hooks
+- Use Zod for runtime validation (API routes)
+- Use `better-sqlite3` synchronous API (no async/await for DB)
+- Keep API routes thin; business logic in `lib/db/services/`
+
+## Key Features
+
+### FSRS Spaced Repetition (src/lib/fsrs/)
+Implements FSRS v5 algorithm with:
+- Power law forgetting curve: R(t) = (1 + t/9S)^(-0.5)
+- 19 tunable weights for personalization
+- Learning steps: 1m → 10m → graduate
+- Interval fuzzing to prevent review clumping
+- Card states: new, learning, review, relearning
+- Rating options: Again (1), Hard (2), Good (3), Easy (4)
+
+### AI Deck Generation (src/lib/ai/)
+OpenAI-powered deck creation:
+- Generate decks from natural language prompts
+- Extract content from URLs, PDFs, YouTube videos
+- MCP tools for structured output (deck/card schemas)
+- System prompts optimized for SRS card design
+
+### Stripe Billing (src/lib/billing/)
+Three-tier subscription model:
+- **Free**: 2 decks, 3 sessions/deck, 1 public deck, 0 AI decks
+- **Premium** ($3.99/mo): Unlimited decks/sessions, 2 AI decks
+- **Pro** ($5.99/mo): Unlimited everything including AI decks
+
+Plan limits enforced via `assertDeckCreationAllowed()`, `assertStudySessionAllowed()`.
+
+### Gamification (src/lib/gamification/)
+- XP system with level progression
+- Daily streaks with streak freezes
+- Achievement system
+- Leaderboard
 
 ## PWA Features
 
@@ -174,13 +362,6 @@ For debugging on mobile devices (iPhone, Android), the app includes an on-device
 - Add `?debug=false` to any URL
 - Or run in browser console: `disableDebug()`
 - Or triple-tap again to toggle off
-
-**Features:**
-- Console output (logs, errors, warnings)
-- Network request inspector
-- Element inspector
-- Storage viewer (localStorage, sessionStorage, cookies)
-- Resource viewer
 
 ## Mobile App (Capacitor)
 
@@ -314,33 +495,71 @@ curl -X POST \
   "https://studek.com/api/notifications/trigger?job=all"
 ```
 
-**Job types:**
-- `all` - Run all notification jobs
-- `study_reminders` - Only study reminders
-- `streak_warnings` - Only streak warnings
-- `weekly_summary` - Only weekly summary
+## API Reference
 
-### API Endpoints
-
+### Authentication
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/api/notifications/preferences` | GET | Get user notification preferences |
-| `/api/notifications/preferences` | PUT | Update notification preferences |
-| `/api/notifications/subscribe` | POST | Subscribe to web push notifications |
-| `/api/notifications/subscribe` | DELETE | Unsubscribe from web push |
-| `/api/notifications/subscribe` | GET | List user's web push subscriptions |
-| `/api/notifications/native-token` | POST | Register native push token (APNs/FCM) |
-| `/api/notifications/native-token` | DELETE | Unregister native push token |
-| `/api/notifications/native-token` | GET | List user's native push tokens |
-| `/api/notifications/vapid-key` | GET | Get VAPID public key (no auth) |
-| `/api/notifications/trigger` | POST | Trigger notification job (cron only) |
+| `/api/auth/register` | POST | Create new account |
+| `/api/auth/login` | POST | Login with email/password |
+| `/api/auth/logout` | POST | Logout (invalidate token) |
+| `/api/auth/refresh` | POST | Refresh access token |
+| `/api/auth/me` | GET | Get current user |
+| `/api/auth/oauth?provider=google\|github` | GET | OAuth redirect |
+| `/api/auth/callback/google` | GET | Google OAuth callback |
+| `/api/auth/callback/github` | GET | GitHub OAuth callback |
+| `/api/auth/forgot-password` | POST | Request password reset |
+| `/api/auth/reset-password` | POST | Reset password with token |
+| `/api/auth/verify-email` | GET | Verify email with token |
 
-### Database Tables
-- `notification_preferences` - User notification settings
-- `push_subscriptions` - Web push subscription data (VAPID)
-- `native_push_tokens` - Native push tokens (APNs/FCM)
-- `notification_logs` - Sent notification history
-- `notification_schedule` - Scheduled notifications queue
+### Decks & Cards
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/decks` | GET | List user's decks |
+| `/api/decks` | POST | Create new deck |
+| `/api/decks/[id]` | GET | Get deck by ID |
+| `/api/decks/[id]` | PUT | Update deck |
+| `/api/decks/[id]` | DELETE | Delete deck |
+| `/api/decks/[id]/cards` | GET | List cards in deck |
+| `/api/decks/[id]/cards` | POST | Add cards to deck |
+| `/api/decks/[id]/share` | POST | Generate share link |
+| `/api/decks/shared/[code]` | GET | Get shared deck by code |
+| `/api/cards/[id]` | PUT | Update card |
+| `/api/cards/[id]` | DELETE | Delete card |
+
+### Study Sessions
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/sessions` | POST | Start study session |
+| `/api/reviews` | POST | Submit card review |
+| `/api/reviews/session` | GET | Get session summary |
+| `/api/fsrs` | GET | Get due cards for deck |
+
+### AI Generation
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/ai/generate` | POST | Generate deck from prompt |
+| `/api/ai/extract/url` | POST | Extract content from URL |
+| `/api/ai/extract/pdf` | POST | Extract content from PDF |
+| `/api/ai/extract/youtube` | POST | Extract from YouTube |
+| `/api/ai/transcribe` | POST | Transcribe audio |
+
+### Billing
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/billing/plans` | GET | List available plans |
+| `/api/billing/checkout` | POST | Create Stripe checkout session |
+| `/api/billing/portal` | POST | Create billing portal session |
+| `/api/billing/webhook` | POST | Stripe webhook handler |
+
+### Notifications
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/notifications/preferences` | GET/PUT | Get/update notification settings |
+| `/api/notifications/subscribe` | POST/DELETE | Web push subscription |
+| `/api/notifications/native-token` | POST/DELETE | Native push token |
+| `/api/notifications/vapid-key` | GET | Get VAPID public key |
+| `/api/notifications/trigger` | POST | Trigger notification job (cron) |
 
 ## OAuth Authentication (Google & GitHub)
 
@@ -398,41 +617,6 @@ Add these secrets to your GitHub repository:
 4. Click **Register application**
 5. Copy the **Client ID**
 6. Generate a new **Client Secret** and copy it
-
-### GitHub Secrets Setup
-
-OAuth credentials are stored as **independent GitHub secrets** (not inside `BACKEND_SECRETS`):
-
-| Secret | Value |
-|--------|-------|
-| `GOOGLE_CLIENT_ID` | Your Google OAuth Client ID |
-| `GOOGLE_CLIENT_SECRET` | Your Google OAuth Client Secret |
-| `GH_CLIENT_ID` | Your GitHub OAuth Client ID |
-| `GH_CLIENT_SECRET` | Your GitHub OAuth Client Secret |
-
-These are passed to the container as environment variables in the GitHub Actions workflow.
-
-### Environment Variables
-
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `GOOGLE_CLIENT_ID` | Yes (for Google) | Google OAuth Client ID |
-| `GOOGLE_CLIENT_SECRET` | Yes (for Google) | Google OAuth Client Secret |
-| `GH_CLIENT_ID` | Yes (for GitHub) | GitHub OAuth App Client ID |
-| `GH_CLIENT_SECRET` | Yes (for GitHub) | GitHub OAuth App Client Secret |
-| `NEXT_PUBLIC_APP_URL` | Yes | Base URL for OAuth callbacks (e.g., `https://studek.com`) |
-
-### OAuth API Endpoints
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/auth/oauth?provider=google` | GET | Redirect to Google OAuth |
-| `/api/auth/oauth?provider=github` | GET | Redirect to GitHub OAuth |
-| `/api/auth/callback/google` | GET | Google OAuth callback handler |
-| `/api/auth/callback/github` | GET | GitHub OAuth callback handler |
-
-### Database Tables
-- `oauth_accounts` - Stores OAuth account links (provider, provider_account_id, tokens)
 
 ### How OAuth Flow Works
 
