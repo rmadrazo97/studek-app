@@ -1,112 +1,245 @@
 # Studek App
 
+A flashcard learning application with AI-powered deck creation and FSRS spaced repetition algorithm.
+
 ## Live Site
 https://studek.com
 
-## Server
-- **IP:** 155.138.237.103
+## Hosting
+- **Platform:** Railway
 - **Domain:** studek.com
 
-## Workflow
-- Develop locally on `main` branch
-- Push to remote triggers automatic deployment via GitHub Actions
-- Docker Compose handles Next.js app + SQLite database
+## Codebase Structure
 
-## GitHub Actions (Automatic Deployment)
+```
+studek-app/
+├── app/                          # Next.js application
+│   ├── src/
+│   │   ├── app/                  # App Router pages
+│   │   │   ├── (dashboard)/      # Protected dashboard routes
+│   │   │   │   ├── analytics/    # Learning analytics
+│   │   │   │   ├── browser/      # Deck browser
+│   │   │   │   ├── create/       # Deck creation studio
+│   │   │   │   ├── dashboard/    # Main dashboard
+│   │   │   │   ├── explore/      # Explore public decks
+│   │   │   │   ├── help/         # Help center
+│   │   │   │   ├── import/       # Import decks (APKG)
+│   │   │   │   ├── library/      # User deck library
+│   │   │   │   ├── profile/      # User profile
+│   │   │   │   ├── settings/     # Settings & notifications
+│   │   │   │   └── study/        # Study session
+│   │   │   ├── api/              # API routes
+│   │   │   │   ├── ai/           # AI generation endpoints
+│   │   │   │   ├── analytics/    # Analytics data
+│   │   │   │   ├── auth/         # Authentication (login, OAuth)
+│   │   │   │   ├── billing/      # Stripe billing
+│   │   │   │   ├── cards/        # Card CRUD
+│   │   │   │   ├── decks/        # Deck CRUD + sharing
+│   │   │   │   ├── notifications/# Push & email notifications
+│   │   │   │   ├── reviews/      # Review session endpoints
+│   │   │   │   └── ...
+│   │   │   ├── login/            # Auth pages
+│   │   │   ├── register/
+│   │   │   └── shared/[code]/    # Shared deck view
+│   │   ├── components/           # React components
+│   │   │   ├── AddDeckSheet/     # Add deck modal
+│   │   │   ├── analytics/        # Charts & heatmaps
+│   │   │   ├── auth/             # Auth guards
+│   │   │   ├── billing/          # Upgrade prompts
+│   │   │   ├── capacitor/        # Native app provider
+│   │   │   ├── creation-studio/  # Block editor for deck creation
+│   │   │   ├── dashboard/        # Sidebar, nav, widgets
+│   │   │   ├── data-grid/        # Virtualized data table
+│   │   │   ├── decks/            # Deck management modals
+│   │   │   ├── landing/          # Landing page sections
+│   │   │   ├── pwa/              # PWA install prompt
+│   │   │   ├── settings/         # Settings sections
+│   │   │   ├── study/            # Review card, controls
+│   │   │   └── ui/               # Base UI components
+│   │   ├── hooks/                # Custom React hooks
+│   │   │   ├── useAI.ts          # AI deck generation
+│   │   │   ├── useCapacitor.ts   # Native platform detection
+│   │   │   ├── useDecks.ts       # Deck data fetching
+│   │   │   └── useNativePush.ts  # Native push notifications
+│   │   └── lib/                  # Core libraries
+│   │       ├── ai/               # OpenAI integration
+│   │       │   ├── extractors/   # URL, PDF, YouTube extractors
+│   │       │   ├── mcp/          # Tool schemas for OpenAI
+│   │       │   └── prompts/      # System & template prompts
+│   │       ├── analytics/        # Analytics calculations
+│   │       ├── api/              # API client & error handling
+│   │       ├── apkg/             # Anki import parser
+│   │       ├── auth/             # JWT auth, OAuth, RBAC
+│   │       ├── billing/          # Stripe, plan limits
+│   │       ├── db/               # SQLite database
+│   │       │   └── services/     # Data access layer
+│   │       ├── email/            # Resend email templates
+│   │       ├── fsrs/             # FSRS v5 spaced repetition
+│   │       ├── gamification/     # XP, achievements, streaks
+│   │       └── notifications/    # Push (VAPID, APNs, FCM)
+│   ├── migrations/               # SQLite migrations
+│   └── public/                   # Static assets, icons, SW
+├── railway.toml                  # Railway deployment config
+├── docker-compose.yml            # Local Docker config (optional)
+├── docker-compose.dev.yml        # Development overrides
+└── .github/workflows/build.yml   # CI/CD pipeline
+```
+
+## Tech Stack
+
+| Category | Technology |
+|----------|------------|
+| Framework | Next.js 16 (App Router, Turbopack) |
+| Language | TypeScript 5 |
+| Database | SQLite with better-sqlite3 |
+| Styling | Tailwind CSS v4 |
+| Animations | Framer Motion |
+| Icons | Lucide React |
+| Auth | JWT tokens (access + refresh) |
+| OAuth | Google, GitHub |
+| Payments | Stripe (subscriptions) |
+| Email | Resend |
+| Push | Web Push (VAPID), APNs (iOS), FCM (Android) |
+| AI | OpenAI GPT-4o-mini |
+| Algorithm | FSRS v5 (spaced repetition) |
+| PWA | Custom service worker |
+| Mobile | Capacitor 8 (iOS/Android) |
+| Hosting | Railway |
+
+## Deployment Workflow
+
+### Automatic Deployment via GitHub Actions
 On push to `main`:
 1. Build & lint the app
-2. Build Docker image → push to ghcr.io
-3. SSH to server → pull image → restart containers
+2. Deploy to Railway using Railway CLI
+
+### Railway Configuration
+The `railway.toml` file configures the deployment:
+- Uses the Dockerfile in `app/` directory
+- Health check at `/api/health`
+- Automatic restarts on failure
 
 ### Required GitHub Secrets
+
 | Secret | Description |
 |--------|-------------|
-| `VPS_HOST` | Server IP: `155.138.237.103` |
-| `VPS_USERNAME` | SSH user: `root` |
-| `VPS_SSH_KEY` | Private SSH key (contents of `id_ed25519`) |
-| `GHCR_PAT` | GitHub PAT with `read:packages` scope |
-| `BACKEND_SECRETS` | JSON object with env vars (must include `JWT_SECRET`) |
-| `OPENAI_APIKEY` | OpenAI API key for AI deck generation (optional) |
+| `RAILWAY_TOKEN` | Railway API token (from Railway dashboard → Account Settings → Tokens) |
+| `RAILWAY_SERVICE_ID` | Railway service ID (from service settings URL or CLI) |
+
+### Railway Environment Variables
+
+Configure these in the Railway dashboard (Service → Variables):
+
+| Variable | Description |
+|----------|-------------|
+| `JWT_SECRET` | Secret for JWT tokens (min 32 chars) |
+| `DATABASE_PATH` | SQLite database path (default: `/app/data/studek.db`) |
+| `NEXT_PUBLIC_APP_URL` | App URL (e.g., `https://studek.com`) |
+| `OPENAI_APIKEY` | OpenAI API key for AI deck generation |
 | `RESEND_API_KEY` | Resend API key for transactional emails |
-| `CRON_SECRET` | Secret token for notification cron job (optional) |
-| `VAPID_PUBLIC_KEY` | VAPID public key for web push notifications (optional) |
-| `VAPID_PRIVATE_KEY` | VAPID private key for web push notifications (optional) |
-| `APNS_KEY_ID` | APNs Key ID for iOS push notifications (optional) |
-| `APNS_TEAM_ID` | Apple Team ID for iOS push notifications (optional) |
-| `APNS_KEY` | APNs .p8 key contents for iOS push (optional) |
-| `APNS_BUNDLE_ID` | iOS app bundle ID (default: com.studek.app) |
-| `FCM_SERVICE_ACCOUNT` | Firebase service account JSON for Android push (optional) |
-| `GOOGLE_CLIENT_ID` | Google OAuth Client ID (optional, for Google login) |
-| `GOOGLE_CLIENT_SECRET` | Google OAuth Client Secret (optional, for Google login) |
-| `GH_CLIENT_ID` | GitHub OAuth Client ID (optional, for GitHub login) |
-| `GH_CLIENT_SECRET` | GitHub OAuth Client Secret (optional, for GitHub login) |
+| `STRIPE_SECRET_KEY` | Stripe secret key for billing |
+| `STRIPE_WEBHOOK_SECRET` | Stripe webhook signing secret |
+| `STRIPE_PRICE_PREMIUM` | Stripe Price ID for Premium plan |
+| `STRIPE_PRICE_PRO` | Stripe Price ID for Pro plan |
+| `GOOGLE_CLIENT_ID` | Google OAuth Client ID |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth Client Secret |
+| `GH_CLIENT_ID` | GitHub OAuth Client ID |
+| `GH_CLIENT_SECRET` | GitHub OAuth Client Secret |
+| `VAPID_PUBLIC_KEY` | VAPID public key for web push |
+| `VAPID_PRIVATE_KEY` | VAPID private key for web push |
+| `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | VAPID public key (client-side) |
+| `CRON_SECRET` | Secret for notification cron endpoint |
+| `APNS_KEY_ID` | APNs Key ID for iOS push (optional) |
+| `APNS_TEAM_ID` | Apple Team ID for iOS push (optional) |
+| `APNS_KEY` | APNs .p8 key contents (optional) |
+| `APNS_BUNDLE_ID` | iOS app bundle ID (optional) |
+| `FCM_SERVICE_ACCOUNT` | Firebase service account JSON (optional) |
 
-**Important:** `BACKEND_SECRETS` must be a JSON object containing at minimum:
-```json
-{
-  "JWT_SECRET": "your-secure-random-string-at-least-32-chars"
-}
-```
-Without a consistent `JWT_SECRET`, tokens will be invalidated on each deployment.
+### Railway Setup Steps
 
-## Domain Configuration (studek.com)
+1. **Create Railway Project:**
+   ```bash
+   # Install Railway CLI
+   npm install -g @railway/cli
 
-### Namecheap DNS Settings
-In Namecheap dashboard → Domain List → Manage → Advanced DNS:
+   # Login to Railway
+   railway login
 
-| Type | Host | Value | TTL |
-|------|------|-------|-----|
-| A Record | @ | 155.138.237.103 | Automatic |
-| A Record | www | 155.138.237.103 | Automatic |
+   # Link to existing project or create new one
+   railway link
+   ```
 
-### Automatic SSL (Let's Encrypt)
-SSL certificates are **automatically obtained** when containers start.
-The Nginx container:
-1. Starts with HTTP-only config
-2. Requests SSL certificate from Let's Encrypt
-3. Switches to HTTPS config
-4. Auto-renews certificates every 12 hours
+2. **Add Persistent Volume for SQLite:**
+   - Go to Railway dashboard → Service → Settings → Volumes
+   - Add volume mounted at `/app/data`
+   - This persists the SQLite database across deployments
 
-**Environment variables:**
-- `DOMAIN` - Domain name (default: studek.com)
-- `SSL_EMAIL` - Email for Let's Encrypt notifications
-- `SKIP_SSL=true` - Disable SSL for local development
+3. **Configure Custom Domain:**
+   - Go to Service → Settings → Networking → Custom Domain
+   - Add `studek.com`
+   - Update DNS records:
+     | Type | Host | Value |
+     |------|------|-------|
+     | CNAME | @ | your-service.up.railway.app |
+     | CNAME | www | your-service.up.railway.app |
 
-### Manual SSL Commands (if needed)
+4. **Get Service ID for GitHub Actions:**
+   ```bash
+   # Using Railway CLI
+   railway status
+   # Or from the URL: https://railway.app/project/xxx/service/SERVICE_ID
+   ```
+
+5. **Generate API Token:**
+   - Go to Railway dashboard → Account Settings → Tokens
+   - Create new token with appropriate permissions
+   - Add as `RAILWAY_TOKEN` secret in GitHub
+
+### Manual Deployment
 ```bash
-# Check certificate status
-docker compose exec nginx certbot certificates
+# Deploy from local machine
+railway up
 
-# Force certificate renewal
-docker compose exec nginx certbot renew --force-renewal
-
-# View nginx logs
-docker compose logs -f nginx
-```
-
-## Server Access
-```bash
-ssh -i development-credentials/id_ed25519 root@155.138.237.103
-```
-- **Repo:** `/root/studek-app`
-- **Stack:** Next.js + Docker + SQLite + Nginx
-
-## Docker Commands
-```bash
 # View logs
-docker compose logs -f app
+railway logs
 
-# Restart
-docker compose restart app
-
-# Rebuild and restart
-docker compose up -d --build
-
-# Check status
-docker compose ps
+# Open Railway dashboard
+railway open
 ```
+
+## Database Schema
+
+### Core Tables
+- `users` - User accounts with plan assignments
+- `decks` - Flashcard decks (supports hierarchy, sharing, AI-generated flag)
+- `cards` - Flashcards (basic, cloze, image-occlusion types)
+- `card_fsrs` - FSRS spaced repetition state per card
+- `review_logs` - Review history for analytics
+- `study_sessions` - Study session tracking
+
+### Gamification Tables
+- `user_stats` - XP, level, streaks
+- `xp_transactions` - XP earning history
+- `achievements` - Achievement definitions
+- `user_achievements` - Unlocked achievements
+
+### Monetization Tables
+- `plans` - Subscription plans (Free, Premium, Pro)
+- `user_subscriptions` - Stripe subscription records
+
+### Notification Tables
+- `notification_preferences` - User notification settings
+- `push_subscriptions` - Web push subscriptions (VAPID)
+- `native_push_tokens` - APNs/FCM tokens
+- `notification_logs` - Sent notification history
+
+### Auth Tables
+- `oauth_accounts` - OAuth provider accounts (Google, GitHub)
+- `password_reset_tokens` - Password reset tokens
+- `email_verification_tokens` - Email verification tokens
 
 ## Local Development
+
 ```bash
 cd app && npm run dev
 ```
@@ -114,6 +247,29 @@ cd app && npm run dev
 Or with Docker:
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+```
+
+### Database Commands
+```bash
+cd app
+
+# Run migrations
+npm run db:migrate
+
+# Rollback last migration
+npm run db:rollback
+
+# Check migration status
+npm run db:status
+
+# Create new migration
+npm run db:create migration_name
+
+# Seed admin user
+npm run db:seed
+
+# Seed subscription plans
+npm run db:seed:plans
 ```
 
 ## Development Guidelines
@@ -131,15 +287,44 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
   - `react/display-name` - anonymous components
 - Run `npm run lint` before committing - **0 errors required** for CI to pass
 
-### Tech Stack
-- **Framework:** Next.js 16 (App Router, Turbopack)
-- **Database:** SQLite with better-sqlite3
-- **Styling:** Tailwind CSS v4
-- **Animations:** Framer Motion
-- **Icons:** Lucide React
-- **Algorithm:** FSRS (spaced repetition)
-- **PWA:** Custom service worker with offline support
-- **Mobile:** Capacitor for iOS/Android builds
+### Code Conventions
+- Use TypeScript strict mode
+- Prefer functional components with hooks
+- Use Zod for runtime validation (API routes)
+- Use `better-sqlite3` synchronous API (no async/await for DB)
+- Keep API routes thin; business logic in `lib/db/services/`
+
+## Key Features
+
+### FSRS Spaced Repetition (src/lib/fsrs/)
+Implements FSRS v5 algorithm with:
+- Power law forgetting curve: R(t) = (1 + t/9S)^(-0.5)
+- 19 tunable weights for personalization
+- Learning steps: 1m → 10m → graduate
+- Interval fuzzing to prevent review clumping
+- Card states: new, learning, review, relearning
+- Rating options: Again (1), Hard (2), Good (3), Easy (4)
+
+### AI Deck Generation (src/lib/ai/)
+OpenAI-powered deck creation:
+- Generate decks from natural language prompts
+- Extract content from URLs, PDFs, YouTube videos
+- MCP tools for structured output (deck/card schemas)
+- System prompts optimized for SRS card design
+
+### Stripe Billing (src/lib/billing/)
+Three-tier subscription model:
+- **Free**: 2 decks, 3 sessions/deck, 1 public deck, 0 AI decks
+- **Premium** ($3.99/mo): Unlimited decks/sessions, 2 AI decks
+- **Pro** ($5.99/mo): Unlimited everything including AI decks
+
+Plan limits enforced via `assertDeckCreationAllowed()`, `assertStudySessionAllowed()`.
+
+### Gamification (src/lib/gamification/)
+- XP system with level progression
+- Daily streaks with streak freezes
+- Achievement system
+- Leaderboard
 
 ## PWA Features
 
@@ -174,13 +359,6 @@ For debugging on mobile devices (iPhone, Android), the app includes an on-device
 - Add `?debug=false` to any URL
 - Or run in browser console: `disableDebug()`
 - Or triple-tap again to toggle off
-
-**Features:**
-- Console output (logs, errors, warnings)
-- Network request inspector
-- Element inspector
-- Storage viewer (localStorage, sessionStorage, cookies)
-- Resource viewer
 
 ## Mobile App (Capacitor)
 
@@ -239,108 +417,89 @@ The app includes a Duolingo-style notification system for study reminders.
    npx web-push generate-vapid-keys
    ```
 
-2. Add to GitHub Secrets:
-   - `VAPID_PUBLIC_KEY` - Also add as `NEXT_PUBLIC_VAPID_PUBLIC_KEY`
+2. Add to Railway environment variables:
+   - `VAPID_PUBLIC_KEY`
    - `VAPID_PRIVATE_KEY`
-   - `VAPID_SUBJECT` (optional, defaults to `mailto:hello@studek.com`)
-
-3. Add to `BACKEND_SECRETS` JSON:
-   ```json
-   {
-     "JWT_SECRET": "...",
-     "VAPID_PRIVATE_KEY": "your-vapid-private-key",
-     "NEXT_PUBLIC_VAPID_PUBLIC_KEY": "your-vapid-public-key"
-   }
-   ```
-
-### Setup Native Push Notifications (iOS/Android)
-
-For native app push notifications, you need to configure APNs (iOS) and FCM (Android).
-
-#### iOS (APNs)
-
-1. In Apple Developer Portal:
-   - Go to Certificates, Identifiers & Profiles
-   - Create a Key for APNs (under Keys section)
-   - Download the .p8 file
-   - Note the Key ID and Team ID
-
-2. Add to GitHub Secrets:
-   - `APNS_KEY_ID` - The Key ID from Apple
-   - `APNS_TEAM_ID` - Your Apple Team ID
-   - `APNS_KEY` - Contents of the .p8 file (entire file contents)
-   - `APNS_BUNDLE_ID` - Your app's bundle ID (default: com.studek.app)
-
-3. In Xcode, enable Push Notifications capability:
-   - Open project → Signing & Capabilities → + Capability → Push Notifications
-
-#### Android (FCM)
-
-1. In Firebase Console:
-   - Create a project (or use existing)
-   - Go to Project Settings → Service Accounts
-   - Generate new private key (downloads JSON file)
-
-2. Add to GitHub Secrets:
-   - `FCM_SERVICE_ACCOUNT` - Entire contents of the JSON file
-
-3. Add `google-services.json` to Android project:
-   - Download from Firebase Console → Project Settings → Your apps → Android
-   - Place in `android/app/google-services.json`
+   - `NEXT_PUBLIC_VAPID_PUBLIC_KEY` (same as public key)
 
 ### Internal Cron Worker
 
-The notification system uses an **internal cron worker** that runs alongside the Next.js app inside the Docker container. No external GitHub Actions required.
+The notification system uses an **internal cron worker** that runs alongside the Next.js app. No external services required.
 
 **Schedule:**
 - **Hourly notifications** (`0 * * * *`): Study reminders, streak warnings (14:00-22:00 UTC)
 - **Weekly summary** (`0 18 * * 0`): Sunday at 18:00 UTC
 
-**How it works:**
-1. The cron worker starts automatically with the app
-2. It calls the `/api/notifications/trigger` endpoint internally
-3. Logs are visible in Docker container logs
-
-**View cron logs:**
+**View logs in Railway:**
 ```bash
-docker compose logs -f app | grep -E "\[Cron\]|\[Notifications\]"
+railway logs
 ```
 
-**Manual trigger (for testing):**
-```bash
-# From server:
-curl -X POST \
-  -H "Authorization: Bearer YOUR_CRON_SECRET" \
-  "https://studek.com/api/notifications/trigger?job=all"
-```
+## API Reference
 
-**Job types:**
-- `all` - Run all notification jobs
-- `study_reminders` - Only study reminders
-- `streak_warnings` - Only streak warnings
-- `weekly_summary` - Only weekly summary
-
-### API Endpoints
-
+### Authentication
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/api/notifications/preferences` | GET | Get user notification preferences |
-| `/api/notifications/preferences` | PUT | Update notification preferences |
-| `/api/notifications/subscribe` | POST | Subscribe to web push notifications |
-| `/api/notifications/subscribe` | DELETE | Unsubscribe from web push |
-| `/api/notifications/subscribe` | GET | List user's web push subscriptions |
-| `/api/notifications/native-token` | POST | Register native push token (APNs/FCM) |
-| `/api/notifications/native-token` | DELETE | Unregister native push token |
-| `/api/notifications/native-token` | GET | List user's native push tokens |
-| `/api/notifications/vapid-key` | GET | Get VAPID public key (no auth) |
-| `/api/notifications/trigger` | POST | Trigger notification job (cron only) |
+| `/api/auth/register` | POST | Create new account |
+| `/api/auth/login` | POST | Login with email/password |
+| `/api/auth/logout` | POST | Logout (invalidate token) |
+| `/api/auth/refresh` | POST | Refresh access token |
+| `/api/auth/me` | GET | Get current user |
+| `/api/auth/oauth?provider=google\|github` | GET | OAuth redirect |
+| `/api/auth/callback/google` | GET | Google OAuth callback |
+| `/api/auth/callback/github` | GET | GitHub OAuth callback |
+| `/api/auth/forgot-password` | POST | Request password reset |
+| `/api/auth/reset-password` | POST | Reset password with token |
+| `/api/auth/verify-email` | GET | Verify email with token |
 
-### Database Tables
-- `notification_preferences` - User notification settings
-- `push_subscriptions` - Web push subscription data (VAPID)
-- `native_push_tokens` - Native push tokens (APNs/FCM)
-- `notification_logs` - Sent notification history
-- `notification_schedule` - Scheduled notifications queue
+### Decks & Cards
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/decks` | GET | List user's decks |
+| `/api/decks` | POST | Create new deck |
+| `/api/decks/[id]` | GET | Get deck by ID |
+| `/api/decks/[id]` | PUT | Update deck |
+| `/api/decks/[id]` | DELETE | Delete deck |
+| `/api/decks/[id]/cards` | GET | List cards in deck |
+| `/api/decks/[id]/cards` | POST | Add cards to deck |
+| `/api/decks/[id]/share` | POST | Generate share link |
+| `/api/decks/shared/[code]` | GET | Get shared deck by code |
+| `/api/cards/[id]` | PUT | Update card |
+| `/api/cards/[id]` | DELETE | Delete card |
+
+### Study Sessions
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/sessions` | POST | Start study session |
+| `/api/reviews` | POST | Submit card review |
+| `/api/reviews/session` | GET | Get session summary |
+| `/api/fsrs` | GET | Get due cards for deck |
+
+### AI Generation
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/ai/generate` | POST | Generate deck from prompt |
+| `/api/ai/extract/url` | POST | Extract content from URL |
+| `/api/ai/extract/pdf` | POST | Extract content from PDF |
+| `/api/ai/extract/youtube` | POST | Extract from YouTube |
+| `/api/ai/transcribe` | POST | Transcribe audio |
+
+### Billing
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/billing/plans` | GET | List available plans |
+| `/api/billing/checkout` | POST | Create Stripe checkout session |
+| `/api/billing/portal` | POST | Create billing portal session |
+| `/api/billing/webhook` | POST | Stripe webhook handler |
+
+### Notifications
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/notifications/preferences` | GET/PUT | Get/update notification settings |
+| `/api/notifications/subscribe` | POST/DELETE | Web push subscription |
+| `/api/notifications/native-token` | POST/DELETE | Native push token |
+| `/api/notifications/vapid-key` | GET | Get VAPID public key |
+| `/api/notifications/trigger` | POST | Trigger notification job (cron) |
 
 ## OAuth Authentication (Google & GitHub)
 
@@ -352,19 +511,6 @@ The app supports OAuth login/signup with Google and GitHub.
 - **Account Linking:** Existing users can link OAuth accounts
 - **Automatic Signup:** New users are created automatically on first OAuth login
 - **Email Verification:** OAuth users are automatically verified (trust provider)
-
-### Required GitHub Secrets for OAuth
-
-Add these secrets to your GitHub repository:
-
-| Secret | Description |
-|--------|-------------|
-| `GOOGLE_CLIENT_ID` | Google OAuth Client ID |
-| `GOOGLE_CLIENT_SECRET` | Google OAuth Client Secret |
-| `GH_CLIENT_ID` | GitHub OAuth App Client ID (named `GH_` due to GitHub restrictions) |
-| `GH_CLIENT_SECRET` | GitHub OAuth App Client Secret (named `GH_` due to GitHub restrictions) |
-
-**Note:** GitHub doesn't allow secrets starting with `GITHUB_`, so we use `GH_` prefix instead.
 
 ### Google Cloud Console Setup
 
@@ -398,41 +544,6 @@ Add these secrets to your GitHub repository:
 4. Click **Register application**
 5. Copy the **Client ID**
 6. Generate a new **Client Secret** and copy it
-
-### GitHub Secrets Setup
-
-OAuth credentials are stored as **independent GitHub secrets** (not inside `BACKEND_SECRETS`):
-
-| Secret | Value |
-|--------|-------|
-| `GOOGLE_CLIENT_ID` | Your Google OAuth Client ID |
-| `GOOGLE_CLIENT_SECRET` | Your Google OAuth Client Secret |
-| `GH_CLIENT_ID` | Your GitHub OAuth Client ID |
-| `GH_CLIENT_SECRET` | Your GitHub OAuth Client Secret |
-
-These are passed to the container as environment variables in the GitHub Actions workflow.
-
-### Environment Variables
-
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `GOOGLE_CLIENT_ID` | Yes (for Google) | Google OAuth Client ID |
-| `GOOGLE_CLIENT_SECRET` | Yes (for Google) | Google OAuth Client Secret |
-| `GH_CLIENT_ID` | Yes (for GitHub) | GitHub OAuth App Client ID |
-| `GH_CLIENT_SECRET` | Yes (for GitHub) | GitHub OAuth App Client Secret |
-| `NEXT_PUBLIC_APP_URL` | Yes | Base URL for OAuth callbacks (e.g., `https://studek.com`) |
-
-### OAuth API Endpoints
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/auth/oauth?provider=google` | GET | Redirect to Google OAuth |
-| `/api/auth/oauth?provider=github` | GET | Redirect to GitHub OAuth |
-| `/api/auth/callback/google` | GET | Google OAuth callback handler |
-| `/api/auth/callback/github` | GET | GitHub OAuth callback handler |
-
-### Database Tables
-- `oauth_accounts` - Stores OAuth account links (provider, provider_account_id, tokens)
 
 ### How OAuth Flow Works
 
