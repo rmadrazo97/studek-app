@@ -1,4 +1,4 @@
-name: Build and Deploy to Railway
+name: Build and Lint
 
 on:
   push:
@@ -36,29 +36,3 @@ jobs:
 
       - name: Build application
         run: npm run build
-
-  deploy:
-    name: Deploy to Railway
-    runs-on: ubuntu-latest
-    needs: build
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Install Railway CLI
-        run: npm install -g @railway/cli
-
-      - name: Deploy to Railway
-        run: railway up --service ${{ secrets.RAILWAY_SERVICE_ID }}
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-
-      - name: Deployment summary
-        run: |
-          echo "## Deployment Complete" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Successfully deployed to Railway." >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Service:** ${{ secrets.RAILWAY_SERVICE_ID }}" >> $GITHUB_STEP_SUMMARY
