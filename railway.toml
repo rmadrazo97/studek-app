@@ -2,10 +2,8 @@
 # https://docs.railway.app/reference/config-as-code
 
 [build]
-# Use the Dockerfile in the app directory
-dockerfilePath = "app/Dockerfile"
-# Build context is the app directory
-buildContextPath = "app"
+# Use the root Dockerfile (handles app/ subdirectory)
+dockerfilePath = "Dockerfile"
 
 [deploy]
 # Port configuration
