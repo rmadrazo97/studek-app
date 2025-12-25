@@ -65,13 +65,10 @@ RUN chmod +x ./start.sh
 COPY --from=builder --chown=nextjs:nodejs /app/src/lib/db ./src/lib/db
 COPY --from=builder --chown=nextjs:nodejs /app/src/lib/auth ./src/lib/auth
 
-# Set correct permissions
-USER nextjs
+# Expose port 80 for Railway
+EXPOSE 80
 
-# Expose port
-EXPOSE 3000
-
-ENV PORT=3000
+ENV PORT=80
 ENV HOSTNAME="0.0.0.0"
 ENV DATABASE_PATH=/app/data/studek.db
 

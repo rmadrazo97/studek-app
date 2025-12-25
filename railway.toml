@@ -8,6 +8,8 @@ dockerfilePath = "app/Dockerfile"
 buildContextPath = "app"
 
 [deploy]
+# Port configuration
+port = 80
 # Health check endpoint
 healthcheckPath = "/api/health"
 healthcheckTimeout = 120
