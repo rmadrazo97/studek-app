@@ -3,33 +3,10 @@
  *
  * Provides AI-powered deck and card generation using OpenAI.
  * Exports client, prompts, MCP tools, and generation utilities.
+ *
+ * NOTE: Content extractors (YouTube, PDF, URL) should be imported directly
+ * from '@/lib/ai/extractors/[type]' to avoid loading all dependencies.
  */
-
-// Content Extractors
-export {
-  // YouTube
-  extractYouTubeTranscript,
-  extractYouTubeVideoId,
-  truncateTranscript,
-  type YouTubeTranscriptSegment,
-  type YouTubeExtractionResult,
-  // PDF
-  extractPDFContent,
-  truncatePDFText,
-  extractPDFSections,
-  type PDFExtractionResult,
-  // URL
-  extractURLContent,
-  extractMultipleURLs,
-  truncateURLContent,
-  isValidURL,
-  type URLExtractionResult,
-  // Common
-  type SourceType,
-  type ExtractionSource,
-  MAX_CONTENT_LENGTHS,
-  truncateForSourceType,
-} from './extractors';
 
 // OpenAI Client
 export {
