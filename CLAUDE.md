@@ -5,8 +5,8 @@ A flashcard learning application with AI-powered deck creation and FSRS spaced r
 ## Live Site
 https://studek.com
 
-## Server
-- **IP:** 155.138.237.103
+## Hosting
+- **Platform:** Railway
 - **Domain:** studek.com
 
 ## Codebase Structure
@@ -79,8 +79,8 @@ studek-app/
 │   │       └── notifications/    # Push (VAPID, APNs, FCM)
 │   ├── migrations/               # SQLite migrations
 │   └── public/                   # Static assets, icons, SW
-├── nginx/                        # Nginx + SSL config
-├── docker-compose.yml            # Production Docker config
+├── railway.toml                  # Railway deployment config
+├── docker-compose.yml            # Local Docker config (optional)
 ├── docker-compose.dev.yml        # Development overrides
 └── .github/workflows/build.yml   # CI/CD pipeline
 ```
@@ -104,52 +104,108 @@ studek-app/
 | Algorithm | FSRS v5 (spaced repetition) |
 | PWA | Custom service worker |
 | Mobile | Capacitor 8 (iOS/Android) |
+| Hosting | Railway |
 
-## Workflow
-- Develop locally on `main` branch
-- Push to remote triggers automatic deployment via GitHub Actions
-- Docker Compose handles Next.js app + SQLite database
+## Deployment Workflow
 
-## GitHub Actions (Automatic Deployment)
+### Automatic Deployment via GitHub Actions
 On push to `main`:
 1. Build & lint the app
-2. Build Docker image → push to ghcr.io
-3. SSH to server → pull image → restart containers
+2. Deploy to Railway using Railway CLI
+
+### Railway Configuration
+The `railway.toml` file configures the deployment:
+- Uses the Dockerfile in `app/` directory
+- Health check at `/api/health`
+- Automatic restarts on failure
 
 ### Required GitHub Secrets
+
 | Secret | Description |
 |--------|-------------|
-| `VPS_HOST` | Server IP: `155.138.237.103` |
-| `VPS_USERNAME` | SSH user: `root` |
-| `VPS_SSH_KEY` | Private SSH key (contents of `id_ed25519`) |
-| `GHCR_PAT` | GitHub PAT with `read:packages` scope |
-| `BACKEND_SECRETS` | JSON object with env vars (must include `JWT_SECRET`) |
-| `OPENAI_APIKEY` | OpenAI API key for AI deck generation (optional) |
+| `RAILWAY_TOKEN` | Railway API token (from Railway dashboard → Account Settings → Tokens) |
+| `RAILWAY_SERVICE_ID` | Railway service ID (from service settings URL or CLI) |
+
+### Railway Environment Variables
+
+Configure these in the Railway dashboard (Service → Variables):
+
+| Variable | Description |
+|----------|-------------|
+| `JWT_SECRET` | Secret for JWT tokens (min 32 chars) |
+| `DATABASE_PATH` | SQLite database path (default: `/app/data/studek.db`) |
+| `NEXT_PUBLIC_APP_URL` | App URL (e.g., `https://studek.com`) |
+| `OPENAI_APIKEY` | OpenAI API key for AI deck generation |
 | `RESEND_API_KEY` | Resend API key for transactional emails |
-| `CRON_SECRET` | Secret token for notification cron job (optional) |
-| `VAPID_PUBLIC_KEY` | VAPID public key for web push notifications (optional) |
-| `VAPID_PRIVATE_KEY` | VAPID private key for web push notifications (optional) |
-| `APNS_KEY_ID` | APNs Key ID for iOS push notifications (optional) |
-| `APNS_TEAM_ID` | Apple Team ID for iOS push notifications (optional) |
-| `APNS_KEY` | APNs .p8 key contents for iOS push (optional) |
-| `APNS_BUNDLE_ID` | iOS app bundle ID (default: com.studek.app) |
-| `FCM_SERVICE_ACCOUNT` | Firebase service account JSON for Android push (optional) |
-| `GOOGLE_CLIENT_ID` | Google OAuth Client ID (optional, for Google login) |
-| `GOOGLE_CLIENT_SECRET` | Google OAuth Client Secret (optional, for Google login) |
-| `GH_CLIENT_ID` | GitHub OAuth Client ID (optional, for GitHub login) |
-| `GH_CLIENT_SECRET` | GitHub OAuth Client Secret (optional, for GitHub login) |
 | `STRIPE_SECRET_KEY` | Stripe secret key for billing |
 | `STRIPE_WEBHOOK_SECRET` | Stripe webhook signing secret |
 | `STRIPE_PRICE_PREMIUM` | Stripe Price ID for Premium plan |
 | `STRIPE_PRICE_PRO` | Stripe Price ID for Pro plan |
+| `GOOGLE_CLIENT_ID` | Google OAuth Client ID |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth Client Secret |
+| `GH_CLIENT_ID` | GitHub OAuth Client ID |
+| `GH_CLIENT_SECRET` | GitHub OAuth Client Secret |
+| `VAPID_PUBLIC_KEY` | VAPID public key for web push |
+| `VAPID_PRIVATE_KEY` | VAPID private key for web push |
+| `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | VAPID public key (client-side) |
+| `CRON_SECRET` | Secret for notification cron endpoint |
+| `APNS_KEY_ID` | APNs Key ID for iOS push (optional) |
+| `APNS_TEAM_ID` | Apple Team ID for iOS push (optional) |
+| `APNS_KEY` | APNs .p8 key contents (optional) |
+| `APNS_BUNDLE_ID` | iOS app bundle ID (optional) |
+| `FCM_SERVICE_ACCOUNT` | Firebase service account JSON (optional) |
 
-**Important:** `BACKEND_SECRETS` must be a JSON object containing at minimum:
-```json
-{
-  "JWT_SECRET": "your-secure-random-string-at-least-32-chars"
-}
+### Railway Setup Steps
+
+1. **Create Railway Project:**
+   ```bash
+   # Install Railway CLI
+   npm install -g @railway/cli
+
+   # Login to Railway
+   railway login
+
+   # Link to existing project or create new one
+   railway link
+   ```
+
+2. **Add Persistent Volume for SQLite:**
+   - Go to Railway dashboard → Service → Settings → Volumes
+   - Add volume mounted at `/app/data`
+   - This persists the SQLite database across deployments
+
+3. **Configure Custom Domain:**
+   - Go to Service → Settings → Networking → Custom Domain
+   - Add `studek.com`
+   - Update DNS records:
+     | Type | Host | Value |
+     |------|------|-------|
+     | CNAME | @ | your-service.up.railway.app |
+     | CNAME | www | your-service.up.railway.app |
+
+4. **Get Service ID for GitHub Actions:**
+   ```bash
+   # Using Railway CLI
+   railway status
+   # Or from the URL: https://railway.app/project/xxx/service/SERVICE_ID
+   ```
+
+5. **Generate API Token:**
+   - Go to Railway dashboard → Account Settings → Tokens
+   - Create new token with appropriate permissions
+   - Add as `RAILWAY_TOKEN` secret in GitHub
+
+### Manual Deployment
+```bash
+# Deploy from local machine
+railway up
+
+# View logs
+railway logs
+
+# Open Railway dashboard
+railway open
 ```
-Without a consistent `JWT_SECRET`, tokens will be invalidated on each deployment.
 
 ## Database Schema
 
@@ -182,67 +238,8 @@ Without a consistent `JWT_SECRET`, tokens will be invalidated on each deployment
 - `password_reset_tokens` - Password reset tokens
 - `email_verification_tokens` - Email verification tokens
 
-## Domain Configuration (studek.com)
-
-### Namecheap DNS Settings
-In Namecheap dashboard → Domain List → Manage → Advanced DNS:
-
-| Type | Host | Value | TTL |
-|------|------|-------|-----|
-| A Record | @ | 155.138.237.103 | Automatic |
-| A Record | www | 155.138.237.103 | Automatic |
-
-### Automatic SSL (Let's Encrypt)
-SSL certificates are **automatically obtained** when containers start.
-The Nginx container:
-1. Starts with HTTP-only config
-2. Requests SSL certificate from Let's Encrypt
-3. Switches to HTTPS config
-4. Auto-renews certificates every 12 hours
-
-**Environment variables:**
-- `DOMAIN` - Domain name (default: studek.com)
-- `SSL_EMAIL` - Email for Let's Encrypt notifications
-- `SKIP_SSL=true` - Disable SSL for local development
-
-### Manual SSL Commands (if needed)
-```bash
-# Check certificate status
-docker compose exec nginx certbot certificates
-
-# Force certificate renewal
-docker compose exec nginx certbot renew --force-renewal
-
-# View nginx logs
-docker compose logs -f nginx
-```
-
-## Server Access
-```bash
-ssh -i development-credentials/id_ed25519 root@155.138.237.103
-```
-- **Repo:** `/root/studek-app`
-- **Stack:** Next.js + Docker + SQLite + Nginx
-
-## Docker Commands
-```bash
-# View logs
-docker compose logs -f app
-
-# Restart
-docker compose restart app
-
-# Rebuild and restart
-docker compose up -d --build
-
-# Check status
-docker compose ps
-
-# View log viewer UI
-# http://155.138.237.103:8080 (Dozzle)
-```
-
 ## Local Development
+
 ```bash
 cd app && npm run dev
 ```
@@ -420,79 +417,22 @@ The app includes a Duolingo-style notification system for study reminders.
    npx web-push generate-vapid-keys
    ```
 
-2. Add to GitHub Secrets:
-   - `VAPID_PUBLIC_KEY` - Also add as `NEXT_PUBLIC_VAPID_PUBLIC_KEY`
+2. Add to Railway environment variables:
+   - `VAPID_PUBLIC_KEY`
    - `VAPID_PRIVATE_KEY`
-   - `VAPID_SUBJECT` (optional, defaults to `mailto:hello@studek.com`)
-
-3. Add to `BACKEND_SECRETS` JSON:
-   ```json
-   {
-     "JWT_SECRET": "...",
-     "VAPID_PRIVATE_KEY": "your-vapid-private-key",
-     "NEXT_PUBLIC_VAPID_PUBLIC_KEY": "your-vapid-public-key"
-   }
-   ```
-
-### Setup Native Push Notifications (iOS/Android)
-
-For native app push notifications, you need to configure APNs (iOS) and FCM (Android).
-
-#### iOS (APNs)
-
-1. In Apple Developer Portal:
-   - Go to Certificates, Identifiers & Profiles
-   - Create a Key for APNs (under Keys section)
-   - Download the .p8 file
-   - Note the Key ID and Team ID
-
-2. Add to GitHub Secrets:
-   - `APNS_KEY_ID` - The Key ID from Apple
-   - `APNS_TEAM_ID` - Your Apple Team ID
-   - `APNS_KEY` - Contents of the .p8 file (entire file contents)
-   - `APNS_BUNDLE_ID` - Your app's bundle ID (default: com.studek.app)
-
-3. In Xcode, enable Push Notifications capability:
-   - Open project → Signing & Capabilities → + Capability → Push Notifications
-
-#### Android (FCM)
-
-1. In Firebase Console:
-   - Create a project (or use existing)
-   - Go to Project Settings → Service Accounts
-   - Generate new private key (downloads JSON file)
-
-2. Add to GitHub Secrets:
-   - `FCM_SERVICE_ACCOUNT` - Entire contents of the JSON file
-
-3. Add `google-services.json` to Android project:
-   - Download from Firebase Console → Project Settings → Your apps → Android
-   - Place in `android/app/google-services.json`
+   - `NEXT_PUBLIC_VAPID_PUBLIC_KEY` (same as public key)
 
 ### Internal Cron Worker
 
-The notification system uses an **internal cron worker** that runs alongside the Next.js app inside the Docker container. No external GitHub Actions required.
+The notification system uses an **internal cron worker** that runs alongside the Next.js app. No external services required.
 
 **Schedule:**
 - **Hourly notifications** (`0 * * * *`): Study reminders, streak warnings (14:00-22:00 UTC)
 - **Weekly summary** (`0 18 * * 0`): Sunday at 18:00 UTC
 
-**How it works:**
-1. The cron worker starts automatically with the app
-2. It calls the `/api/notifications/trigger` endpoint internally
-3. Logs are visible in Docker container logs
-
-**View cron logs:**
+**View logs in Railway:**
 ```bash
-docker compose logs -f app | grep -E "\[Cron\]|\[Notifications\]"
-```
-
-**Manual trigger (for testing):**
-```bash
-# From server:
-curl -X POST \
-  -H "Authorization: Bearer YOUR_CRON_SECRET" \
-  "https://studek.com/api/notifications/trigger?job=all"
+railway logs
 ```
 
 ## API Reference
@@ -571,19 +511,6 @@ The app supports OAuth login/signup with Google and GitHub.
 - **Account Linking:** Existing users can link OAuth accounts
 - **Automatic Signup:** New users are created automatically on first OAuth login
 - **Email Verification:** OAuth users are automatically verified (trust provider)
-
-### Required GitHub Secrets for OAuth
-
-Add these secrets to your GitHub repository:
-
-| Secret | Description |
-|--------|-------------|
-| `GOOGLE_CLIENT_ID` | Google OAuth Client ID |
-| `GOOGLE_CLIENT_SECRET` | Google OAuth Client Secret |
-| `GH_CLIENT_ID` | GitHub OAuth App Client ID (named `GH_` due to GitHub restrictions) |
-| `GH_CLIENT_SECRET` | GitHub OAuth App Client Secret (named `GH_` due to GitHub restrictions) |
-
-**Note:** GitHub doesn't allow secrets starting with `GITHUB_`, so we use `GH_` prefix instead.
 
 ### Google Cloud Console Setup
 
