@@ -10,7 +10,8 @@
 import { Cron } from 'croner';
 
 // Configuration
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+const PORT = process.env.PORT || 3000;
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || `http://localhost:${PORT}`;
 const CRON_SECRET = process.env.CRON_SECRET;
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
