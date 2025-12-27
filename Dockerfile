@@ -62,10 +62,10 @@ RUN chmod +x ./start.sh
 COPY --from=builder /app/src/lib/db ./src/lib/db
 COPY --from=builder /app/src/lib/auth ./src/lib/auth
 
-# Expose port 80 for Railway
-EXPOSE 80
+# Railway injects PORT env var dynamically
+EXPOSE 8080
 
-ENV PORT=80
+ENV PORT=8080
 ENV HOSTNAME="0.0.0.0"
 ENV DATABASE_PATH=/app/data/studek.db
 
